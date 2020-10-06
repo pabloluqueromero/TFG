@@ -1,0 +1,16 @@
+\begin{thebibliography}{}
+
+\bibitem[Russell and Norvig, 2006]{RUSSELL}
+Russell, S. and Norvig, P. (2006).
+\newblock {\em Inteligencia Artificial. Un enfoque moderno. (2ed)}.
+\newblock Pearson.
+
+\bibitem[Silver et~al., 2017]{AlphaZero}
+Silver, D., Hubert, T., Schrittwieser, J., Antonoglou, I., Lai, M., Guez, A.,
+  Lanctot, M., Sifre, L., Kumaran, D., Graepel, T., Lillicrap, T.~P., Simonyan,
+  K., and Hassabis, D. (2017).
+\newblock Mastering chess and shogi by self-play with a general reinforcement
+  learning algorithm.
+\newblock {\em CoRR}, abs/1712.01815.
+
+\end{thebibliography}

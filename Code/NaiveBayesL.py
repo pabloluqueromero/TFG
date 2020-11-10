@@ -4,8 +4,12 @@ from itertools import combinations
 from sklearn.naive_bayes import GaussianNB,BernoulliNB,CategoricalNB
 from time import time
 import random
+# from NaiveBayesEfficiente import NaiveBayes as NBE
 
-class NaiveBayes:
+
+
+'''Extender clase de scikit'''
+class NaiveBayesL:
     def __init__(self, attributes: list, class_to_predict: str):
         self.attributes = attributes
         self.class_to_predict = class_to_predict
@@ -13,10 +17,10 @@ class NaiveBayes:
 
     def fit(self, X_train: np.ndarray, Y_train: np.ndarray):
         # Añadir checks
-        data_df = pd.DataFrame(data=X_train,columns=attributes)
+        data_df = pd.DataFrame(data=X_train,columns=self.attributes)
         data_df[self.class_to_predict]=Y_train
         data_df['P']=np.array(X_train.shape[0])
-        joint_probability_distribution = data_df.groupby(attributes+[self.class_to_predict],as_index=False,sort=True).agg({'P': lambda x: np.size(x)/data_df.shape[0]})
+        joint_probability_distribution = data_df.groupby(self.attributes+[self.class_to_predict],as_index=False,sort=True).agg({'P': lambda x: np.size(x)/data_df.shape[0]})
         self.probability_tables[self.class_to_predict] = joint_probability_distribution.groupby([self.class_to_predict],as_index=False,sort=True).agg({'P': np.sum})
         class_values = np.unique(Y_train)
         
@@ -39,7 +43,7 @@ class NaiveBayes:
 
     def predict(self,X):          
         df =  self.probability_tables[self.class_to_predict]
-        values_X = pd.DataFrame(data=X,columns=attributes)
+        values_X = pd.DataFrame(data=X,columns=self.attributes)
         values_X['data_index'] = np.arange(X.shape[0])                                 #Insertamos el indice de la evidencia
         df = values_X.assign(key=1).merge(df.assign(key=1), on='key').drop('key', 1)  #Producto cartesiano
         #Multiplicamos para todas las evidencias a la vez
@@ -54,6 +58,20 @@ class NaiveBayes:
         return np.sum(self.predict(X)==y)/y.shape[0]
 
 
+    '''
+    Metodo para construir variable y ver probabilidades
+    '''
+
+    '''
+    Metodo para hacer un predict predict con algunas variables
+    '''
+
+    '''
+    Método para eliminar tabla de probabilidad
+    '''
+
+
+
 if __name__ == "__main__":
     attributes = [
         'X1',
@@ -62,13 +80,119 @@ if __name__ == "__main__":
     class_to_predict = 'C'
 
     print("------------Generating random Database-----------------")
-    database_size= 100000
+    database_size= 1000000
     seed=30
     print(f"Database size: {database_size}")
     #Prepare data
     random.seed(seed)
-    data = np.array([ [random.randint(0,1),random.randint(1,1),random.randint(0,1)]  for _ in range(database_size) ])
+    data = np.array([ [random.randint(0,200),random.randint(1,20),random.randint(0,1)]  for _ in range(database_size) ])
 
+    data =np.array([
+        [0,0,1],
+        [0,0,1],
+        [0,0,1],
+        [0,0,1],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [0,1,0],
+        [0,1,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [0,1,0],
+        [0,1,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [0,1,0],
+        [0,1,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [0,1,0],
+        [0,1,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [0,1,0],
+        [0,1,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [0,1,0],
+        [0,1,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [0,1,0],
+        [0,1,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [0,1,0],
+        [0,1,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [0,1,0],
+        [0,1,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [0,1,0],
+        [0,1,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [0,1,0],
+        [0,1,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [0,1,0],
+        [0,1,0],
+        [0,0,1],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [1,0,0],
+        [0,1,0],
+        [0,1,0],
+        [0,1,0],
+        [0,1,0],
+        [0,1,0],
+        [1,1,1],
+        [1,1,1],
+        [1,1,1],
+        [1,1,1],
+        [1,1,1]
+    ])
     print("Splitting data")
     x,y = np.hsplit(data,np.array([2]))
     y = y.reshape(-1,)
@@ -77,14 +201,40 @@ if __name__ == "__main__":
     nb_classifier = NaiveBayes(attributes, class_to_predict)
     gnb = GaussianNB()
     bnb = BernoulliNB()
+    cnb= CategoricalNB(alpha=0.3)
+    nbe = NBE(alpha=0.3)
 
-    gnb.fit(x,y)
-    bnb.fit(x,y)
-    nb_classifier.fit(x,y)
     ts =time()
+    gnb.fit(x,y)
     print(f"GaussianNB {gnb.score(x,y)}  -> {time()-ts}")
     ts =time()
+    bnb.fit(x,y)
     print(f"BernouilliNB {bnb.score(x,y)}  -> {time()-ts}")
     ts =time()
+    cnb.fit(x,y)
+    print(f"CategoricalNB {cnb.score(x,y)}  -> {time()-ts}")
+    ts =time()
+    nb_classifier.fit(x,y)
     print(f"CustomNB {nb_classifier.score(x,y)}  -> {time()-ts}")
+    ts =time()
+    nbe.fit(x,y)
+    print(f"NBEficiente {nbe.score(x,y)}  -> {time()-ts}")
     
+    ts =time()
+    gnb.fit(x,y)
+    print(f"GaussianNB {gnb.score(x,y)}  -> {time()-ts}")
+    ts =time()
+    bnb.fit(x,y)
+    print(f"BernouilliNB {bnb.score(x,y)}  -> {time()-ts}")
+    ts =time()
+    cnb.fit(x,y)
+    print(f"CategoricalNB {cnb.score(x,y)}  -> {time()-ts}")
+    ts =time()
+    nb_classifier.fit(x,y)
+    print(f"CustomNB {nb_classifier.score(x,y)}  -> {time()-ts}")
+    ts =time()
+    nbe.fit(x,y)
+    print(f"NBEficiente {nbe.score(x,y)}  -> {time()-ts}")
+    
+
+

@@ -1,0 +1,15 @@
+He visto que existen los algoritmos 
+ID2-OF-3
+M-of-N Pazzani
+X-OF-N M-OF-N X-OF-N
+MRP
+
+
+Hola José Antonio y Juan Ángel,
+
+¿Podríamos quedar algún día, aunque sea por Teams, para ver qué puedo ir mirando ya con más detalle para entrar en materia?
+He estado mirando algunos artículos relacionados con la construcción de variables mediante conectores
+lógicos y he visto que ya hay algunos algoritmos en particular he visto:
+ID2-OF-3, M-of-N, X-OF-N y MRP. Tampoco los he mirado con detalle pero creo que tratan más o menos temas similares a lo
+que planteamos si bien la salida del algoritmo no es un conjunto de variables en todos. 
+

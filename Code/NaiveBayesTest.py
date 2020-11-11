@@ -7,11 +7,9 @@ import random
 
 if __name__ == "__main__":
 
-    print("------------Generating random Database-----------------")
     N = 10000
     M = 4
     seed=30
-    print(f"Database size: {M}x{N}")
     # Prepare data
     random.seed(seed)
     np.random.seed(seed)
@@ -21,10 +19,10 @@ if __name__ == "__main__":
         y =  np.random.randint(ry, size=(n))
         return X, y
 
-    for i in range(30):
+    for i in range(10):
         print()
-        N+=i*2
-        M+=i*10
+        N+=i*10
+        M+=i*2
         print(f"Rows: {N}  Features: {M}")
         X, y = generate_data(N, M, 3, 3)
         nbp = PandasNaiveBayes(attributes=list(map(str,range(M))), class_to_predict="C")
@@ -42,6 +40,15 @@ if __name__ == "__main__":
         cnb.fit(X, y)
         print(f"CategoricalNB {cnb.score(X,y)}  -> Time: {time()-ts}")
         ts=time()
+        # X=np.array([
+        #     ['A','-'],
+        #     ['B','+'],
+        #     ['B','+'],
+        #     ['B','+'],
+        #     ['B','+'],
+        #     ['A','+'],
+        # ])
+        # y=np.array(['P','O','O','O','O','P'])
         nb_classifier.fit(X,y)
         print(f"CustomNB {nb_classifier.score(X,y)}  -> Time: {time()-ts}")
         ts=time()

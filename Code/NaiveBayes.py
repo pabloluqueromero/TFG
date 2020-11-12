@@ -1,12 +1,7 @@
 import numpy as np
-from sklearn.base import BaseEstimator, ClassifierMixin
-from sklearn.utils.validation import check_is_fitted
-from sklearn.preprocessing import OrdinalEncoder, LabelEncoder
+from sklearn.preprocessing import LabelEncoder
 from CustomFeatureEncoder import CustomFeatureEncoder
 from numba import njit
-
-from numba.core import types
-from numba.typed import Dict
 
 
 @njit
@@ -38,7 +33,7 @@ def _predict(X: np.array, probabilities: list,len_feature_values:list,alpha:floa
     return log_probability
 
 
-class NaiveBayes:#(BaseEstimator, ClassifierMixin):
+class NaiveBayes:
     def __init__(self, alpha=1, encode_data=True):
         self.alpha = alpha
         self.encode_data = encode_data

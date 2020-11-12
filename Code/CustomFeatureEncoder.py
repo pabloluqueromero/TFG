@@ -1,6 +1,4 @@
 import numpy as np
-from numba import jit
-from numba import types
         
 class CustomFeatureEncoder:
 

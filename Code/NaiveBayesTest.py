@@ -26,7 +26,7 @@ if __name__ == "__main__":
         print(f"Rows: {N}  Features: {M}")
         X, y = generate_data(N, M, 3, 3)
         nbp = PandasNaiveBayes(attributes=list(map(str,range(M))), class_to_predict="C")
-        nb_classifier=CustomNaiveBayes(encode_data=False)
+        nb_classifier=CustomNaiveBayes(encode_data=True)
         gnb=GaussianNB()
         bnb=BernoulliNB()
         cnb=CategoricalNB()
@@ -49,6 +49,17 @@ if __name__ == "__main__":
         #     ['A','+'],
         # ])
         # y=np.array(['P','O','O','O','O','P'])
+        X_train=np.array([
+        ['P','+'],
+        ['P2','-']
+        ])
+        y_train = np.array(['.','ç'])
+        X_test=np.array([
+            ['P','+'],
+            ['P2','l'],
+            ['i','l']
+        ])
+        y_test = np.array(['.','ç','ç'])
         nb_classifier.fit(X,y)
         print(f"CustomNB {nb_classifier.score(X,y)}  -> Time: {time()-ts}")
         ts=time()

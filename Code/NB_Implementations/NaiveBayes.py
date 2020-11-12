@@ -3,7 +3,9 @@ from sklearn.preprocessing import LabelEncoder
 from CustomFeatureEncoder import CustomFeatureEncoder
 from numba import njit
 
-
+'''
+Enhanced methods with Numba nopython mode
+'''
 @njit
 def _get_probabilities(X: np.array, y: np.array, feature_values_count_: np.array, n_classes: int, alpha: float):
     probabilities = []
@@ -31,7 +33,6 @@ def _predict(X: np.array, probabilities: list,len_feature_values:list,alpha:floa
         mask = np.logical_not(mask)       
         log_probability[mask,:] += log_alpha    #Unknown values that are not in probabilities => og(0+alpha)
     return log_probability
-
 
 class NaiveBayes:
     def __init__(self, alpha=1, encode_data=True):
@@ -72,8 +73,7 @@ class NaiveBayes:
 
     def predict(self, X: np.ndarray):
         if not self.is_fitted:
-            raise Exception("Naive Bayes not fitted")
-        # check_is_fitted(self)
+            raise Exception("NB not fitted")
         if self.encode_data:
             X = self.feature_encoder_.transform(X)
         probabilities = _predict(X, self.probabilities_,self.feature_values_count_,self.alpha)

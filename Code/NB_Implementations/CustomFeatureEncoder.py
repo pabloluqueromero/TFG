@@ -1,6 +1,8 @@
 import numpy as np
         
 class CustomFeatureEncoder:
+    def __init__(self):
+        self.is_fitted=False
 
     def fit(self,X, y=None):
         self.categories_ = [np.unique(column) for column in X.T]
@@ -25,7 +27,7 @@ class CustomFeatureEncoder:
         return X_1
     
     def fit_transform(self, X, y=None):
-        return self.fit(X,y).transform(X, y=y)
+        return self.fit(X,y).transform(X,y)
 
 if __name__ =="__main__":
     ce = CustomFeatureEncoder()

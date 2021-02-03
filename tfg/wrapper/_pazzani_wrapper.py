@@ -160,7 +160,7 @@ class PazzaniWrapper:
 
                 if isinstance(features[1],tuple):
                     features[1] = list(features[1])
-                separated_columns = np.concatenate([original_data[:,features[0]].reshape(-1,1),individual[:,features[1]].reshape(-1,1)],axis=1)
+                separated_columns = np.concatenate([original_data[:,features_index[0]].reshape(-1,1),individual[:,features_index[1]].reshape(-1,1)],axis=1)
                 combined_columns = self.combine_columns(separated_columns)
                 neighbor = np.concatenate([individual,combined_columns],axis=1)
                 yield new_columns,new_available_columns, np.delete(neighbor,features_index[1],axis=1)

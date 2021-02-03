@@ -81,7 +81,6 @@ class PazzaniWrapper:
         return np.apply_along_axis(concat, 1, X).reshape(-1,1)
 
     def _generate_neighbors_bsej(self,current_columns,X):
-        current_col_set = set(current_columns)
         if X.shape[1]>1:
             for col in range(X.shape[1]):
                 new_columns = current_columns.copy()
@@ -90,8 +89,6 @@ class PazzaniWrapper:
                 yield new_columns,np.delete(X,col,axis=1)
             for features in combinations(np.arange(X.shape[1]),2):
                 new_col_name = flatten([current_columns[features[0]],current_columns[features[1]]])
-                if frozenset(new_col_name) in current_col_set: #Maybe this is not necessary
-                    continue
                 new_columns = current_columns.copy()
                 new_columns.append(tuple(new_col_name))
                 del new_columns[features[0]]
@@ -114,11 +111,11 @@ class PazzaniWrapper:
         while not stop:
             stop=True
             if self.verbose:
-                print("\nCurrent Best: ", current_columns, " Score: ",best_score)
+                print("Current Best: ", current_columns, " Score: ",best_score)
             for new_columns,neighbor in self._generate_neighbors_bsej(current_columns,current_best):
                 score=self.evaluate(self.classifier,self.cv,neighbor,y,new_columns)
                 if self.verbose==2:
-                    print("Neighbor: ", new_columns, " Score: ",score)
+                    print("\tNeighbor: ", new_columns, " Score: ",score)
                 if score > best_score:
                     stop=False
                     current_best = neighbor
@@ -178,14 +175,14 @@ class PazzaniWrapper:
         while not stop:
             stop=True
             if self.verbose:
-                print("\nCurrent Best: ", current_columns, " Score: ",best_score,"Available columns: ", available_columns)
+                print("Current Best: ", current_columns, " Score: ",best_score,"Available columns: ", available_columns)
             for new_columns,new_available_columns,neighbor in self._generate_neighbors_fssj(current_columns = current_columns,
                                                                                             individual = current_best,
                                                                                             original_data = X,
                                                                                             available_columns = available_columns):
                 score = self.evaluate(self.classifier,self.cv,neighbor,y,new_columns)  
                 if self.verbose==2:
-                    print("Neighbour: ", new_columns, " Score: ",score,"Available columns: ", new_available_columns)
+                    print("\tNeighbour: ", new_columns, " Score: ",score,"Available columns: ", new_available_columns)
                 if score > best_score:
                     stop=False
                     current_best = neighbor

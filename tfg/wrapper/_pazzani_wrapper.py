@@ -1,11 +1,11 @@
-from itertools import combinations
-from sklearn.model_selection import LeaveOneOut,StratifiedKFold
 import numpy as np 
-from NaiveBayes import NaiveBayes
-import pandas as pd
+
 from itertools import combinations
-from sklearn.model_selection import LeaveOneOut,StratifiedKFold
 from collections import deque
+from sklearn.model_selection import LeaveOneOut,StratifiedKFold
+
+#Local imports
+from tfg.naive_bayes import NaiveBayes
 
 
 def memoize(f):

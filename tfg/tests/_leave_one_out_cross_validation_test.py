@@ -1,6 +1,7 @@
 import numpy as np
 import random
 
+from functools import reduce
 from sklearn.naive_bayes import GaussianNB, BernoulliNB, CategoricalNB, MultinomialNB
 from sklearn.datasets import make_classification
 from sklearn.model_selection import LeaveOneOut
@@ -76,7 +77,7 @@ def test_incremental_validation(X=None, y=None, iterations=10,verbose=1):
         custom_nb_val_4.append(time()-ts)
 
         if i == 0 and verbose:
-            print("Resultado:", score_1, score_2, score_3, score_4, score_5)
+            assert reduce(lambda a,b: (a==b).alll(), [score_1, score_2, score_3, score_4, score_5])
 
     print("Categorical with scikit loo: ", np.mean(categorical_nb[1:]))
     print("Custom with scikit loo: ", np.mean(custom_nb_val_3[1:]))

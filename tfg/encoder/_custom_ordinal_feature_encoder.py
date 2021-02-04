@@ -42,17 +42,17 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
             X_copy[:,j] = np.where(mask,np.nan,self.sorted_categories_[j][inverse_idx])
         return X_copy
     
-    def inverse_transform_columns(self,X,columns=None):
-        check_is_fitted(self)
-        if columns == None:
-            columns = np.arange(X.shape[1])
-        X_copy = np.empty(X[:,columns].shape,dtype=self.categories_[0].dtype)
-        for j in columns:
-            inverse_idx = X[:,j]
-            mask = inverse_idx==self.sorted_categories_[j].shape[0]
-            inverse_idx[mask] = 0
-            X_copy[:,j] = np.where(mask,np.nan,self.sorted_categories_[j][inverse_idx])
-        return X_copy
+    # def inverse_transform_columns(self,X,columns=None):
+    #     check_is_fitted(self)
+    #     if columns == None:
+    #         columns = np.arange(X.shape[1])
+    #     X_copy = np.empty(X[:,columns].shape,dtype=self.categories_[0].dtype)
+    #     for j in columns:
+    #         inverse_idx = X[:,j]
+    #         mask = inverse_idx==self.sorted_categories_[j].shape[0]
+    #         inverse_idx[mask] = 0
+    #         X_copy[:,j] = np.where(mask,np.nan,self.sorted_categories_[j][inverse_idx])
+    #     return X_copy
 
     def fit_transform(self, X, y=None):
         return self.fit(X,y).transform(X,y)
@@ -60,3 +60,13 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
     def get_index(self):
         check_is_fitted(self)
         return self.sorted_categories_
+
+    def remove_feature(self,index):
+        check_is_fitted(self)
+        self.n_features -=1 
+        del self.categories_[index] 
+        self.sort_index_ = [cat.argsort() for cat in self.categories_]
+        self.sorted_categories_ = [self.categories_[j][self.sort_index_[j]] for j in range(self.n_features)]
+        self.sorted_encoded_ = [np.arange(self.categories_[j].shape[0])[self.sort_index_[j]] for j in range(self.n_features)]
+        self.unknown_values_ = [cat.shape[0] for cat in self.categories_]
+

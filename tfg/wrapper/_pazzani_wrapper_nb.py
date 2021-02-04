@@ -8,31 +8,22 @@ from sklearn.model_selection import LeaveOneOut
 
 #Local imports
 from tfg.naive_bayes import NaiveBayes
-
+from tfg.wrapper import PazzaniWrapper
 
 def memoize(f):
     cache =dict()
-    def g(clf,cv,X,y,columns):
+    def g(clf,X,y,columns,fit):
         elements = frozenset(columns)
         if elements not in cache:
-            cache[elements] = f(clf,cv,X,y,columns)
+            cache[elements] = f(clf,X,y,columns,fit)
         return cache[elements]
     return g
 
 # @memoize
-def _evaluate(clf,cv,X,y,columns):
+def _evaluate(clf,X,y,columns,fit):
     if isinstance(X,pd.DataFrame):
         X=X.to_numpy()
-    scores = []
-    if cv:
-        for train_index, test_index in cv.split(X,y):
-            X_train, X_test = X[train_index], X[test_index]
-            y_train, y_test = y[train_index], y[test_index]
-            clf.fit(X_train,y_train)
-            score = clf.score(X_test,y_test)
-            scores.append(score)
-        return np.mean(scores)
-    return clf.leave_one_out_cross_val(X,y)
+    return clf.leave_one_out_cross_val(X,y,fit=fit)
     
 concat = lambda d: "-".join(d)
 
@@ -64,40 +55,26 @@ def flatten(l):
         return q
     return deque()
 
-class PazzaniWrapper:
-    def __init__(self,seed=None,cv = None, strategy = "BSEJ",verbose=0):
-        self.cv = cv
-        self.classifier = NaiveBayes(encode_data=True)
-        self.seed = seed
-        self.strategy = strategy
-        allowed_strategies = ("BSEJ","FSSJ")
-        if self.strategy not in allowed_strategies:
-            raise ValueError("Unknown strategy type: %s, expected one of %s." % (self.strategy, allowed_strategies))
-        self.search = self.search_bsej if strategy=="BSEJ" else self.search_fssj
-        self.verbose = verbose
-    def combine_columns(self,X,columns=None):
-        if columns:
-            return np.apply_along_axis(concat, 1, X[:,columns]).reshape(-1,1)
-        return np.apply_along_axis(concat, 1, X).reshape(-1,1)
+class PazzaniWrapperNB(PazzaniWrapper):
+    def __init__(self,seed=None, strategy = "BSEJ",verbose=0):
+        super().__init__(seed=seed, strategy=strategy, verbose=verbose,cv=None)
 
     def _generate_neighbors_bsej(self,current_columns,X):
         if X.shape[1]>1:
-            for col in range(X.shape[1]):
+            for column_to_drop in range(X.shape[1]):
                 new_columns = current_columns.copy()
-                del new_columns[col]
-                yield new_columns,np.delete(X,col,axis=1)
+                del new_columns[column_to_drop]
+                yield new_columns,column_to_drop,None,True #Updated column list, columns to remove, columns to add, delete?
             for features in combinations(np.arange(X.shape[1]),2):
                 new_col_name = flatten([current_columns[features[0]],current_columns[features[1]]])
                 new_columns = current_columns.copy()
                 new_columns.append(tuple(new_col_name))
-                features = sorted(features,reverse=True)
-                del new_columns[features[0]]
-                del new_columns[features[1]]
+                columns_to_drop = sorted(features,reverse=True)
+                del new_columns[columns_to_drop[0]]
+                del new_columns[columns_to_drop[1]]
                 
-                columns = features
-                combined_columns = self.combine_columns(X,columns)
-                neighbor = np.concatenate([X,combined_columns],axis=1)
-                yield new_columns, np.delete(neighbor,columns,axis=1)
+                combined_columns = self.combine_columns(X,list(features))
+                yield new_columns,list(columns_to_drop), combined_columns, False
      
     def search_bsej(self,X,y):
         self.evaluate = memoize(_evaluate)
@@ -106,31 +83,73 @@ class PazzaniWrapper:
         X = X.astype(str)
         current_best = X.copy()
         current_columns = deque(range(X.shape[1]))
-        best_score=self.evaluate(self.classifier,self.cv,current_best,y,current_columns)
+        best_score=self.evaluate(self.classifier,current_best,y,current_columns,fit=True)
         stop=False
+        update=False
         while not stop:
             stop=True
             if self.verbose:
                 print("Current Best: ", current_columns, " Score: ",best_score)
-            for new_columns,neighbor in self._generate_neighbors_bsej(current_columns,current_best):
-                score=self.evaluate(self.classifier,self.cv,neighbor,y,new_columns)
+            for new_columns,columns_to_delete,columns_to_add,delete in self._generate_neighbors_bsej(current_columns,current_best):
+                if delete:
+                    action = "DELETE"
+                    #Update classifier and get validation result
+                    self.classifier.remove_feature(columns_to_delete)
+                    neighbor = np.delete(current_best,columns_to_delete,axis=1)
+                    score=self.evaluate(self.classifier,neighbor,y,new_columns,fit=False)
+
+                    #Restore the column for the next iteration
+                    self.classifier.add_features(current_best[:,columns_to_delete].reshape(-1,1),y,index=[columns_to_delete])
+                else:
+                    action = "ADD"
+                    self.classifier.remove_feature(columns_to_delete[0])
+                    self.classifier.remove_feature(columns_to_delete[1])
+                    
+                    self.classifier.add_features(columns_to_add,y)
+
+                    neighbor = np.delete(current_best,columns_to_delete,axis=1)
+                    neighbor = np.concatenate([neighbor,columns_to_add],axis=1)
+
+                    score=self.evaluate(self.classifier,neighbor,y,new_columns,fit=False)
+
+                    self.classifier.remove_feature(neighbor.shape[1]-1)
+                    self.classifier.add_features(current_best[:,columns_to_delete],y,index=columns_to_delete) #We reverse it for insert order
+                
                 if self.verbose==2:
                     print("\tNeighbor: ", new_columns, " Score: ",score)
                 if score > best_score:
                     stop=False
-                    current_best = neighbor
+                    best_columns = new_columns
+                    best_action = action
                     best_score = score
-                    current_columns = new_columns
+                    update=True
+                    column_to_delete = column_to_delete
+                    if best_action == "ADD":
+                        column_to_add = column_to_add
                     if score == 1.0:
                         stop=True
                         break
+            if update:
+                current_columns = best_columns
+                if best_action == "DELETE":
+                    current_best = np.delete(current_best,column_to_delete,axis=1)
+                    #Update best
+                    self.classifier.remove_feature(columns_to_delete)
+                else:
+                    current_best = np.delete(current_best,columns_to_delete,axis=1)
+                    current_best = np.concatenate([current_best,columns_to_add],axis=1)
+                    #Update classifier
+                    self.classifier.remove_feature(columns_to_delete[0])
+                    self.classifier.remove_feature(columns_to_delete[1])
+                    self.classifier.add_features(columns_to_add,y)
 
         print("Final best: ", list(current_columns), " Score: ",best_score)
-        model = self.classifier.fit(current_best,y)
+        model = self.classifier
         features = current_columns
         transformer = lambda X: _join_columns(X,columns = features)
         return transformer, features, model
 
+    #TODO
     def _generate_neighbors_fssj(self,current_columns, individual , original_data, available_columns):
         if available_columns:
             for index,col in enumerate(available_columns):
@@ -157,7 +176,7 @@ class PazzaniWrapper:
 
                 if isinstance(features[1],tuple):
                     features[1] = list(features[1])
-                separated_columns = np.concatenate([original_data[:,features[0]].reshape(-1,1),individual[:,features_index[1]].reshape(-1,1)],axis=1)
+                separated_columns = np.concatenate([original_data[:,features_index[0]].reshape(-1,1),individual[:,features_index[1]].reshape(-1,1)],axis=1)
                 combined_columns = self.combine_columns(separated_columns)
                 neighbor = np.concatenate([individual,combined_columns],axis=1)
                 yield new_columns,new_available_columns, np.delete(neighbor,features_index[1],axis=1)
@@ -198,5 +217,5 @@ class PazzaniWrapper:
         transformer = lambda X: _join_columns(X,columns = features)
         return transformer, features, model
 
-    def evaluate(self,classifier,cv,X,y,columns):
-        return _evaluate(classifier,cv,X,y,columns)
+    def evaluate(self,classifier,X,y,columns,fit):
+        return _evaluate(classifier,X,y,columns,fit)

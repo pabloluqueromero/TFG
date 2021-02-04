@@ -77,7 +77,7 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
             X[:,X_index]= np.where(mask , self.sorted_encoded_[j][idx],self.unknown_values_[j])
         return X.astype(int)
 
-    def add_features(self,X,transform=False):
+    def add_features(self,X,transform=False,index=None):
         try:
             check_is_fitted(self)
         except NotFittedError as e:
@@ -88,13 +88,21 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
         
         self.n_features += X.shape[1]
         new_categories = [np.unique(X[:,j]) for j in range(X.shape[1])]
-        self.categories_.extend(new_categories)
+        if index is not None:
+            sort_index = np.argsort(index)
+            index_with_column = list(enumerate(index))
+            for i in sort_index:
+                column,list_insert_index = index_with_column[i]
+                self.categories_.insert(list_insert_index,new_categories[column]) 
+        else:
+            self.categories_.extend(new_categories)
         self.sort_index_ = [cat.argsort() for cat in self.categories_]
         self.sorted_categories_ = [self.categories_[j][self.sort_index_[j]] for j in range(self.n_features)]
         self.sorted_encoded_ = [np.arange(self.categories_[j].shape[0])[self.sort_index_[j]] for j in range(self.n_features)]
         self.unknown_values_ = [cat.shape[0] for cat in self.categories_]
         if transform:
-            index =  list(range(len(self.categories_)-len(new_categories),len(self.categories_)))
+            if index is None:
+                index =  list(range(len(self.categories_)-len(new_categories),len(self.categories_)))
             return self.transform_columns(X,categories=index)
     def remove_feature(self,index):
         check_is_fitted(self)

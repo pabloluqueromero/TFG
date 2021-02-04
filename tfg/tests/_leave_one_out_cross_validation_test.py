@@ -24,7 +24,7 @@ def cross_leave_one_out(clf, X, y):
 
 def test_incremental_validation(X=None, y=None, iterations=10,verbose=1):
     if not X:
-        X, y = make_classification(n_samples=10000,
+        X, y = make_classification(n_samples=1000,
                                    n_features=100,
                                    n_informative=2,
                                    n_redundant=10,
@@ -63,9 +63,9 @@ def test_incremental_validation(X=None, y=None, iterations=10,verbose=1):
         score_2 = nb_classifier.leave_one_out_cross_val(X, y)
         custom_nb_val_1.append(time()-ts)
 
-        ts = time()
-        score_3 = nb_classifier.leave_one_out_cross_val2(X, y)
-        custom_nb_val_2.append(time()-ts)
+        # ts = time()
+        # score_3 = nb_classifier.leave_one_out_cross_val2(X, y)
+        # custom_nb_val_2.append(time()-ts)
 
         ts = time()
         score_4 = cross_leave_one_out(nb_classifier, X, y)
@@ -76,12 +76,12 @@ def test_incremental_validation(X=None, y=None, iterations=10,verbose=1):
         score_5 = cross_leave_one_out(nb_classifier_no_encoding, X2, y)
         custom_nb_val_4.append(time()-ts)
 
-        if i == 0 and verbose:
-            assert reduce(lambda a,b: (a==b).all(), [score_1, score_2, score_3, score_4, score_5])
-
+        if i == 0:
+            scores = [score_1, score_2, score_4, score_5]
+            assert all( score == scores[0] for score in scores )
     print("Categorical with scikit loo: ", np.mean(categorical_nb[1:]))
     print("Custom with scikit loo: ", np.mean(custom_nb_val_3[1:]))
     print("Custom with scikit loo (pre-encoding): ", np.mean(custom_nb_val_4[1:]))
     print("Custom with first incremental: ", np.mean(custom_nb_val_1[1:]))
-    print("Custom with second incremental: ", np.mean(custom_nb_val_2[1:]))
+    # print("Custom with second incremental: ", np.mean(custom_nb_val_2[1:]))
 

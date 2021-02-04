@@ -30,11 +30,42 @@ def test_remove_feature():
     nb = CustomNaiveBayes(encode_data=True)
     nb.fit(X,y)
     nb.remove_feature(0)
+    independent = nb.indepent_term_
+    probabilities = nb.probabilities_
     removed = nb.predict_proba(np.delete(X,0,axis=1))
     nb.fit(np.delete(X,0,axis=1),y)
     og = nb.predict_proba(np.delete(X,0,axis=1))
     assert np.allclose(og,removed)
+    assert np.allclose(nb.indepent_term_,independent)
+    assert np.allclose(nb.probabilities_,probabilities)
 
+
+def test_add_features():
+    X,y = make_classification(n_samples=1000, 
+                          n_features=100, 
+                          n_informative=2, 
+                          n_redundant=0, 
+                          n_repeated=0, 
+                          n_classes=2, 
+                          n_clusters_per_class=1, 
+                          weights=None,  
+                          class_sep=1.0, 
+                          hypercube=True, 
+                          scale=2.0, 
+                          shuffle=True, 
+                          random_state=0)
+    X_two_less = np.delete(X,[0,1],axis=1)
+    nb = CustomNaiveBayes(encode_data=True)
+    nb.fit(X_two_less,y)
+    nb.add_features(X[:,[0,1]],y)
+    independent = nb.indepent_term_
+    probabilities = nb.probabilities_
+    added = nb.predict_proba(X)
+    nb.fit(X,y)
+    og = nb.predict_proba(X)
+    assert np.allclose(og,added)
+    assert np.allclose(nb.probabilities_,probabilities)
+    assert np.allclose(nb.indepent_term_,independent)
 # if __name__ == "__main__":
 #     a1 = []
 #     a2 = []

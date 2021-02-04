@@ -226,16 +226,18 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         self.feature_values_count_per_element_.extend(new_feature_value_count_per_element)
         new_feature_value_counts = np.array([(feature_counts).shape[0] for feature_counts in new_feature_value_count_per_element])
         self.feature_values_count_ = np.concatenate([self.feature_values_count_,new_feature_value_counts])
-        new_feature_values = np.array([np.arange(j.shape[0]) for j in new_feature_value_count_per_element],dtype="object")
-        self.feature_values_ = np.concatenate([self.feature_values_,new_feature_values])
-        self.probabilities_.extend(_get_probabilities(X,y,new_feature_value_counts,self.n_classes_,self.alpha))
+        # new_feature_values = np.array([np.arange(j.shape[0]) for j in new_feature_value_count_per_element],dtype="object")
+        # self.feature_values_ = np.concatenate([self.feature_values_,new_feature_values])
+        new_probabilities = _get_probabilities(X,y,new_feature_value_counts,self.n_classes_,self.alpha)
+        self.probabilities_.extend(new_probabilities)
 
-        new_real_unique_feature_value_counts = np.array([(feature_counts!=0).sum() for feature_counts in new_feature_value_count_per_element])
-        feature_contribution = compute_total_probability_(self.class_values_count_,new_real_unique_feature_value_counts,self.alpha)
-        feature_contribution = np.where(feature_contribution==0,1,feature_contribution)
-        feature_contribution = np.log(feature_contribution)
-        self.total_probability_ +=  feature_contribution
-        self.indepent_term_ = self.class_log_count_ - self.total_probability_
+        # new_real_unique_feature_value_counts = np.array([(feature_counts!=0).sum() for feature_counts in new_feature_value_count_per_element])
+        # feature_contribution = compute_total_probability_(self.class_values_count_,new_real_unique_feature_value_counts,self.alpha)
+        # feature_contribution = np.where(feature_contribution==0,1,feature_contribution)
+        # feature_contribution = np.log(feature_contribution)
+        # self.total_probability_ +=  feature_contribution
+        # self.indepent_term_ -= feature_contribution
+        self._compute_independent_terms()
         return self
 
     

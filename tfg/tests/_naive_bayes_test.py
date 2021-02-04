@@ -35,9 +35,9 @@ def test_remove_feature():
     removed = nb.predict_proba(np.delete(X,0,axis=1))
     nb.fit(np.delete(X,0,axis=1),y)
     og = nb.predict_proba(np.delete(X,0,axis=1))
-    assert np.allclose(og,removed)
-    assert np.allclose(nb.indepent_term_,independent)
     assert np.allclose(nb.probabilities_,probabilities)
+    assert np.allclose(nb.indepent_term_,independent)
+    assert np.allclose(og,removed)
 
 
 def test_add_features():
@@ -54,18 +54,21 @@ def test_add_features():
                           scale=2.0, 
                           shuffle=True, 
                           random_state=0)
+    X_og = X.copy()
     X_two_less = np.delete(X,[0,1],axis=1)
+    X = np.concatenate([X_two_less,X[:,[0,1]]],axis=1)
     nb = CustomNaiveBayes(encode_data=True)
     nb.fit(X_two_less,y)
-    nb.add_features(X[:,[0,1]],y)
+    nb.add_features(X_og[:,[0,1]],y)
     independent = nb.indepent_term_
     probabilities = nb.probabilities_
     added = nb.predict_proba(X)
+
     nb.fit(X,y)
     og = nb.predict_proba(X)
-    assert np.allclose(og,added)
-    assert np.allclose(nb.probabilities_,probabilities)
     assert np.allclose(nb.indepent_term_,independent)
+    assert np.allclose(nb.probabilities_,probabilities)
+    assert np.allclose(og,added)
 # if __name__ == "__main__":
 #     a1 = []
 #     a2 = []

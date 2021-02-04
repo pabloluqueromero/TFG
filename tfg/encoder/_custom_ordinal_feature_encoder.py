@@ -86,7 +86,7 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
                 return self.transform(X)
             return self
         
-        self.n_features +=X.shape[1]
+        self.n_features += X.shape[1]
         new_categories = [np.unique(X[:,j]) for j in range(X.shape[1])]
         self.categories_.extend(new_categories)
         self.sort_index_ = [cat.argsort() for cat in self.categories_]

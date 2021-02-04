@@ -32,11 +32,11 @@ def _get_counts(column: np.ndarray, y: np.ndarray, n_features: int, n_classes: i
     return counts
 
 @njit
-def compute_total_probability(class_values_count,feature_values_count_,alpha):
-    total_probability = class_values_count + alpha*feature_values_count_.reshape(-1,1)
-    total_probability = np.where(total_probability==0,1,total_probability)
-    total_probability = np.sum(np.log(total_probability),axis=0)
-    return total_probability
+def compute_total_probability_(class_values_count_,feature_values_count_,alpha):
+    total_probability_ = class_values_count_ + alpha*feature_values_count_.reshape(-1,1)
+    total_probability_ = np.where(total_probability_==0,1,total_probability_)
+    total_probability_ = np.sum(np.log(total_probability_),axis=0)
+    return total_probability_
     
 #probabilities is not a squared matrix only solution would be to pad with zeros, inneficient when there are many features
 def _predict(X: np.ndarray, probabilities:np.ndarray, feature_values_count_:np.ndarray,alpha:float):
@@ -102,18 +102,18 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         self.n_classes_ = self.class_values_.shape[0]
 
         
-        self.feature_values_count_per_element = [np.bincount(X[:,j]) for j in range(self.column_count_)]
-        self.feature_values_count_ = np.array([(feature_counts).shape[0] for feature_counts in self.feature_values_count_per_element])
-        self.feature_values_ = np.array([np.arange(j.shape[0]) for j in self.feature_values_count_per_element],dtype="object")
+        self.feature_values_count_per_element_ = [np.bincount(X[:,j]) for j in range(self.column_count_)]
+        self.feature_values_count_ = np.array([(feature_counts).shape[0] for feature_counts in self.feature_values_count_per_element_])
+        self.feature_values_ = np.array([np.arange(j.shape[0]) for j in self.feature_values_count_per_element_],dtype="object")
         
         self._compute_probabilities(X, y)
         self._compute_independent_terms()
         return self
 
     def _compute_independent_terms(self):
-        real_unique_value_counts = np.array([(feature_counts!=0).sum() for feature_counts in self.feature_values_count_per_element])
-        self.total_probability = compute_total_probability(self.class_values_count_,real_unique_value_counts,self.alpha)
-        self.indepent_term = self.class_log_count_ - self.total_probability
+        real_unique_value_counts = np.array([(feature_counts!=0).sum() for feature_counts in self.feature_values_count_per_element_])
+        self.total_probability_ = compute_total_probability_(self.class_values_count_,real_unique_value_counts,self.alpha)
+        self.indepent_term_ = self.class_log_count_ - self.total_probability_
 
     def _compute_probabilities(self, X: np.ndarray, y: np.ndarray):
         self.probabilities_ = _get_probabilities(
@@ -126,7 +126,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         if self.encode_data:
             X = self.feature_encoder_.transform(X)
         probabilities = _predict(X, self.probabilities_,self.feature_values_count_,self.alpha)
-        probabilities += self.indepent_term
+        probabilities += self.indepent_term_
         output = np.argmax(probabilities, axis=1)
         if self.encode_data:
             output = self.class_encoder_.inverse_transform(output)
@@ -135,10 +135,9 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
     def predict_proba(self, X: np.ndarray):
         check_is_fitted(self)
         if self.encode_data:
-            check_is_fitted(self.feature_encoder_)
             X = self.feature_encoder_.transform(X)
         probabilities = _predict(X, self.probabilities_,self.feature_values_count_,self.alpha)
-        probabilities += self.indepent_term
+        probabilities += self.indepent_term_
         log_prob_x = logsumexp(probabilities, axis=1)
         return np.exp(probabilities - np.atleast_2d(log_prob_x).T)
 
@@ -155,16 +154,16 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
     #         example, label = X[i], y[i]
     #         class_values_count_ = self.class_values_count_.copy()
     #         class_values_count_[label]-=(1 if class_values_count_[label] else 0)
-    #         feature_values_count_per_element = []
+    #         feature_values_count_per_element_ = []
     #         for j in range(X.shape[1]):
-    #             feature_count = self.feature_values_count_per_element[j].copy()
+    #             feature_count = self.feature_values_count_per_element_[j].copy()
     #             if  example[j] < feature_count.shape[0]: #Could be unknown
     #                 feature_count[example[j]] -= (1 if feature_count[example[j]] else 0)
-    #             feature_values_count_per_element.append(feature_count)
-    #         feature_values_count_ = np.array([(feature_counts!=0).sum() for feature_counts in feature_values_count_per_element])
-    #         total_probability = compute_total_probability(class_values_count_,feature_values_count_, self.alpha)
+    #             feature_values_count_per_element_.append(feature_count)
+    #         feature_values_count_ = np.array([(feature_counts!=0).sum() for feature_counts in feature_values_count_per_element_])
+    #         total_probability_ = compute_total_probability_(class_values_count_,feature_values_count_, self.alpha)
     #         class_values_count_ = np.where(class_values_count_==0,1,class_values_count_)
-    #         indepent_term = np.log(class_values_count_) - total_probability
+    #         indepent_term_ = np.log(class_values_count_) - total_probability_
 
     #         probabilities_loo = []
     #         for col in range(X.shape[1]):
@@ -173,7 +172,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
     #             updated_value = np.where(updated_value==0,1,updated_value)
     #             probabilities_loo_j[example[col]][label]= np.log(updated_value)
     #             probabilities_loo.append(probabilities_loo_j)
-    #         prediction = _predict(np.array([example]),probabilities_loo,feature_values_count_,self.alpha)+ indepent_term
+    #         prediction = _predict(np.array([example]),probabilities_loo,feature_values_count_,self.alpha)+ indepent_term_
     #         prediction = np.argmax( prediction,axis=1)
     #         score.append(prediction[0]==label)
     #     return np.mean(score)
@@ -192,7 +191,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
             log_proba[y==v,v] += np.log(self.class_values_count_[v]-1) if self.class_values_count_[v] >1 else -float("inf") #Can't predict an unseen label
         for i in range(X.shape[0]):
             example, label = X[i], y[i]
-            feature_values_count_per_element = self.feature_values_count_per_element.copy()
+            feature_values_count_per_element_ = self.feature_values_count_per_element_.copy()
             class_values_count_ = self.class_values_count_.copy()
             class_values_count_[label]-=1
             for j in range(X.shape[1]):
@@ -200,12 +199,72 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
                 log_proba[i] += p
                 log_proba[i,label] -= p[label] 
                 log_proba[i,label] += np.log(np.exp(p[label])-1)
-                feature_values_count_per_element[j][example[j]]-=1
-            feature_values_count_ = np.array([(feature_counts!=0).sum() for feature_counts in feature_values_count_per_element])
-            total_probability = compute_total_probability(class_values_count_,feature_values_count_, self.alpha)
-            log_proba[i] -=total_probability
+                feature_values_count_per_element_[j][example[j]]-=1
+            feature_values_count_ = np.array([(feature_counts!=0).sum() for feature_counts in feature_values_count_per_element_])
+            total_probability_ = compute_total_probability_(class_values_count_,feature_values_count_, self.alpha)
+            log_proba[i] -=total_probability_
         prediction = np.argmax(log_proba ,axis=1)
         return np.sum(prediction == y)/y.shape[0]
+
+    def add_features(self,X,y): 
+        check_is_fitted(self)
+        check_X_y(X,y)
+        if isinstance(X,pd.DataFrame):
+            X = X.to_numpy()
+        if self.encode_data:
+            y = self.class_encoder_.transform(y) #y should the same than the one that was first fitted for now  ----> FUTURE IMPLEMENTATION
+            X = self.feature_encoder_.add_features(X,transform=True)
+
+        
+        # self.class_values_ = np.arange(0,1+np.max(y))
+        # self.class_values_count_ = np.bincount(y)
+        # self.class_log_count_ = np.log(self.class_values_count_,where = self.class_values_count_!=0)
+        # self.n_classes_ = self.class_values_.shape[0]
+
+        self.column_count_ += X.shape[1]
+        new_feature_value_count_per_element =[np.bincount(X[:,j]) for j in range(X.shape[1])]
+        self.feature_values_count_per_element_.extend(new_feature_value_count_per_element)
+        new_feature_value_counts = np.array([(feature_counts).shape[0] for feature_counts in new_feature_value_count_per_element])
+        self.feature_values_count_ = np.concatenate([self.feature_values_count_,new_feature_value_counts])
+        # new_feature_values = np.array([np.arange(j.shape[0]) for j in new_feature_value_count_per_element],dtype="object")
+        # self.feature_values_ = np.concatenate([self.feature_values_,new_feature_values])
+        new_probabilities = _get_probabilities(X,y,new_feature_value_counts,self.n_classes_,self.alpha)
+        self.probabilities_.extend(new_probabilities)
+
+        # new_real_unique_feature_value_counts = np.array([(feature_counts!=0).sum() for feature_counts in new_feature_value_count_per_element])
+        # feature_contribution = compute_total_probability_(self.class_values_count_,new_real_unique_feature_value_counts,self.alpha)
+        # feature_contribution = np.where(feature_contribution==0,1,feature_contribution)
+        # feature_contribution = np.log(feature_contribution)
+        # self.total_probability_ +=  feature_contribution
+        # self.indepent_term_ -= feature_contribution
+        self._compute_independent_terms()
+        return self
+
+    
+    def remove_feature(self,index):
+        check_is_fitted(self)
+        if self.column_count_ <=1:
+            raise Exception("Cannot remove only feature from classifier")       
+        if not 0 <= index <= self.column_count_:
+            raise Exception(f"Feature index not valid, expected index between 0 and {self.column_count_}")       
+        self.column_count_-=1
+        
+        unique_feature_value_counts = (self.feature_values_count_per_element_[index]!=0).sum()
+        feature_contribution = self.class_values_count_ + self.alpha*unique_feature_value_counts
+        feature_contribution = np.where(feature_contribution==0,1,feature_contribution)
+        feature_contribution = np.log(feature_contribution)
+        self.total_probability_ -=  feature_contribution
+        self.indepent_term_ += feature_contribution
+
+
+        self.feature_values_count_ = np.delete(self.feature_values_count_,index)
+        self.feature_values_ = np.delete(self.feature_values_,index,axis=0)
+        del self.feature_values_count_per_element_[index]
+        del self.probabilities_[index]
+        
+        if self.encode_data:
+            self.feature_encoder_.remove_feature(index)
+        return self
 
     def score(self, X: np.ndarray, y: np.ndarray):
         return np.sum(self.predict(X) == y)/y.shape[0]

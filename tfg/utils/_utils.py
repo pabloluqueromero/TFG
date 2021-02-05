@@ -14,9 +14,9 @@ def join_columns(X,columns):
         if isinstance(col,tuple):
             idx = list(col)
             if X_1 is not None:
-                X_1= np.concatenate([X_1,np.apply_along_axis(concat, 1, X_2[:,idx]).reshape(-1,1)],axis=1)
+                X_1= np.concatenate([X_1,np.apply_along_axis(concat_columns, 1, X_2[:,idx]).reshape(-1,1)],axis=1)
             else:
-                X_1 = np.apply_along_axis(concat, 1, X_2[:,idx]).reshape(-1,1)
+                X_1 = np.apply_along_axis(concat_columns, 1, X_2[:,idx]).reshape(-1,1)
         else:
             if X_1 is not None:
                 X_1 = np.concatenate([X_1,X_2[:,col].reshape(-1,1)],axis=1)

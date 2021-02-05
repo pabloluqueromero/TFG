@@ -8,52 +8,13 @@ from sklearn.model_selection import LeaveOneOut
 
 #Local imports
 from tfg.naive_bayes import NaiveBayes
+from tfg.utils import join_columns,concat_columns,flatten,memoize,combine_columns
 from tfg.wrapper import PazzaniWrapper
 
-def memoize(f):
-    cache =dict()
-    def g(clf,X,y,columns,fit):
-        elements = frozenset(columns)
-        if elements not in cache:
-            cache[elements] = f(clf,X,y,columns,fit)
-        return cache[elements]
-    return g
-
-# @memoize
 def _evaluate(clf,X,y,columns,fit=False):
     if isinstance(X,pd.DataFrame):
         X=X.to_numpy()
     return clf.leave_one_out_cross_val(X,y,fit=fit)
-    
-concat = lambda d: "-".join(d)
-
-def _join_columns(X,columns):
-    if isinstance(X,pd.DataFrame):
-        X=X.to_numpy()
-    X_1 = None
-    X_2 = X.astype(str)
-    for col in columns:
-        if isinstance(col,tuple):
-            idx = list(col)
-            if X_1 is not None:
-                X_1= np.concatenate([X_1,np.apply_along_axis(concat, 1, X_2[:,idx]).reshape(-1,1)],axis=1)
-            else:
-                X_1 = np.apply_along_axis(concat, 1, X_2[:,idx]).reshape(-1,1)
-        else:
-            if X_1 is not None:
-                X_1 = np.concatenate([X_1,X_2[:,col].reshape(-1,1)],axis=1)
-            else:
-                X_1 = X_2[:,col].reshape(-1,1)
-    return X_1
-
-def flatten(l):
-    if l:
-        q = flatten(l[1:])
-        if hasattr(l[0],"__iter__"):
-            return flatten(l[0]) + q
-        q.appendleft(l[0])
-        return q
-    return deque()
 
 class PazzaniWrapperNB(PazzaniWrapper):
     def __init__(self,seed=None, strategy = "BSEJ",verbose=0):
@@ -73,17 +34,17 @@ class PazzaniWrapperNB(PazzaniWrapper):
                 del new_columns[columns_to_drop[0]]
                 del new_columns[columns_to_drop[1]]
                 
-                combined_columns = self.combine_columns(X,list(features))
+                combined_columns = combine_columns(X,list(features))
                 yield new_columns,list(columns_to_drop), combined_columns, False
      
     def search_bsej(self,X,y):
-        self.evaluate = memoize(_evaluate)
+        self.evaluate = memoize(_evaluate,attribute_to_cache = "columns")
         if isinstance(X,pd.DataFrame):
             X = X.to_numpy()
         X = X.astype(str)
         current_best = X.copy()
         current_columns = deque(range(X.shape[1]))
-        best_score=self.evaluate(self.classifier,current_best,y,current_columns,fit=True)
+        best_score=self.evaluate(self.classifier,current_best,y,columns=current_columns,fit=True)
         stop=False
         update=False
         while not stop:
@@ -96,7 +57,7 @@ class PazzaniWrapperNB(PazzaniWrapper):
                     #Update classifier and get validation result
                     self.classifier.remove_feature(columns_to_delete)
                     neighbor = np.delete(current_best,columns_to_delete,axis=1)
-                    score=self.evaluate(self.classifier,neighbor,y,new_columns,fit=False)
+                    score=self.evaluate(self.classifier,neighbor,y,columns=new_columns,fit=False)
 
                     #Restore the column for the next iteration
                     self.classifier.add_features(current_best[:,columns_to_delete].reshape(-1,1),y,index=[columns_to_delete])
@@ -110,7 +71,7 @@ class PazzaniWrapperNB(PazzaniWrapper):
                     neighbor = np.delete(current_best,columns_to_delete,axis=1)
                     neighbor = np.concatenate([neighbor,columns_to_add],axis=1)
 
-                    score=self.evaluate(self.classifier,neighbor,y,new_columns,fit=False)
+                    score=self.evaluate(self.classifier,neighbor,y,columns=new_columns,fit=False)
 
                     self.classifier.remove_feature(neighbor.shape[1]-1)
                     self.classifier.add_features(current_best[:,columns_to_delete],y,index=columns_to_delete) #We reverse it for insert order
@@ -146,9 +107,8 @@ class PazzaniWrapperNB(PazzaniWrapper):
         print("Final best: ", list(current_columns), " Score: ",best_score)
         model = self.classifier
         features = current_columns
-        transformer = lambda X: _join_columns(X,columns = features)
+        transformer = lambda X: join_columns(X,columns = features)
         return transformer, features, model
-
 
     def _generate_neighbors_fssj(self,current_columns, individual , original_data, available_columns):
         if available_columns:
@@ -175,13 +135,13 @@ class PazzaniWrapperNB(PazzaniWrapper):
                 if isinstance(features[1],tuple):
                     features[1] = list(features[1])
                 separated_columns = np.concatenate([original_data[:,features_index[0]].reshape(-1,1),individual[:,features_index[1]].reshape(-1,1)],axis=1)
-                combined_columns = self.combine_columns(separated_columns)
+                combined_columns = combine_columns(separated_columns)
                 column_to_add = combined_columns
                 column_to_delete = features_index[1]
                 yield new_columns,new_available_columns,column_to_delete,column_to_add,True
 
     def search_fssj(self,X,y):
-        self.evaluate = memoize(_evaluate)
+        self.evaluate = memoize(_evaluate,attribute_to_cache = "columns")
         if isinstance(X,pd.DataFrame):
             X = X.to_numpy()
         X = X.astype(str)
@@ -211,7 +171,7 @@ class PazzaniWrapperNB(PazzaniWrapper):
 
                     neighbor = np.delete(current_best,column_to_delete,axis=1)
                     neighbor = np.concatenate([neighbor,column_to_add],axis=1)
-                    score=self.evaluate(self.classifier,neighbor,y,new_columns,fit=False)
+                    score=self.evaluate(self.classifier,neighbor,y,columns=new_columns,fit=False)
 
                     #Restore the column for the next iteration
                     if neighbor.shape[1] ==1:
@@ -229,7 +189,7 @@ class PazzaniWrapperNB(PazzaniWrapper):
                         neighbor = np.concatenate([current_best,column_to_add],axis=1)
                         self.classifier.add_features(column_to_add,y)
 
-                    score=self.evaluate(self.classifier,neighbor,y,new_columns,fit=False)
+                    score=self.evaluate(self.classifier,neighbor,y,columns=new_columns,fit=False)
                     
                     if current_best is None:
                         self.classifier=NaiveBayes(encode_data=True)
@@ -278,8 +238,8 @@ class PazzaniWrapperNB(PazzaniWrapper):
         print("Final best: ", list(current_columns), " Score: ",best_score)
         model = self.classifier
         features = current_columns
-        transformer = lambda X: _join_columns(X,columns = features)
+        transformer = lambda X: join_columns(X,columns = features)
         return transformer, features, model
 
-    def evaluate(self,classifier,X,y,columns,fit):
-        return _evaluate(classifier,X,y,columns,fit)
+    def evaluate(self,classifier,X,y,fit=True,columns=None):
+        return _evaluate(classifier,X,y,fit=True,columns=None)

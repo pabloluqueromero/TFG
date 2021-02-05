@@ -141,26 +141,7 @@ def test_add_features():
 #     a1_score = []
 #     a2_score = []
 #     a3_score = []
-#     def make_discrete(X,m=100):
-#         X*=m
-#         minimum = np.amin(X)
-#         if minimum <0:
-#             minimum*=-1
-#             X+= minimum
-#         return X.astype(int)
-#     def twospirals(n_points, noise=.5,seed=0):
-#         """
-#         Returns the two spirals dataset.
-#         """
-#         np.random.seed(seed)
-#         n = np.sqrt(np.random.rand(n_points,1)) * 780 * (2*np.pi)/360
-#         d1x = -np.cos(n)*n + np.random.rand(n_points,1) * noise
-#         d1y = np.sin(n)*n + np.random.rand(n_points,1) * noise
-#         return (np.vstack((np.hstack((d1x,d1y)),np.hstack((-d1x,-d1y)))), 
-#                 np.hstack((np.zeros(n_points),np.ones(n_points))))
-#     import os
 #     for i in range(5):
-#         # os.system( 'cls' )
 #         print(i)
 #         # X,y = twospirals(500000,seed=i)
 #         # X,y = make_classification(n_samples=100000, 

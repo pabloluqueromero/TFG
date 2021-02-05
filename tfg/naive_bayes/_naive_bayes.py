@@ -140,42 +140,6 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         log_prob_x = logsumexp(probabilities, axis=1)
         return np.exp(probabilities - np.atleast_2d(log_prob_x).T)
 
-    # Less efficient
-    # def leave_one_out_cross_val(self,X,y):
-    #     self.fit(X,y)
-    #     if isinstance(X,pd.DataFrame):
-    #         X = X.to_numpy()
-    #     if self.encode_data:
-    #         X = self.feature_encoder_.transform(X)
-    #         y = self.class_encoder_.transform(y)
-    #     score = []
-    #     for i in range(X.shape[0]):
-    #         example, label = X[i], y[i]
-    #         class_values_count_ = self.class_values_count_.copy()
-    #         class_values_count_[label]-=(1 if class_values_count_[label] else 0)
-    #         feature_values_count_per_element_ = []
-    #         for j in range(X.shape[1]):
-    #             feature_count = self.feature_values_count_per_element_[j].copy()
-    #             if  example[j] < feature_count.shape[0]: #Could be unknown
-    #                 feature_count[example[j]] -= (1 if feature_count[example[j]] else 0)
-    #             feature_values_count_per_element_.append(feature_count)
-    #         feature_values_count_ = np.array([(feature_counts!=0).sum() for feature_counts in feature_values_count_per_element_])
-    #         total_probability_ = compute_total_probability_(class_values_count_,feature_values_count_, self.alpha)
-    #         class_values_count_ = np.where(class_values_count_==0,1,class_values_count_)
-    #         indepent_term_ = np.log(class_values_count_) - total_probability_
-
-    #         probabilities_loo = []
-    #         for col in range(X.shape[1]):
-    #             probabilities_loo_j = self.probabilities_[col].copy()
-    #             updated_value = np.clip(np.exp(probabilities_loo_j[example[col]][label])-1,a_min = self.alpha,a_max =None)
-    #             updated_value = np.where(updated_value==0,1,updated_value)
-    #             probabilities_loo_j[example[col]][label]= np.log(updated_value)
-    #             probabilities_loo.append(probabilities_loo_j)
-    #         prediction = _predict(np.array([example]),probabilities_loo,feature_values_count_,self.alpha)+ indepent_term_
-    #         prediction = np.argmax( prediction,axis=1)
-    #         score.append(prediction[0]==label)
-    #     return np.mean(score)
-
     def leave_one_out_cross_val(self,X,y,fit=True):
         if fit:
             self.fit(X,y)

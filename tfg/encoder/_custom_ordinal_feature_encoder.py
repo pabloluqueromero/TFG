@@ -104,6 +104,7 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
             if index is None:
                 index =  list(range(len(self.categories_)-len(new_categories),len(self.categories_)))
             return self.transform_columns(X,categories=index)
+            
     def remove_feature(self,index):
         check_is_fitted(self)
         self.n_features -=1 

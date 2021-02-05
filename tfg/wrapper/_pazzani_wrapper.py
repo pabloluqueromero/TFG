@@ -8,18 +8,9 @@ from sklearn.model_selection import LeaveOneOut
 
 #Local imports
 from tfg.naive_bayes import NaiveBayes
+from tfg.utils import join_columns,concat_columns,flatten,memoize,combine_columns
 
 
-def memoize(f):
-    cache =dict()
-    def g(clf,cv,X,y,columns):
-        elements = frozenset(columns)
-        if elements not in cache:
-            cache[elements] = f(clf,cv,X,y,columns)
-        return cache[elements]
-    return g
-
-# @memoize
 def _evaluate(clf,cv,X,y,columns):
     if isinstance(X,pd.DataFrame):
         X=X.to_numpy()
@@ -34,35 +25,6 @@ def _evaluate(clf,cv,X,y,columns):
         return np.mean(scores)
     return clf.leave_one_out_cross_val(X,y)
     
-concat = lambda d: "-".join(d)
-
-def _join_columns(X,columns):
-    if isinstance(X,pd.DataFrame):
-        X=X.to_numpy()
-    X_1 = None
-    X_2 = X.astype(str)
-    for col in columns:
-        if isinstance(col,tuple):
-            idx = list(col)
-            if X_1 is not None:
-                X_1= np.concatenate([X_1,np.apply_along_axis(concat, 1, X_2[:,idx]).reshape(-1,1)],axis=1)
-            else:
-                X_1 = np.apply_along_axis(concat, 1, X_2[:,idx]).reshape(-1,1)
-        else:
-            if X_1 is not None:
-                X_1 = np.concatenate([X_1,X_2[:,col].reshape(-1,1)],axis=1)
-            else:
-                X_1 = X_2[:,col].reshape(-1,1)
-    return X_1
-
-def flatten(l):
-    if l:
-        q = flatten(l[1:])
-        if hasattr(l[0],"__iter__"):
-            return flatten(l[0]) + q
-        q.appendleft(l[0])
-        return q
-    return deque()
 
 class PazzaniWrapper:
     def __init__(self,seed=None,cv = None, strategy = "BSEJ",verbose=0):
@@ -75,10 +37,6 @@ class PazzaniWrapper:
             raise ValueError("Unknown strategy type: %s, expected one of %s." % (self.strategy, allowed_strategies))
         self.search = self.search_bsej if strategy=="BSEJ" else self.search_fssj
         self.verbose = verbose
-    def combine_columns(self,X,columns=None):
-        if columns:
-            return np.apply_along_axis(concat, 1, X[:,columns]).reshape(-1,1)
-        return np.apply_along_axis(concat, 1, X).reshape(-1,1)
 
     def _generate_neighbors_bsej(self,current_columns,X):
         if X.shape[1]>1:
@@ -95,25 +53,25 @@ class PazzaniWrapper:
                 del new_columns[features[1]]
                 
                 columns = features
-                combined_columns = self.combine_columns(X,columns)
+                combined_columns = combine_columns(X,columns)
                 neighbor = np.concatenate([X,combined_columns],axis=1)
                 yield new_columns, np.delete(neighbor,columns,axis=1)
      
     def search_bsej(self,X,y):
-        self.evaluate = memoize(_evaluate)
+        self.evaluate = memoize(_evaluate,attribute_to_cache="columns")
         if isinstance(X,pd.DataFrame):
             X = X.to_numpy()
         X = X.astype(str)
         current_best = X.copy()
         current_columns = deque(range(X.shape[1]))
-        best_score=self.evaluate(self.classifier,self.cv,current_best,y,current_columns)
+        best_score=self.evaluate(self.classifier,self.cv,current_best,y,columns=current_columns)
         stop=False
         while not stop:
             stop=True
             if self.verbose:
                 print("Current Best: ", current_columns, " Score: ",best_score)
             for new_columns,neighbor in self._generate_neighbors_bsej(current_columns,current_best):
-                score=self.evaluate(self.classifier,self.cv,neighbor,y,new_columns)
+                score=self.evaluate(self.classifier,self.cv,neighbor,y,columns = new_columns)
                 if self.verbose==2:
                     print("\tNeighbor: ", new_columns, " Score: ",score)
                 if score > best_score:
@@ -128,7 +86,7 @@ class PazzaniWrapper:
         print("Final best: ", list(current_columns), " Score: ",best_score)
         model = self.classifier.fit(current_best,y)
         features = current_columns
-        transformer = lambda X: _join_columns(X,columns = features)
+        transformer = lambda X: join_columns(X,columns = features)
         return transformer, features, model
 
     def _generate_neighbors_fssj(self,current_columns, individual , original_data, available_columns):
@@ -158,12 +116,12 @@ class PazzaniWrapper:
                 if isinstance(features[1],tuple):
                     features[1] = list(features[1])
                 separated_columns = np.concatenate([original_data[:,features[0]].reshape(-1,1),individual[:,features_index[1]].reshape(-1,1)],axis=1)
-                combined_columns = self.combine_columns(separated_columns)
+                combined_columns = combine_columns(separated_columns)
                 neighbor = np.concatenate([individual,combined_columns],axis=1)
                 yield new_columns,new_available_columns, np.delete(neighbor,features_index[1],axis=1)
 
     def search_fssj(self,X,y):
-        self.evaluate = memoize(_evaluate)
+        self.evaluate = memoize(_evaluate,attribute_to_cache="columns")
         if isinstance(X,pd.DataFrame):
             X = X.to_numpy()
         X = X.astype(str)
@@ -180,7 +138,7 @@ class PazzaniWrapper:
                                                                                             individual = current_best,
                                                                                             original_data = X,
                                                                                             available_columns = available_columns):
-                score = self.evaluate(self.classifier,self.cv,neighbor,y,new_columns)  
+                score = self.evaluate(self.classifier,self.cv,neighbor,y,columns = new_columns)  
                 if self.verbose==2:
                     print("\tNeighbour: ", new_columns, " Score: ",score,"Available columns: ", new_available_columns)
                 if score > best_score:
@@ -195,7 +153,7 @@ class PazzaniWrapper:
         print("Final best: ", list(current_columns), " Score: ",best_score)
         model = self.classifier.fit(current_best,y)
         features = current_columns
-        transformer = lambda X: _join_columns(X,columns = features)
+        transformer = lambda X: join_columns(X,columns = features)
         return transformer, features, model
 
     def evaluate(self,classifier,cv,X,y,columns):

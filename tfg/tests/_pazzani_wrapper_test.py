@@ -1,18 +1,11 @@
 import numpy as np
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
+
+#Local imports
+from tfg.utils import make_discrete,generate_xor_data
 from tfg.wrapper import PazzaniWrapper
 from tfg.wrapper import PazzaniWrapperNB
-
-
-def generate_xor_data():
-    data=np.array(
-        ([[1,1,'+']]*10)+
-        ([[1,0,'-']]*10)+
-        ([[0,1,'-']]*10)+
-        ([[0,0,'+']]*10)
-    )
-    return data[:,:2],data[:,2]
 
 def test_fssj_xor_problem():
     X,y = generate_xor_data()
@@ -26,15 +19,6 @@ def test_fssj_xor_problem():
     pw = PazzaniWrapper(200,strategy="FSSJ",verbose=2)
     transformer,features,model = pw.search(X_train,y_train)
 
-def twospirals(n_points, noise=.5):
-    """
-    Returns the two spirals dataset.
-    """
-    n = np.sqrt(np.random.rand(n_points,1)) * 780 * (2*np.pi)/360
-    d1x = -np.cos(n)*n + np.random.rand(n_points,1) * noise
-    d1y = np.sin(n)*n + np.random.rand(n_points,1) * noise
-    return (np.vstack((np.hstack((d1x,d1y)),np.hstack((-d1x,-d1y)))), 
-            np.hstack((np.zeros(n_points),np.ones(n_points))).astype(int)) 
 
 def test_pazzani_wrapper_bsej():
     seed = 200
@@ -117,13 +101,6 @@ def test_pazzani_wrapper_bsej_nb():
                                         test_size=0.3, 
                                         random_state=seed,
                                         stratify=y)
-    def make_discrete(X,m=100):
-        X*=m
-        minimum = np.amin(X)
-        if minimum <0:
-            minimum*=-1
-            X+= minimum
-        return X.astype(int)
     X,y = make_classification(n_samples=10000, 
                             n_features=10, 
                             n_informative=7, 
@@ -190,13 +167,6 @@ def test_pazzani_wrapper_fssj_nb():
                                         test_size=0.3, 
                                         random_state=seed,
                                         stratify=y)
-    def make_discrete(X,m=100):
-        X*=m
-        minimum = np.amin(X)
-        if minimum <0:
-            minimum*=-1
-            X+= minimum
-        return X.astype(int)
     X,y = make_classification(n_samples=10000, 
                             n_features=10, 
                             n_informative=7, 
@@ -286,13 +256,6 @@ def test_pazzani_wrapper_fssj():
                                         test_size=0.3, 
                                         random_state=seed,
                                         stratify=y)
-    def make_discrete(X,m=100):
-        X*=m
-        minimum = np.amin(X)
-        if minimum <0:
-            minimum*=-1
-            X+= minimum
-        return X.astype(int)
     X,y = make_classification(n_samples=10000, 
                             n_features=10, 
                             n_informative=7, 

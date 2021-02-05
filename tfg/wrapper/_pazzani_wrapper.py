@@ -4,7 +4,7 @@ import pandas as pd
 from itertools import combinations
 from itertools import product
 from collections import deque
-from sklearn.model_selection import LeaveOneOut,StratifiedKFold
+from sklearn.model_selection import LeaveOneOut
 
 #Local imports
 from tfg.naive_bayes import NaiveBayes
@@ -85,16 +85,16 @@ class PazzaniWrapper:
             for col in range(X.shape[1]):
                 new_columns = current_columns.copy()
                 del new_columns[col]
-                np.delete(X,0,axis=1)
                 yield new_columns,np.delete(X,col,axis=1)
             for features in combinations(np.arange(X.shape[1]),2):
                 new_col_name = flatten([current_columns[features[0]],current_columns[features[1]]])
                 new_columns = current_columns.copy()
                 new_columns.append(tuple(new_col_name))
+                features = sorted(features,reverse=True)
                 del new_columns[features[0]]
-                del new_columns[features[1]-(1 if features[0] < features[1] else 0)]
+                del new_columns[features[1]]
                 
-                columns = list(features)
+                columns = features
                 combined_columns = self.combine_columns(X,columns)
                 neighbor = np.concatenate([X,combined_columns],axis=1)
                 yield new_columns, np.delete(neighbor,columns,axis=1)
@@ -157,7 +157,7 @@ class PazzaniWrapper:
 
                 if isinstance(features[1],tuple):
                     features[1] = list(features[1])
-                separated_columns = np.concatenate([original_data[:,features_index[0]].reshape(-1,1),individual[:,features_index[1]].reshape(-1,1)],axis=1)
+                separated_columns = np.concatenate([original_data[:,features[0]].reshape(-1,1),individual[:,features_index[1]].reshape(-1,1)],axis=1)
                 combined_columns = self.combine_columns(separated_columns)
                 neighbor = np.concatenate([individual,combined_columns],axis=1)
                 yield new_columns,new_available_columns, np.delete(neighbor,features_index[1],axis=1)

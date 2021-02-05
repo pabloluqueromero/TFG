@@ -176,8 +176,9 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
     #         score.append(prediction[0]==label)
     #     return np.mean(score)
 
-    def leave_one_out_cross_val(self,X,y):
-        self.fit(X,y)
+    def leave_one_out_cross_val(self,X,y,fit=True):
+        if fit:
+            self.fit(X,y)
         if isinstance(X,pd.DataFrame):
             X = X.to_numpy()
         if self.encode_data:
@@ -206,28 +207,39 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         prediction = np.argmax(log_proba ,axis=1)
         return np.sum(prediction == y)/y.shape[0]
 
-    def add_features(self,X,y): 
+    def add_features(self,X,y,index=None): 
         check_is_fitted(self)
-        check_X_y(X,y)
         if isinstance(X,pd.DataFrame):
             X = X.to_numpy()
         if self.encode_data:
             y = self.class_encoder_.transform(y) #y should the same than the one that was first fitted for now  ----> FUTURE IMPLEMENTATION
-            X = self.feature_encoder_.add_features(X,transform=True)
-
+            X = self.feature_encoder_.add_features(X,transform=True,index=index)
+        check_X_y(X,y)
+        
         self.column_count_ += X.shape[1]
         new_feature_value_count_per_element =[np.bincount(X[:,j]) for j in range(X.shape[1])]
-        self.feature_values_count_per_element_.extend(new_feature_value_count_per_element)
         new_feature_value_counts = np.array([(feature_counts).shape[0] for feature_counts in new_feature_value_count_per_element])
-        self.feature_values_count_ = np.concatenate([self.feature_values_count_,new_feature_value_counts])
         new_probabilities = _get_probabilities(X,y,new_feature_value_counts,self.n_classes_,self.alpha)
-        self.probabilities_.extend(new_probabilities)
-
         new_real_unique_feature_value_counts = np.array([(feature_counts!=0).sum() for feature_counts in new_feature_value_count_per_element])
-        self.feature_unique_values_count_ = np.concatenate([self.feature_unique_values_count_,new_real_unique_feature_value_counts])
         feature_contribution = compute_total_probability_(self.class_values_count_,new_real_unique_feature_value_counts,self.alpha)
+        if index:
+            sort_index = np.argsort(index)
+            index_with_column = list(enumerate(index))
+            for i in sort_index:
+                column,list_insert_index = index_with_column[i]
+                self.feature_values_count_per_element_.insert(list_insert_index,new_feature_value_count_per_element[column])
+                self.feature_values_count_ = np.insert(self.feature_values_count_,list_insert_index,new_feature_value_counts[column])
+                self.probabilities_.insert(list_insert_index,new_probabilities[column])
+                self.feature_unique_values_count_ = np.insert(self.feature_unique_values_count_,list_insert_index,new_real_unique_feature_value_counts[column])
+        else:
+            self.feature_values_count_per_element_.extend(new_feature_value_count_per_element)
+            self.feature_values_count_ = np.concatenate([self.feature_values_count_,new_feature_value_counts])
+            self.probabilities_.extend(new_probabilities)
+            self.feature_unique_values_count_ = np.concatenate([self.feature_unique_values_count_,new_real_unique_feature_value_counts])
+
         self.total_probability_ +=  feature_contribution
         self.indepent_term_ -= feature_contribution
+        
         return self
 
     

@@ -114,7 +114,9 @@ class PazzaniWrapper:
                 del new_columns[features_index[1]]
 
                 if isinstance(features[1],tuple):
+                    features =list(features)
                     features[1] = list(features[1])
+                    features = tuple(features)
                 separated_columns = np.concatenate([original_data[:,features[0]].reshape(-1,1),individual[:,features_index[1]].reshape(-1,1)],axis=1)
                 combined_columns = combine_columns(separated_columns)
                 neighbor = np.concatenate([individual,combined_columns],axis=1)

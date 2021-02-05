@@ -117,8 +117,38 @@ def test_pazzani_wrapper_bsej_nb():
                                         test_size=0.3, 
                                         random_state=seed,
                                         stratify=y)
-    pw = PazzaniWrapperNB(seed,strategy="BSEJ",verbose=2)
+    def make_discrete(X,m=100):
+        X*=m
+        minimum = np.amin(X)
+        if minimum <0:
+            minimum*=-1
+            X+= minimum
+        return X.astype(int)
+    X,y = make_classification(n_samples=10000, 
+                            n_features=10, 
+                            n_informative=7, 
+                            n_redundant=0, 
+                            n_repeated=0, 
+                            n_classes=2, 
+                            n_clusters_per_class=2, 
+                            weights=None,
+                            class_sep=1.0, 
+                            hypercube=True, 
+                            scale=2.0, 
+                            shuffle=True, 
+                            random_state=seed)
+    X = make_discrete(X,m=10)
+
+    X_train, X_test, y_train, y_test = train_test_split(
+                                        X, y, 
+                                        test_size=0.3, 
+                                        random_state=200,
+                                        stratify=y)
+    from time import time
+    ts = time()
+    pw = PazzaniWrapperNB(200,strategy="BSEJ",verbose=1)
     transformer,features,model = pw.search(X_train,y_train)
+    print(f"Seconds: {time()-ts}")
 
 def test_pazzani_wrapper_fssj():
     seed = 200

@@ -122,26 +122,26 @@ class PazzaniWrapperNB(PazzaniWrapper):
                     best_columns = new_columns
                     best_action = action
                     best_score = score
+                    best_columns_to_delete = columns_to_delete
                     update=True
-                    column_to_delete = column_to_delete
                     if best_action == "ADD":
-                        column_to_add = column_to_add
+                        best_columns_to_add = columns_to_add
                     if score == 1.0:
                         stop=True
                         break
             if update:
                 current_columns = best_columns
                 if best_action == "DELETE":
-                    current_best = np.delete(current_best,column_to_delete,axis=1)
+                    current_best = np.delete(current_best,best_columns_to_delete,axis=1)
                     #Update best
-                    self.classifier.remove_feature(columns_to_delete)
+                    self.classifier.remove_feature(best_columns_to_delete)
                 else:
-                    current_best = np.delete(current_best,columns_to_delete,axis=1)
-                    current_best = np.concatenate([current_best,columns_to_add],axis=1)
+                    current_best = np.delete(current_best,best_columns_to_delete,axis=1)
+                    current_best = np.concatenate([current_best,best_columns_to_add],axis=1)
                     #Update classifier
-                    self.classifier.remove_feature(columns_to_delete[0])
-                    self.classifier.remove_feature(columns_to_delete[1])
-                    self.classifier.add_features(columns_to_add,y)
+                    self.classifier.remove_feature(best_columns_to_delete[0])
+                    self.classifier.remove_feature(best_columns_to_delete[1])
+                    self.classifier.add_features(best_columns_to_add,y)
 
         print("Final best: ", list(current_columns), " Score: ",best_score)
         model = self.classifier

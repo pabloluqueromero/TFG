@@ -5,6 +5,7 @@ from ._utils import flatten
 from ._utils import combine_columns
 from ._utils import make_discrete
 from ._utils import twospirals
+from ._utils import generate_xor_data
 
 
 __all__ = [
@@ -14,5 +15,6 @@ __all__ = [
     "flatten",
     "make_discrete",
     "twospirals",
+    "generate_xor_data",
     "combine_columns"
 ]

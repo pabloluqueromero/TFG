@@ -202,7 +202,7 @@ class PazzaniWrapperNB(PazzaniWrapper):
                 if score > best_score:
                     stop=False
                     best_columns = new_columns
-                    best_available_columns = available_columns
+                    best_available_columns = new_available_columns
                     best_action = action
                     best_score = score
                     best_column_to_delete = column_to_delete

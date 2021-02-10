@@ -12,11 +12,12 @@ from sklearn.utils.validation import check_is_fitted
 #Local Imports
 from tfg.encoder import CustomOrdinalFeatureEncoder
   
-'''
+"""
 Enhanced methods with Numba nopython mode
-'''
+"""
 @njit
 def _get_probabilities(X: np.array, y: np.array, feature_values_count_: np.array, n_classes: int, alpha: float):
+    """Computes conditional log count for each value of each feature"""
     probabilities = []
     for i in range(X.shape[1]):
         smoothed_counts = _get_counts(X[:, i], y, feature_values_count_[i], n_classes) +alpha
@@ -26,6 +27,7 @@ def _get_probabilities(X: np.array, y: np.array, feature_values_count_: np.array
 
 @njit
 def _get_counts(column: np.ndarray, y: np.ndarray, n_features: int, n_classes: int):
+    """Computes count for each value of each feature for each class value"""
     counts = np.zeros((n_features, n_classes))
     for i in range(column.shape[0]):
         counts[column[i], y[i]] += 1
@@ -33,6 +35,7 @@ def _get_counts(column: np.ndarray, y: np.ndarray, n_features: int, n_classes: i
 
 @njit
 def compute_total_probability_(class_values_count_,feature_values_count_,alpha):
+    """Computes count for each value of each feature for each class value"""
     total_probability_ = class_values_count_ + alpha*feature_values_count_.reshape(-1,1)
     total_probability_ = np.where(total_probability_==0,1,total_probability_)
     total_probability_ = np.sum(np.log(total_probability_),axis=0)
@@ -40,6 +43,7 @@ def compute_total_probability_(class_values_count_,feature_values_count_,alpha):
     
 #probabilities is not a squared matrix only solution would be to pad with zeros, inneficient when there are many features
 def _predict(X: np.ndarray, probabilities:np.ndarray, feature_values_count_:np.ndarray,alpha:float):
+    """Computes the log joint probability"""
     log_probability = np.zeros((X.shape[0], probabilities[0].shape[1]))
     log_alpha=(np.log(alpha) if alpha else 0)
     for j in range(X.shape[1]):
@@ -51,39 +55,104 @@ def _predict(X: np.ndarray, probabilities:np.ndarray, feature_values_count_:np.n
     return log_probability
 
 class NaiveBayes(ClassifierMixin,BaseEstimator):
-    '''Simple NaiveBayes classifier accepting non-encoded input and enhanced with numba
+    """A Naive Bayes classifier.
+
+    Simple NaiveBayes classifier accepting non-encoded input, enhanced with numba using MAP
+    to predict most likely class.
+
     Parameters
     ----------
-    alpha : float, default=1.0
+    alpha : {float, array-like}, default=1.0
         Additive (Laplace/Lidstone) smoothing parameter
-        (0 for no smoothing).
-    encode_data: bool, default=Ture
+        (0 for no smoothing). If it is an array it is 
+        expected to have the same size as number of attributes
+
+    encode_data : bool, default=Ture
         Encode data when data is not encoded by default with an OrdinalEncoder
-    '''
+    
+    Attributes
+    ----------
+    feature_encoder_ : CustomOrdinalFeatureEncoder or None
+        Encodes data in ordinal way with unseen values handling if encode_data is set to True.
+    
+    class_encoder_ : LabelEncoder or None
+        Encodes Data in ordinal way for the class if encode_data is set to True.
+    
+    row_count_ : int
+        Number of samples  
+    
+    column_count_ : int
+        Number of features
+    
+    n_classes_ : int
+        Number of classes
+
+    class_values_ : array-like of shape (n_classes_,)
+        Array containing the values of the classes, as ordinal encoding is assumed it will be an array
+        ranging from 0 to largest value for the class
+    
+    class_values_count_ : array-like of shape (n_classes_,)
+        Array where `class_values_count_[i]` contains the count of the ith class value. 
+
+    class_log_count_ : array-like of shape (n_classes_,)
+        Array where `class_values_count_[i]` contains the log count of the ith class value. 
+    
+    feature_values_count_per_element_ : array-like of shape (column_count,~)
+        Array where `feature_values_count_per_element_[i]` is an array where `feature_values_count_per_element_[i][j]`
+        contains the count of the jth value for the ith feature. Assuming ordinal encoding, some values might be equal to 0
+    
+    feature_values_count_ : array-like of shape (column_count,)
+        Array where `feature_values_count_per_element_[i]` is an integer with the number of possible values for the ith feature.
+
+    feature_unique_values_count_ : array-like of shape (column_count,)
+        Array where `feature_unique_values_count_[i]` is an integer with the number of unique seen values for the ith feature at
+        fitting time. This is needed to compute the smoothing.
+
+    total_probability_ : array-like of shape (n_classes,)
+        Smoothing factor to be applied to the prediction. Array where `total_probability_[i]` if equal to
+        class_values_count_[i] + alpha*feature_unique_values_count_
+    
+    self.indepent_term_ : array-like of shape (n_classes,)
+        Independent term computed at fitting time. It includes the smoothing factor to be applied to the prediction and 
+        the apriori probability.
+    
+    probabilities_ : array-like of shape (column_count,~)
+        Array where `feature_values_count_per_element_[i]` is an array  of shape (where `feature_values_count_per_element_[i][j]`
+        contains the count of the jth value for the ith feature. Assuming ordinal encoding, some values might be equal to 0
+    """
     def __init__(self, alpha=1.0, encode_data=True):
         self.alpha = alpha
         self.encode_data = encode_data
         super().__init__()
 
+
+    def _compute_independent_terms(self):
+        """Computes the terms that are indepent of the prediction"""
+        self.total_probability_ = compute_total_probability_(self.class_values_count_,self.feature_unique_values_count_,self.alpha)
+        self.indepent_term_ = self.class_log_count_ - self.total_probability_
+
+    def _compute_probabilities(self, X: np.ndarray, y: np.ndarray):
+        """Computes the conditional probabilities for each value of each feature"""
+        self.probabilities_ = _get_probabilities(
+            X, y, self.feature_values_count_, self.n_classes_, self.alpha)
+
     def fit(self, X: np.ndarray, y: np.ndarray):
-        ''' Fit the classifier
-            Attributes
-            ----------
-            feature_encoder_ : TransformerMixin
-                    Encodes data in ordinal way with unknown values handling.
-            class_encoder_: TransformerMixin
-                    Encodes Data in ordinal way for the class.
-            row_count_: int
-                    Size of the dataset  
-            column_count_: int
-                    Number of features
-            n_classes_: int
-                    Number of classes
-            feature_values_: int
-                    Values of the clase 
-            feature_values_count_: int
-                    Values of the clase 
-        '''
+        """ Fits the classifier with trainning data.
+
+        Parameters
+        ----------
+
+        X : array-like of shape (n_samples, n_features)
+            Training array that must be encoded unless
+            encode_data is set to True
+
+        y : array-like of shape (n_samples,)
+            Label of the class associated to each sample.
+            
+        Returns
+        -------
+        self : object
+        """
         if isinstance(X,pd.DataFrame):
             X = X.to_numpy()
         if isinstance(y,pd.DataFrame):
@@ -110,15 +179,20 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         self._compute_independent_terms()
         return self
 
-    def _compute_independent_terms(self):
-        self.total_probability_ = compute_total_probability_(self.class_values_count_,self.feature_unique_values_count_,self.alpha)
-        self.indepent_term_ = self.class_log_count_ - self.total_probability_
-
-    def _compute_probabilities(self, X: np.ndarray, y: np.ndarray):
-        self.probabilities_ = _get_probabilities(
-            X, y, self.feature_values_count_, self.n_classes_, self.alpha)
-
     def predict(self, X: np.ndarray):
+        """ Predicts the label of the samples based on the MAP.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+           Training array that must be encoded unless
+           encode_data is set to True
+
+        Returns
+        -------
+        y : array-like of shape (n_samples)
+            Predicted label for each sample.
+        """
         if isinstance(X,pd.DataFrame):
             X = X.to_numpy()
         check_is_fitted(self)
@@ -132,6 +206,20 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         return output
 
     def predict_proba(self, X: np.ndarray):
+        """ Predicts the probability for each label of the samples based on the MAP.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+           Training array that must be encoded unless
+           encode_data is set to True
+
+        Returns
+        -------
+        y : array-like of shape (n_classes,n_samples)
+            Array where `y[i][j]` contains the MAP of the jth class for ith
+            sample
+        """
         check_is_fitted(self)
         if self.encode_data:
             X = self.feature_encoder_.transform(X)
@@ -141,6 +229,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         return np.exp(probabilities - np.atleast_2d(log_prob_x).T)
 
     def leave_one_out_cross_val(self,X,y,fit=True):
+        """Efficient LOO computation"""
         if fit:
             self.fit(X,y)
         if isinstance(X,pd.DataFrame):
@@ -172,6 +261,24 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         return np.sum(prediction == y)/y.shape[0]
 
     def add_features(self,X,y,index=None): 
+        """Updates classifier with new features
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+           Training array that must be encoded unless
+           encode_data is set to True
+
+        y : array-like of shape (n_samples,)
+            Label of the class associated to each sample.
+        
+        index: {None,array-like of shape (X.shape[1])}
+                Indicates where to insert each new feature, if it is None
+                they are all appended at the very end.
+        Returns
+        -------
+        self : object
+        """
         check_is_fitted(self)
         if isinstance(X,pd.DataFrame):
             X = X.to_numpy()
@@ -208,6 +315,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
 
     
     def remove_feature(self,index):
+        """Updates classifierby removing one feature (index)"""
         check_is_fitted(self)
         if self.column_count_ <=1:
             raise Exception("Cannot remove only feature from classifier")       
@@ -231,4 +339,19 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         return self
 
     def score(self, X: np.ndarray, y: np.ndarray):
+        """Computes the accuracy
+        
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+           Training array that must be encoded unless
+           encode_data is set to True
+
+        y : array-like of shape (n_samples,)
+            Label of the class associated to each sample.
+        Returns
+        -------
+        score : float
+                Percentage of correctly classified instances
+        """
         return np.sum(self.predict(X) == y)/y.shape[0]

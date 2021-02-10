@@ -42,16 +42,32 @@ def compute_total_probability_(class_values_count_,feature_values_count_,alpha):
     return total_probability_
     
 #probabilities is not a squared matrix only solution would be to pad with zeros, inneficient when there are many features
+# def _predict(X: np.ndarray, probabilities:np.ndarray, feature_values_count_:np.ndarray,alpha:float):
+#     """Computes the log joint probability"""
+#     log_probability = np.zeros((X.shape[0], probabilities[0].shape[1]))
+#     log_alpha=(np.log(alpha) if alpha else 0)
+#     for j in range(X.shape[1]):
+#         mask = X[:, j] < feature_values_count_[j] #Values known in the fitting stage
+#         index = X[:, j][mask]
+#         log_probability[mask,:] += probabilities[j][index]   # Only known values that are in probabilities
+#         mask = np.logical_not(mask)       
+#         log_probability[mask,:] += log_alpha   #Unknown values that are not in probabilities => log(0+alpha)
+#     return log_probability
 def _predict(X: np.ndarray, probabilities:np.ndarray, feature_values_count_:np.ndarray,alpha:float):
     """Computes the log joint probability"""
     log_probability = np.zeros((X.shape[0], probabilities[0].shape[1]))
     log_alpha=(np.log(alpha) if alpha else 0)
     for j in range(X.shape[1]):
-        mask = X[:, j] < feature_values_count_[j] #Values known in the fitting stage
-        index = X[:, j][mask]
-        log_probability[mask,:] += probabilities[j][index]   # Only known values that are in probabilities
-        mask = np.logical_not(mask)       
-        log_probability[mask,:] += log_alpha   #Unknown values that are not in probabilities => log(0+alpha)
+        log_probability = _predict_single(log_probability,j,X,feature_values_count_,probabilities[j],log_alpha)
+    return log_probability
+
+@njit
+def _predict_single(log_probability,j,X,feature_values_count_,probabilities,log_alpha):
+    mask = X[:, j] < feature_values_count_[j] #Values known in the fitting stage
+    index = X[:, j][mask]
+    log_probability[mask,:] += probabilities[index]   # Only known values that are in probabilities
+    mask = np.logical_not(mask)       
+    log_probability[mask,:] += log_alpha   #Unknown values that are not in probabilities => log(0+alpha)
     return log_probability
 
 class NaiveBayes(ClassifierMixin,BaseEstimator):

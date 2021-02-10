@@ -21,7 +21,7 @@ def _get_probabilities(X: np.array, y: np.array, feature_values_count_: np.array
     probabilities = []
     for i in range(X.shape[1]):
         smoothed_counts = _get_counts(X[:, i], y, feature_values_count_[i], n_classes) +alpha
-        smoothed_counts = np.where(smoothed_counts==0,-float("inf"),smoothed_counts)
+        smoothed_counts = np.where(smoothed_counts==0,np.NINF,smoothed_counts)
         probabilities.append(np.log(smoothed_counts))
     return probabilities
 
@@ -37,7 +37,7 @@ def _get_counts(column: np.ndarray, y: np.ndarray, n_features: int, n_classes: i
 def compute_total_probability_(class_values_count_,feature_values_count_,alpha):
     """Computes count for each value of each feature for each class value"""
     total_probability_ = class_values_count_ + alpha*feature_values_count_.reshape(-1,1)
-    total_probability_ = np.where(total_probability_==0,-float("inf"),total_probability_)
+    total_probability_ = np.where(total_probability_==0,np.NINF,total_probability_)
     total_probability_ = np.sum(np.log(total_probability_),axis=0)
     return total_probability_
     
@@ -257,7 +257,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         log_proba+= self.class_log_count_
         for v in np.unique(y):
             log_proba[y==v,v] -= self.class_log_count_[v]
-            log_proba[y==v,v] += np.log(self.class_values_count_[v]-1) if self.class_values_count_[v] >1 else -float("inf") #Can't predict an unseen label
+            log_proba[y==v,v] += np.log(self.class_values_count_[v]-1) if self.class_values_count_[v] >1 else np.NINF #Can't predict an unseen label
         for i in range(X.shape[0]):
             example, label = X[i], y[i]
             feature_values_count_per_element_ = self.feature_values_count_per_element_.copy()
@@ -340,7 +340,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         self.column_count_-=1
         
         feature_contribution = self.class_values_count_ + self.alpha*self.feature_unique_values_count_[index]
-        feature_contribution = np.where(feature_contribution==0,-float("inf"),feature_contribution)
+        feature_contribution = np.where(feature_contribution==0,np.NINF,feature_contribution)
         feature_contribution = np.log(feature_contribution)
         self.total_probability_ -=  feature_contribution
         self.indepent_term_ += feature_contribution

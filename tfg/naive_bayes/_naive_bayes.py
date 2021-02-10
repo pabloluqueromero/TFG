@@ -37,7 +37,7 @@ def _get_counts(column: np.ndarray, y: np.ndarray, n_features: int, n_classes: i
 def compute_total_probability_(class_values_count_,feature_values_count_,alpha):
     """Computes count for each value of each feature for each class value"""
     total_probability_ = class_values_count_ + alpha*feature_values_count_.reshape(-1,1)
-    total_probability_ = np.where(total_probability_==0,1,total_probability_)
+    total_probability_ = np.where(total_probability_==0,-float("inf"),total_probability_)
     total_probability_ = np.sum(np.log(total_probability_),axis=0)
     return total_probability_
     
@@ -340,7 +340,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         self.column_count_-=1
         
         feature_contribution = self.class_values_count_ + self.alpha*self.feature_unique_values_count_[index]
-        feature_contribution = np.where(feature_contribution==0,1,feature_contribution)
+        feature_contribution = np.where(feature_contribution==0,-float("inf"),feature_contribution)
         feature_contribution = np.log(feature_contribution)
         self.total_probability_ -=  feature_contribution
         self.indepent_term_ += feature_contribution

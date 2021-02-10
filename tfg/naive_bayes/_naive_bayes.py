@@ -21,7 +21,7 @@ def _get_probabilities(X: np.array, y: np.array, feature_values_count_: np.array
     probabilities = []
     for i in range(X.shape[1]):
         smoothed_counts = _get_counts(X[:, i], y, feature_values_count_[i], n_classes) +alpha
-        smoothed_counts = np.where(smoothed_counts==0,1,smoothed_counts)
+        smoothed_counts = np.where(smoothed_counts==0,-float("inf"),smoothed_counts)
         probabilities.append(np.log(smoothed_counts))
     return probabilities
 

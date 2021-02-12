@@ -29,7 +29,7 @@ class CustomOrdinalFeatureEncoderNormal(TransformerMixin, BaseEstimator):
         for j in range(X.shape[1]):
             for i in range(X.shape[0]):
                 if X[i,j] in self.categories_[j]:
-                    X[i,j] = self.categories_[j][i]
+                    X[i,j] = self.categories_[j][X[i,j]]
                 else:
                     X[i,j] = len(self.categories_[j])
         return X.astype(int)
@@ -43,7 +43,7 @@ class CustomOrdinalFeatureEncoderNormal(TransformerMixin, BaseEstimator):
         for j in range(X.shape[1]):
             for i in range(X.shape[0]):
                 if X_copy[i,j] in self.reverse_categories[j]:
-                    X_copy[i,j] = self.reverse_categories[j][i]
+                    X_copy[i,j] = self.reverse_categories[j][X[i,j]]
                 else:
                     X_copy[i,j] = np.nan
         return X_copy

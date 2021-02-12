@@ -237,6 +237,8 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
             sample
         """
         check_is_fitted(self)
+        if isinstance(X,pd.DataFrame):
+            X = X.to_numpy()
         if self.encode_data:
             X = self.feature_encoder_.transform(X)
         probabilities = _predict(X, self.smoothed_log_counts_,self.feature_values_count_,self.alpha)

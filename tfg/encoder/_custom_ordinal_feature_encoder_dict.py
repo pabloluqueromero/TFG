@@ -13,7 +13,7 @@ class CustomOrdinalFeatureEncoderNormal(TransformerMixin, BaseEstimator):
         self.categories_ = []
         self.reverse_categories = []
         self.dtype=X.dtype
-        for j in X.shape[1]:
+        for j in range(X.shape[1]):
             uniques = np.unique(X[:,j])
             self.categories_.append(dict(zip(uniques,range(uniques.shape[0]))))
             self.reverse_categories.append({v:k for k,v in self.categories_[j].items()})

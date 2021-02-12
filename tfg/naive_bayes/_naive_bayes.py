@@ -8,10 +8,11 @@ from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import check_X_y
 from sklearn.utils.validation import check_is_fitted
-
 #Local Imports
 from tfg.encoder import CustomOrdinalFeatureEncoder
   
+#For unseen values we want that log(0) = -inf
+np.seterr(divide='ignore')
 """
 Enhanced methods with Numba nopython mode
 """
@@ -29,22 +30,22 @@ def _get_tables(X: np.array, y: np.array , n_classes: int, alpha: float):
         feature_values_count_per_element.append(np.sum(counts,axis=1))
         feature_unique_values_count.append((feature_values_count_per_element[i]!=0).sum())
         smoothed_count = counts+alpha
-        smoothed_count = np.where(smoothed_count==0,np.NINF,smoothed_count)
-        smoothed_log_counts.append(np.log(smoothed_count))
+        smoothed_count_log = np.log(smoothed_count)
+        smoothed_log_counts.append(smoothed_count_log)
     return smoothed_log_counts,np.array(feature_values_count),feature_values_count_per_element,np.array(feature_unique_values_count)
 
 @njit
 def _get_counts(column: np.ndarray, y: np.ndarray, n_features: int, n_classes: int):
     """Computes count for each value of each feature for each class value"""
-    counts = np.zeros((n_features, n_classes))
+    counts = np.zeros((n_features, n_classes),dtype=np.float64)
     for i in range(column.shape[0]):
         counts[column[i], y[i]] += 1
     return counts
 
 @njit
-def compute_total_probability_(class_values_count_,feature_values_count_,alpha):
+def compute_total_probability_(class_count_,feature_values_count_,alpha):
     """Computes count for each value of each feature for each class value"""
-    total_probability_ = class_values_count_ + alpha*feature_values_count_.reshape(-1,1)
+    total_probability_ = class_count_ + alpha*feature_values_count_.reshape(-1,1)
     total_probability_ = np.where(total_probability_==0,np.NINF,total_probability_)
     total_probability_ = np.sum(np.log(total_probability_),axis=0)
     return total_probability_
@@ -103,11 +104,11 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         Array containing the values of the classes, as ordinal encoding is assumed it will be an array
         ranging from 0 to largest value for the class
     
-    class_values_count_ : array-like of shape (n_classes_,)
-        Array where `class_values_count_[i]` contains the count of the ith class value. 
+    class_count_ : array-like of shape (n_classes_,)
+        Array where `class_count_[i]` contains the count of the ith class value. 
 
     class_log_count_ : array-like of shape (n_classes_,)
-        Array where `class_values_count_[i]` contains the log count of the ith class value. 
+        Array where `class_count_[i]` contains the log count of the ith class value. 
     
     feature_values_count_per_element_ : array-like of shape (column_count,~)
         Array where `feature_values_count_per_element_[i]` is an array where `feature_values_count_per_element_[i][j]`
@@ -122,7 +123,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
 
     total_probability_ : array-like of shape (n_classes,)
         Smoothing factor to be applied to the prediction. Array where `total_probability_[i]` if equal to
-        class_values_count_[i] + alpha*feature_unique_values_count_
+        class_count_[i] + alpha*feature_unique_values_count_
     
     self.indepent_term_ : array-like of shape (n_classes,)
         Independent term computed at fitting time. It includes the smoothing factor to be applied to the prediction and 
@@ -140,7 +141,8 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
 
     def _compute_independent_terms(self):
         """Computes the terms that are indepent of the prediction"""
-        self.total_probability_ = compute_total_probability_(self.class_values_count_,self.feature_unique_values_count_,self.alpha)
+        # self.total_probability_ = compute_total_probability_(self.class_count_,self.feature_unique_values_count_,self.alpha)
+        self.total_probability_ = compute_total_probability_(self.class_count_,self.feature_values_count_,self.alpha) #-->scikit usa esto
         self.indepent_term_ = self.class_log_count_ - self.total_probability_
 
     def _compute_probabilities(self, X: np.ndarray, y: np.ndarray):
@@ -181,17 +183,13 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
 
         check_X_y(X,y)
         self.row_count_, self.column_count_ = X.shape
-        self.class_values_ = np.arange(0,1+np.max(y)) #Not needed
-        self.class_values_count_ = np.bincount(y)
-        self.class_log_count_ = np.log(self.class_values_count_,where = self.class_values_count_!=0)
-        self.n_classes_ = self.class_values_.shape[0]
+        self.n_classes_ = 1+np.max(y)
+        self.class_count_ = np.bincount(y)
+        self.class_log_count_ = np.log(self.class_count_)
+        self.class_count_smoothed_ = (self.class_count_ + self.alpha)
+        self.class_log_count_smoothed_ = np.log(self.class_count_smoothed_) # --> this is not being used, we need to confirm it and chang LOO if yes
 
-        
-        # self.feature_values_count_per_element_ = [np.bincount(X[:,j]) for j in range(self.column_count_)]
-        self._compute_probabilities(X, y)
-        # self.feature_values_count_ = np.array([(feature_counts).shape[0] for feature_counts in self.feature_values_count_per_element_])
-        # self.feature_unique_values_count_ = np.array([(feature_counts!=0).sum() for feature_counts in self.feature_values_count_per_element_])
-        
+        self._compute_probabilities(X, y)        
         self._compute_independent_terms()
         return self
 
@@ -259,15 +257,15 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         log_proba+= self.class_log_count_
         for v in np.unique(y):
             log_proba[y==v,v] -= self.class_log_count_[v]
-            log_proba[y==v,v] += np.log(self.class_values_count_[v]-1) if self.class_values_count_[v] >1 else np.NINF #Can't predict an unseen label
+            log_proba[y==v,v] += np.log(self.class_count_[v]-1) if self.class_count_[v] >1 else np.NINF #Can't predict an unseen label
         for i in range(X.shape[0]):
             example, label = X[i], y[i]
             feature_values_count_per_element_ = self.feature_values_count_per_element_.copy()
-            class_values_count_ = self.class_values_count_.copy()
-            class_values_count_[label]-=1
-            total_probability_ = compute_total_probability_(class_values_count_,self.feature_unique_values_count_, self.alpha)
+            class_count_ = self.class_count_.copy()
+            class_count_[label]-=1
+            total_probability_ = compute_total_probability_(class_count_,self.feature_unique_values_count_, self.alpha)
             log_proba[i] -= total_probability_
-            update_value = np.log(class_values_count_ + self.alpha)
+            update_value = np.log(class_count_ + self.alpha)
             for j in range(X.shape[1]):
                 p = self.smoothed_log_counts_[j][example[j]] 
                 log_proba[i] += p
@@ -310,7 +308,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         new_feature_value_counts = np.array([(feature_counts).shape[0] for feature_counts in new_feature_value_count_per_element])
         new_probabilities = _get_tables(X,y,new_feature_value_counts,self.n_classes_,self.alpha)
         new_real_unique_feature_value_counts = np.array([(feature_counts!=0).sum() for feature_counts in new_feature_value_count_per_element])
-        feature_contribution = compute_total_probability_(self.class_values_count_,new_real_unique_feature_value_counts,self.alpha)
+        feature_contribution = compute_total_probability_(self.class_count_,new_real_unique_feature_value_counts,self.alpha)
         if index:
             sort_index = np.argsort(index)
             index_with_column = list(enumerate(index))
@@ -341,7 +339,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
             raise Exception(f"Feature index not valid, expected index between 0 and {self.column_count_}")       
         self.column_count_-=1
         
-        feature_contribution = self.class_values_count_ + self.alpha*self.feature_unique_values_count_[index]
+        feature_contribution = self.class_count_ + self.alpha*self.feature_unique_values_count_[index]
         feature_contribution = np.where(feature_contribution==0,np.NINF,feature_contribution)
         feature_contribution = np.log(feature_contribution)
         self.total_probability_ -=  feature_contribution

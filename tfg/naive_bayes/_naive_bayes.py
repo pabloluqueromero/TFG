@@ -10,7 +10,7 @@ from sklearn.utils import check_X_y
 from sklearn.utils.validation import check_is_fitted
 
 #Local Imports
-from tfg.encoder import CustomOrdinalFeatureEncoder
+from tfg.encoder import CustomOrdinalFeatureEncoderNormal as CustomOrdinalFeatureEncoder
   
 """
 Enhanced methods with Numba nopython mode

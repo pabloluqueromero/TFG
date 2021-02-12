@@ -6,7 +6,7 @@ from numba import njit
 from scipy.special import logsumexp
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.preprocessing import LabelEncoder
-from sklearn.utils import check_X_y
+from sklearn.utils import check_X_y, check_array
 from sklearn.utils.validation import check_is_fitted
 #Local Imports
 from tfg.encoder import CustomOrdinalFeatureEncoder
@@ -216,6 +216,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         check_is_fitted(self)
         if self.encode_data:
             X = self.feature_encoder_.transform(X)
+        check_array(X)
         probabilities = _predict(X, self.smoothed_log_counts_,self.feature_values_count_,self.alpha)
         probabilities += self.indepent_term_
         output = np.argmax(probabilities, axis=1)

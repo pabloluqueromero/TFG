@@ -91,10 +91,10 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
     class_encoder_ : LabelEncoder or None
         Encodes Data in ordinal way for the class if encode_data is set to True.
     
-    row_count_ : int
+    n_samples_ : int
         Number of samples  
     
-    column_count_ : int
+    n_features : int
         Number of features
     
     n_classes_ : int
@@ -145,8 +145,17 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         self.total_probability_ = compute_total_probability_(self.class_count_,self.feature_values_count_,self.alpha) #-->scikit usa esto
         self.indepent_term_ = self.class_log_count_smoothed_ - self.total_probability_
 
-    def _compute_probabilities(self, X: np.ndarray, y: np.ndarray):
-        """Computes the conditional probabilities for each value of each feature"""
+    def _compute_class_counts(self, X: np.ndarray, y: np.ndarray):
+        """Computes the counts for the priors"""
+        self.n_classes_ = 1+np.max(y)
+        self.class_count_ = np.bincount(y)
+        self.class_log_count_ = np.log(self.class_count_)
+        self.class_count_smoothed_ = (self.class_count_ + self.alpha)
+        self.class_log_count_smoothed_ = np.log(self.class_count_smoothed_)
+
+
+    def _compute_feature_counts(self, X: np.ndarray, y: np.ndarray):
+        """Computes the conditional smoothed counts for each feature"""
         tables = _get_tables(
             X, y, self.n_classes_, self.alpha)
         self.smoothed_log_counts_ = tables[0]
@@ -182,14 +191,9 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
             y = self.class_encoder_.fit_transform(y)
 
         check_X_y(X,y)
-        self.row_count_, self.column_count_ = X.shape
-        self.n_classes_ = 1+np.max(y)
-        self.class_count_ = np.bincount(y)
-        self.class_log_count_ = np.log(self.class_count_)
-        self.class_count_smoothed_ = (self.class_count_ + self.alpha)
-        self.class_log_count_smoothed_ = np.log(self.class_count_smoothed_) # --> this is not being used, we need to confirm it and chang LOO if yes
-
-        self._compute_probabilities(X, y)        
+        self.n_samples_, self.n_features = X.shape
+        self._compute_class_counts(X, y)  
+        self._compute_feature_counts(X, y)        
         self._compute_independent_terms()
         return self
 
@@ -303,7 +307,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
             X = self.feature_encoder_.add_features(X,transform=True,index=index)
         check_X_y(X,y)
         
-        self.column_count_ += X.shape[1]
+        self.n_features += X.shape[1]
         new_feature_value_count_per_element =[np.bincount(X[:,j]) for j in range(X.shape[1])]
         new_feature_value_counts = np.array([(feature_counts).shape[0] for feature_counts in new_feature_value_count_per_element])
         new_probabilities = _get_tables(X,y,new_feature_value_counts,self.n_classes_,self.alpha)
@@ -333,11 +337,11 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
     def remove_feature(self,index):
         """Updates classifierby removing one feature (index)"""
         check_is_fitted(self)
-        if self.column_count_ <=1:
+        if self.n_features <=1:
             raise Exception("Cannot remove only feature from classifier")       
-        if not 0 <= index <= self.column_count_:
-            raise Exception(f"Feature index not valid, expected index between 0 and {self.column_count_}")       
-        self.column_count_-=1
+        if not 0 <= index <= self.n_features:
+            raise Exception(f"Feature index not valid, expected index between 0 and {self.n_features}")       
+        self.n_features-=1
         
         feature_contribution = self.class_count_ + self.alpha*self.feature_unique_values_count_[index]
         feature_contribution = np.where(feature_contribution==0,np.NINF,feature_contribution)

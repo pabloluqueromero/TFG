@@ -19,19 +19,19 @@ Enhanced methods with Numba nopython mode
 def _get_tables(X: np.array, y: np.array , n_classes: int, alpha: float):
     """Computes conditional log count for each value of each feature"""
     smoothed_log_counts = []
-    feature_values_count_ = []
-    feature_values_count_per_element_ = []
-    feature_unique_values_count_ = []
+    feature_values_count = []
+    feature_values_count_per_element = []
+    feature_unique_values_count = []
     for i in range(X.shape[1]):
         feature = X[:, i]
-        feature_values_count_.append(np.max(feature))
-        counts = _get_counts(feature, y, feature_values_count_[i], n_classes)
-        feature_values_count_per_element_.append(np.sum(counts,axis=1))
-        feature_unique_values_count_.append((feature_values_count_per_element_[i]!=0).sum())
+        feature_values_count.append(np.max(feature))
+        counts = _get_counts(feature, y, feature_values_count[i], n_classes)
+        feature_values_count_per_element.append(np.sum(counts,axis=1))
+        feature_unique_values_count.append((feature_values_count_per_element[i]!=0).sum())
         smoothed_count = counts+alpha
         smoothed_count = np.where(smoothed_count==0,np.NINF,smoothed_count)
         smoothed_log_counts.append(np.log(smoothed_count))
-    return smoothed_log_counts,np.array(feature_values_count_),feature_values_count_per_element_,np.array(feature_unique_values_count_)
+    return smoothed_log_counts,np.array(feature_values_count),feature_values_count_per_element,np.array(feature_unique_values_count)
 
 @njit
 def _get_counts(column: np.ndarray, y: np.ndarray, n_features: int, n_classes: int):
@@ -147,7 +147,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         """Computes the conditional probabilities for each value of each feature"""
         tables = _get_tables(
             X, y, self.n_classes_, self.alpha)
-        self.smoothed_log_counts = tables[0]
+        self.smoothed_log_counts_ = tables[0]
         self.feature_values_count_ = tables[1]
         self.feature_values_count_per_element_ = tables[2]
         self.feature_unique_values_count_ = tables[3]

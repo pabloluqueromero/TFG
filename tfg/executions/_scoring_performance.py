@@ -11,7 +11,7 @@ from tfg.utils import make_discrete
 from time import time
 
 
-def scoring_comparison(datasets,labels,filename=None,load_data=False):
+def scoring_comparison(datasets):
     column_names = ["dataset",
                     "custom_training_score",
                     "custom_test_score",

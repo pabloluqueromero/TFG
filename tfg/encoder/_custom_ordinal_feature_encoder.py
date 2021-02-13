@@ -21,6 +21,8 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
         if isinstance(X,pd.DataFrame):
             X = X.to_numpy()
         X = X.copy()
+        if X.dtype=="O":
+            X = X.astype(str)
         check_is_fitted(self)
         if self.n_features != X.shape[1]:
             raise Exception(f"Expected {self.n_features} features, got {X.shape[1]} instead")

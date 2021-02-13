@@ -143,7 +143,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         """Computes the terms that are indepent of the prediction"""
         # self.total_probability_ = compute_total_probability_(self.class_count_,self.feature_unique_values_count_,self.alpha)
         self.total_probability_ = compute_total_probability_(self.class_count_,self.feature_values_count_,self.alpha) #-->scikit uses this
-        self.indepent_term_ = self.class_log_count - self.total_probability_
+        self.indepent_term_ = self.class_log_count_ - self.total_probability_
 
     def _compute_class_counts(self, X: np.ndarray, y: np.ndarray):
         """Computes the counts for the priors"""

@@ -7,6 +7,8 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
     def fit(self,X, y=None):
         if isinstance(X,pd.DataFrame):
             X = X.to_numpy()
+        if X.dtype=="O":
+            X = X.astype(str)
         self.n_features = X.shape[1]
         self.categories_ = [np.unique(X[:,j]) for j in range(self.n_features)]
         self.sort_index_ = [cat.argsort() for cat in self.categories_]

@@ -11,28 +11,6 @@ from tfg.utils import make_discrete
 from time import time
 
 
-
-def update_df(df,
-                clf,
-                rows,
-                columns,
-                nb_fit_time,
-                nb_predict_time,
-                nb_score,
-                nb_errors):
-    row  =  [clf,
-                  rows,
-                  columns,
-                  np.mean(nb_fit_time),
-                  np.std(nb_fit_time),
-                  0 if nb_errors else np.mean(nb_predict_time),
-                  0 if nb_errors else np.std(nb_predict_time),
-                  0 if nb_errors else np.mean(nb_score),
-                  nb_errors]
-    df.loc[len(df)]=row
-    df.to_csv("implementation_comparison.csv")
-
-
 def scoring_comparison(datasets,labels,filename=None,load_data=False):
     column_names = ["dataset",
                     "custom_training_score",

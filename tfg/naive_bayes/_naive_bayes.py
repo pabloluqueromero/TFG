@@ -309,28 +309,30 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         check_X_y(X,y)
         
         self.n_features += X.shape[1]
-        new_feature_value_count_per_element =[np.bincount(X[:,j]) for j in range(X.shape[1])]
-        new_feature_value_counts = np.array([(feature_counts).shape[0] for feature_counts in new_feature_value_count_per_element])
-        new_probabilities = _get_tables(X,y,new_feature_value_counts,self.n_classes_,self.alpha)
-        new_real_unique_feature_value_counts = np.array([(feature_counts!=0).sum() for feature_counts in new_feature_value_count_per_element])
-        feature_contribution = compute_total_probability_(self.class_count_,new_real_unique_feature_value_counts,self.alpha)
+        new_probabilities = _get_tables(X,y,self.n_classes_,self.alpha)
+        tables = _get_tables(X, y, self.n_classes_, self.alpha)
+        new_probabilities = tables[0]
+        new_feature_value_counts = tables[1]
+        new_feature_value_counts_per_element = tables[2]
+        new_feature_unique_values_count_ = tables[3]
+        new_feature_contribution = compute_total_probability_(self.class_count_,new_feature_unique_values_count_,self.alpha)
         if index:
             sort_index = np.argsort(index)
             index_with_column = list(enumerate(index))
             for i in sort_index:
                 column,list_insert_index = index_with_column[i]
-                self.feature_values_count_per_element_.insert(list_insert_index,new_feature_value_count_per_element[column])
+                self.feature_values_count_per_element_.insert(list_insert_index,new_feature_value_counts_per_element[column])
                 self.feature_values_count_ = np.insert(self.feature_values_count_,list_insert_index,new_feature_value_counts[column])
                 self.smoothed_log_counts_.insert(list_insert_index,new_probabilities[column])
-                self.feature_unique_values_count_ = np.insert(self.feature_unique_values_count_,list_insert_index,new_real_unique_feature_value_counts[column])
+                self.feature_unique_values_count_ = np.insert(self.feature_unique_values_count_,list_insert_index,new_feature_unique_values_count_[column])
         else:
-            self.feature_values_count_per_element_.extend(new_feature_value_count_per_element)
+            self.feature_values_count_per_element_.extend(new_feature_value_counts_per_element)
             self.feature_values_count_ = np.concatenate([self.feature_values_count_,new_feature_value_counts])
             self.smoothed_log_counts_.extend(new_probabilities)
-            self.feature_unique_values_count_ = np.concatenate([self.feature_unique_values_count_,new_real_unique_feature_value_counts])
+            self.feature_unique_values_count_ = np.concatenate([self.feature_unique_values_count_,new_feature_unique_values_count_])
 
-        self.total_probability_ +=  feature_contribution
-        self.indepent_term_ -= feature_contribution
+        self.total_probability_ +=  new_feature_contribution
+        self.indepent_term_ -= new_feature_contribution
         
         return self
 
@@ -345,7 +347,6 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         self.n_features-=1
         
         feature_contribution = self.class_count_ + self.alpha*self.feature_unique_values_count_[index]
-        feature_contribution = np.where(feature_contribution==0,np.NINF,feature_contribution)
         feature_contribution = np.log(feature_contribution)
         self.total_probability_ -=  feature_contribution
         self.indepent_term_ += feature_contribution

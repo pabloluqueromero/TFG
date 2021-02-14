@@ -109,7 +109,7 @@ class PazzaniWrapperNB(PazzaniWrapper):
         print("Final best: ", list(current_columns), " Score: ",best_score)
         features = current_columns
         transformer = lambda X: join_columns(X,columns = features)
-        model = NaiveBayes(encode_data=True).fit(transformer(X),y)
+        model = self.classifier
         return transformer, features, model
 
     def _generate_neighbors_fssj(self,current_columns, individual , original_data, available_columns):
@@ -232,7 +232,7 @@ class PazzaniWrapperNB(PazzaniWrapper):
         print("Final best: ", list(current_columns), " Score: ",best_score)
         features = current_columns
         transformer = lambda X: join_columns(X,columns = features)
-        model = NaiveBayes(encode_data=True).fit(transformer(X),y)
+        model = self.classifier
         return transformer, features, model
 
     def evaluate(self,classifier,X,y,fit=True,columns=None):

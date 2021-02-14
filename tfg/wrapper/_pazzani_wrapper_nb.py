@@ -46,8 +46,8 @@ class PazzaniWrapperNB(PazzaniWrapper):
         current_columns = deque(range(X.shape[1]))
         best_score=self.evaluate(self.classifier,current_best,y,columns=current_columns,fit=True)
         stop=False
-        update=False
         while not stop:
+            update=False
             stop=True
             if self.verbose:
                 print("Current Best: ", current_columns, " Score: ",best_score)
@@ -154,6 +154,7 @@ class PazzaniWrapperNB(PazzaniWrapper):
         stop=False
         first_iteration = True
         while not stop:
+            update=False
             stop=True
             if self.verbose:
                 print("Current Best: ", current_columns, " Score: ",best_score,"Available columns: ", available_columns)

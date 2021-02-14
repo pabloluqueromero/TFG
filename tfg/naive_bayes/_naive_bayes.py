@@ -20,6 +20,7 @@ Enhanced methods with Numba nopython mode
 def _get_tables(X: np.array, y: np.array , n_classes: int, alpha: float):
     """Computes conditional log count for each value of each feature"""
     smoothed_log_counts = []
+    smoothed_counts = []
     feature_values_count = []
     feature_values_count_per_element = []
     feature_unique_values_count = []
@@ -29,10 +30,13 @@ def _get_tables(X: np.array, y: np.array , n_classes: int, alpha: float):
         counts = _get_counts(feature, y, feature_values_count[i], n_classes)
         feature_values_count_per_element.append(np.sum(counts,axis=1))
         feature_unique_values_count.append((feature_values_count_per_element[i]!=0).sum())
+        
         smoothed_count = counts+alpha
+        smoothed_counts.append(smoothed_count)
+
         smoothed_count_log = np.log(smoothed_count)
         smoothed_log_counts.append(smoothed_count_log)
-    return smoothed_log_counts,np.array(feature_values_count),feature_values_count_per_element,np.array(feature_unique_values_count)
+    return smoothed_counts,smoothed_log_counts,np.array(feature_values_count),feature_values_count_per_element,np.array(feature_unique_values_count)
 
 @njit
 def _get_counts(column: np.ndarray, y: np.ndarray, n_features: int, n_classes: int):
@@ -42,13 +46,14 @@ def _get_counts(column: np.ndarray, y: np.ndarray, n_features: int, n_classes: i
         counts[column[i], y[i]] += 1
     return counts
 
-@njit
+# @njit
 def compute_total_probability_(class_count_,feature_values_count_,alpha):
     """Computes count for each value of each feature for each class value"""
     total_probability_ = class_count_ + alpha*feature_values_count_.reshape(-1,1)
-    total_probability_ = np.where(total_probability_==0,np.NINF,total_probability_)
-    total_probability_ = np.sum(np.log(total_probability_),axis=0)
-    return total_probability_
+    total_log_probability_ = np.log(total_probability_)
+    total_log_probability_ = np.where(total_log_probability_==np.NINF,0,total_log_probability_)
+    total_log_probability_ = np.sum(total_log_probability_,axis=0)
+    return total_log_probability_
     
 def _predict(X: np.ndarray, smoothed_log_counts_:np.ndarray, feature_values_count_:np.ndarray,alpha:float):
     """Computes the log joint probability"""
@@ -158,10 +163,11 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         """Computes the conditional smoothed counts for each feature"""
         tables = _get_tables(
             X, y, self.n_classes_, self.alpha)
-        self.smoothed_log_counts_ = tables[0]
-        self.feature_values_count_ = tables[1]
-        self.feature_values_count_per_element_ = tables[2]
-        self.feature_unique_values_count_ = tables[3]
+        self.smoothed_counts_ = tables[0]
+        self.smoothed_log_counts_ = tables[1]
+        self.feature_values_count_ = tables[2]
+        self.feature_values_count_per_element_ = tables[3]
+        self.feature_unique_values_count_ = tables[4]
 
     def fit(self, X: np.ndarray, y: np.ndarray):
         """ Fits the classifier with trainning data.
@@ -258,26 +264,21 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         if self.encode_data:
             X = self.feature_encoder_.transform(X)
             y = self.class_encoder_.transform(y)
-        log_proba = np.zeros((X.shape[0],self.class_log_count_.shape[0]))
-        log_proba+= self.class_log_count_smoothed_
-        for v in np.unique(y):
-            log_proba[y==v,v] -= self.class_log_count_smoothed_[v]
-            log_proba[y==v,v] += np.log(self.class_count_[v]-1+self.alpha) #Can't predict an unseen label if0 -NINF
+        
+        log_proba = np.zeros((X.shape[0],self.n_classes_))
         for i in range(X.shape[0]):
             example, label = X[i], y[i]
-            feature_values_count_per_element_ = self.feature_values_count_per_element_.copy()
             class_count_ = self.class_count_.copy()
             class_count_[label]-=1
-            total_probability_ = compute_total_probability_(class_count_,self.feature_unique_values_count_, self.alpha)
-            log_proba[i] -= total_probability_
-            update_value = np.log(class_count_ + self.alpha)
+            log_proba[i] += np.log(self.class_count_+self.alpha)
             for j in range(X.shape[1]):
-                p = self.smoothed_log_counts_[j][example[j]] 
+                p = self.smoothed_log_counts_[j][example[j]].copy()
+                p[label] = np.log(self.smoothed_counts_[j][example[j]][label]-1)
                 log_proba[i] += p
-                log_proba[i,label] -= p[label] 
-                log_proba[i,label] += np.log(np.exp(p[label])-1)
-                if feature_values_count_per_element_[j][example[j]] == 1:
-                    log_proba[i] +=update_value
+                if self.feature_values_count_per_element_[j][example[j]] == 1: 
+                    log_proba[i]  -= np.log(class_count_ + (self.feature_unique_values_count_[j]-1)*self.alpha)
+                else:
+                    log_proba[i]  -= np.log(class_count_ + (self.feature_unique_values_count_[j])*self.alpha)
         prediction = np.argmax(log_proba ,axis=1)
         return np.sum(prediction == y)/y.shape[0]
 
@@ -309,12 +310,12 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         check_X_y(X,y)
         
         self.n_features += X.shape[1]
-        new_probabilities = _get_tables(X,y,self.n_classes_,self.alpha)
         tables = _get_tables(X, y, self.n_classes_, self.alpha)
-        new_probabilities = tables[0]
-        new_feature_value_counts = tables[1]
-        new_feature_value_counts_per_element = tables[2]
-        new_feature_unique_values_count_ = tables[3]
+        new_smoothed_counts = tables[0]
+        new_smoothed_log_counts = tables[1]
+        new_feature_value_counts = tables[2]
+        new_feature_value_counts_per_element = tables[3]
+        new_feature_unique_values_count_ = tables[4]
         new_feature_contribution = compute_total_probability_(self.class_count_,new_feature_unique_values_count_,self.alpha)
         if index:
             sort_index = np.argsort(index)
@@ -323,12 +324,14 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
                 column,list_insert_index = index_with_column[i]
                 self.feature_values_count_per_element_.insert(list_insert_index,new_feature_value_counts_per_element[column])
                 self.feature_values_count_ = np.insert(self.feature_values_count_,list_insert_index,new_feature_value_counts[column])
-                self.smoothed_log_counts_.insert(list_insert_index,new_probabilities[column])
+                self.smoothed_counts_.insert(list_insert_index,new_smoothed_counts[column])
+                self.smoothed_log_counts_.insert(list_insert_index,new_smoothed_log_counts[column])
                 self.feature_unique_values_count_ = np.insert(self.feature_unique_values_count_,list_insert_index,new_feature_unique_values_count_[column])
         else:
             self.feature_values_count_per_element_.extend(new_feature_value_counts_per_element)
             self.feature_values_count_ = np.concatenate([self.feature_values_count_,new_feature_value_counts])
-            self.smoothed_log_counts_.extend(new_probabilities)
+            self.smoothed_counts_.extend(new_smoothed_counts)
+            self.smoothed_log_counts_.extend(new_smoothed_log_counts)
             self.feature_unique_values_count_ = np.concatenate([self.feature_unique_values_count_,new_feature_unique_values_count_])
 
         self.total_probability_ +=  new_feature_contribution
@@ -354,6 +357,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         self.feature_unique_values_count_ = np.delete(self.feature_unique_values_count_,index)
         self.feature_values_count_ = np.delete(self.feature_values_count_,index)
         del self.feature_values_count_per_element_[index]
+        del self.smoothed_counts_[index]
         del self.smoothed_log_counts_[index]
         
         if self.encode_data:

@@ -31,11 +31,11 @@ def test_remove_feature_with_index():
     nb.fit(X,y)
     nb.remove_feature(0)
     independent = nb.indepent_term_
-    probabilities = nb.probabilities_
+    smoothed_log_counts_ = nb.smoothed_log_counts_
     removed = nb.predict_proba(np.delete(X,0,axis=1))
     nb.fit(np.delete(X,0,axis=1),y)
     og = nb.predict_proba(np.delete(X,0,axis=1))
-    assert np.allclose(nb.probabilities_,probabilities)
+    assert np.allclose(nb.smoothed_log_counts_,smoothed_log_counts_)
     assert np.allclose(nb.indepent_term_,independent)
     assert np.allclose(og,removed)
 
@@ -58,11 +58,11 @@ def test_remove_feature():
     nb.fit(X,y)
     nb.remove_feature(0)
     independent = nb.indepent_term_
-    probabilities = nb.probabilities_
+    smoothed_log_counts_ = nb.smoothed_log_counts_
     removed = nb.predict_proba(np.delete(X,0,axis=1))
     nb.fit(np.delete(X,0,axis=1),y)
     og = nb.predict_proba(np.delete(X,0,axis=1))
-    assert np.allclose(nb.probabilities_,probabilities)
+    assert np.allclose(nb.smoothed_log_counts_,smoothed_log_counts_)
     assert np.allclose(nb.indepent_term_,independent)
     assert np.allclose(og,removed)
 
@@ -82,18 +82,19 @@ def test_add_features_with_index():
                           shuffle=True, 
                           random_state=0)
     X_og =X.copy()
-    X_two_less = np.delete(X_og,[0,1],axis=1)
+    index = [0,8,9,20]
+    X_two_less = np.delete(X_og,index,axis=1)
     nb = CustomNaiveBayes(encode_data=True)
     nb.fit(X_two_less,y)
-    nb.add_features(X_og[:,[0,1]],y,index=[0,1])
+    nb.add_features(X_og[:,index],y,index=index)
     independent = nb.indepent_term_
-    probabilities = nb.probabilities_
+    smoothed_log_counts_ = nb.smoothed_log_counts_
     added = nb.predict_proba(X)
 
     nb.fit(X,y)
     og = nb.predict_proba(X)
     assert np.allclose(nb.indepent_term_,independent)
-    assert np.allclose(nb.probabilities_,probabilities)
+    assert np.allclose(nb.smoothed_log_counts_,smoothed_log_counts_)
     assert np.allclose(og,added)
 
 
@@ -113,19 +114,20 @@ def test_add_features():
                           shuffle=True, 
                           random_state=0)
     X_og = X.copy()
-    X_two_less = np.delete(X,[0,1],axis=1)
-    X = np.concatenate([X_two_less,X[:,[0,1]]],axis=1)
+    elments = [0,2,9,48,10]
+    X_two_less = np.delete(X,elments,axis=1)
+    X = np.concatenate([X_two_less,X[:,elments]],axis=1)
     nb = CustomNaiveBayes(encode_data=True)
     nb.fit(X_two_less,y)
-    nb.add_features(X_og[:,[0,1]],y)
+    nb.add_features(X_og[:,elments],y)
     independent = nb.indepent_term_
-    probabilities = nb.probabilities_
+    smoothed_log_counts_ = nb.smoothed_log_counts_
     added = nb.predict_proba(X)
 
     nb.fit(X,y)
     og = nb.predict_proba(X)
     assert np.allclose(nb.indepent_term_,independent)
-    assert np.allclose(nb.probabilities_,probabilities)
+    assert np.allclose(nb.smoothed_log_counts_,smoothed_log_counts_)
     assert np.allclose(og,added)
 
 

@@ -24,10 +24,10 @@ def cross_leave_one_out(clf, X, y):
 
 def test_incremental_validation(X=None, y=None, iterations=10,verbose=1):
     if not X:
-        X, y = make_classification(n_samples=1000,
-                                   n_features=100,
-                                   n_informative=2,
-                                   n_redundant=10,
+        X, y = make_classification(n_samples=500,
+                                   n_features=1000,
+                                   n_informative=20,
+                                   n_redundant=1,
                                    n_repeated=0,
                                    n_classes=2,
                                    n_clusters_per_class=2,
@@ -37,7 +37,7 @@ def test_incremental_validation(X=None, y=None, iterations=10,verbose=1):
                                    scale=1.0,
                                    shuffle=True,
                                    random_state=0)
-        X//=10 #--> To be able to evaluate categoricalNB
+    X//=10 #--> To be able to evaluate categoricalNB
 
     # classifiers
     nb_classifier = NaiveBayes(encode_data=True)
@@ -56,8 +56,8 @@ def test_incremental_validation(X=None, y=None, iterations=10,verbose=1):
             print(f"Iteration {i}")
         ts = time()
         X2 = custom_encoder.fit_transform(X)
-        score_1 = cross_leave_one_out(cnb, X2, y)
-        categorical_nb.append(time()-ts)
+        # score_1 = cross_leave_one_out(cnb, X2, y)
+        # categorical_nb.append(time()-ts)
 
         ts = time()
         score_2 = nb_classifier.leave_one_out_cross_val(X, y)
@@ -77,6 +77,7 @@ def test_incremental_validation(X=None, y=None, iterations=10,verbose=1):
         custom_nb_val_4.append(time()-ts)
 
         if i == 0:
+            score_1=score_2
             scores = [score_1, score_2, score_4, score_5]
             assert all( score == scores[0] for score in scores )
     print("Categorical with scikit loo: ", np.mean(categorical_nb[1:]))

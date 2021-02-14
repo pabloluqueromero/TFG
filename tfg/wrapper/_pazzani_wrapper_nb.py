@@ -7,6 +7,7 @@ from collections import deque
 from sklearn.model_selection import LeaveOneOut
 
 #Local imports
+from tfg.encoder import CustomOrdinalFeatureEncoder
 from tfg.naive_bayes import NaiveBayes
 from tfg.utils import join_columns,concat_columns,flatten,memoize,combine_columns
 from tfg.wrapper import PazzaniWrapper
@@ -19,7 +20,8 @@ def _evaluate(clf,X,y,columns,fit=False):
 class PazzaniWrapperNB(PazzaniWrapper):
     def __init__(self,seed=None, strategy = "BSEJ",verbose=0):
         super().__init__(seed=seed, strategy=strategy, verbose=verbose,cv=None)
-
+        self.classifier.encode_data = False
+        self.feature_encoder = CustomOrdinalFeatureEncoder()
     def _generate_neighbors_bsej(self,current_columns,X):
         if X.shape[1]>1:
             for column_to_drop in range(X.shape[1]):
@@ -52,6 +54,7 @@ class PazzaniWrapperNB(PazzaniWrapper):
             if self.verbose:
                 print("Current Best: ", current_columns, " Score: ",best_score)
             for new_columns,columns_to_delete,columns_to_add,delete in self._generate_neighbors_bsej(current_columns,current_best):
+                columns_to_add = self.feature_encoder.fit_transform(columns_to_add)
                 if delete:
                     action = "DELETE"
                     #Update classifier and get validation result
@@ -105,9 +108,10 @@ class PazzaniWrapperNB(PazzaniWrapper):
                     self.classifier.add_features(best_columns_to_add,y)
 
         print("Final best: ", list(current_columns), " Score: ",best_score)
-        model = self.classifier
+        model = NaiveBayes(encode_data=True)
         features = current_columns
         transformer = lambda X: join_columns(X,columns = features)
+        model.fit(transformer(X),y)
         return transformer, features, model
 
     def _generate_neighbors_fssj(self,current_columns, individual , original_data, available_columns):
@@ -162,6 +166,7 @@ class PazzaniWrapperNB(PazzaniWrapper):
                                                                                             individual = current_best,
                                                                                             original_data = X,
                                                                                             available_columns = available_columns):
+                column_to_add = self.feature_encoder.fit_transform(column_to_add)
                 if delete:
                     action = "JOIN"
                     #Update classifier and get validation result
@@ -239,9 +244,10 @@ class PazzaniWrapperNB(PazzaniWrapper):
             first_iteration=False
 
         print("Final best: ", list(current_columns), " Score: ",best_score)
-        model = self.classifier
+        model = NaiveBayes(encode_data=True)
         features = current_columns
         transformer = lambda X: join_columns(X,columns = features)
+        model.fit(transformer(X),y)
         return transformer, features, model
 
     def evaluate(self,classifier,X,y,fit=True,columns=None):

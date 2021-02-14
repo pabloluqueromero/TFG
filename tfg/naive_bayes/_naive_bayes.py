@@ -50,19 +50,19 @@ def compute_total_probability_(class_count_,feature_values_count_,alpha):
     total_probability_ = np.sum(np.log(total_probability_),axis=0)
     return total_probability_
     
-def _predict(X: np.ndarray, probabilities:np.ndarray, feature_values_count_:np.ndarray,alpha:float):
+def _predict(X: np.ndarray, smoothed_log_counts_:np.ndarray, feature_values_count_:np.ndarray,alpha:float):
     """Computes the log joint probability"""
-    log_probability = np.zeros((X.shape[0], probabilities[0].shape[1]))
-    log_alpha=(np.log(alpha) if alpha else 0)
+    log_probability = np.zeros((X.shape[0], smoothed_log_counts_[0].shape[1])) #(n_samples,n_classes)
+    log_alpha= (np.log(alpha) if alpha else 0)
     for j in range(X.shape[1]):
-        log_probability = _predict_single(log_probability,j,X,feature_values_count_,probabilities[j],log_alpha)
+        log_probability = _predict_single(log_probability,j,X,feature_values_count_,smoothed_log_counts_[j],log_alpha)
     return log_probability
 
 @njit
-def _predict_single(log_probability,j,X,feature_values_count_,probabilities,log_alpha):
+def _predict_single(log_probability,j,X,feature_values_count_,smoothed_log_counts_,log_alpha):
     mask = X[:, j] < feature_values_count_[j] #Values known in the fitting stage
     index = X[:, j][mask]
-    log_probability[mask,:] += probabilities[index]   # Only known values that are in probabilities
+    log_probability[mask,:] += smoothed_log_counts_[index]   # Only known values that are in probabilities
     mask = np.logical_not(mask)       
     log_probability[mask,:] += log_alpha   #Unknown values that are not in probabilities => log(0+alpha)
     return log_probability
@@ -217,9 +217,9 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         if self.encode_data:
             X = self.feature_encoder_.transform(X)
         check_array(X)
-        probabilities = _predict(X, self.smoothed_log_counts_,self.feature_values_count_,self.alpha)
-        probabilities += self.indepent_term_
-        output = np.argmax(probabilities, axis=1)
+        log_probabilities = _predict(X, self.smoothed_log_counts_,self.feature_values_count_,self.alpha)
+        log_probabilities += self.indepent_term_
+        output = np.argmax(log_probabilities, axis=1)
         if self.encode_data:
             output = self.class_encoder_.inverse_transform(output)
         return output
@@ -244,10 +244,10 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
             X = X.to_numpy()
         if self.encode_data:
             X = self.feature_encoder_.transform(X)
-        probabilities = _predict(X, self.smoothed_log_counts_,self.feature_values_count_,self.alpha)
-        probabilities += self.indepent_term_
-        log_prob_x = logsumexp(probabilities, axis=1)
-        return np.exp(probabilities - np.atleast_2d(log_prob_x).T)
+        log_probabilities = _predict(X, self.smoothed_log_counts_,self.feature_values_count_,self.alpha)
+        log_probabilities += self.indepent_term_
+        log_prob_x = logsumexp(log_probabilities, axis=1)
+        return np.exp(log_probabilities - np.atleast_2d(log_prob_x).T)
 
     def leave_one_out_cross_val(self,X,y,fit=True):
         """Efficient LOO computation"""
@@ -259,10 +259,10 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
             X = self.feature_encoder_.transform(X)
             y = self.class_encoder_.transform(y)
         log_proba = np.zeros((X.shape[0],self.class_log_count_.shape[0]))
-        log_proba+= self.class_log_count_
+        log_proba+= self.class_log_count_smoothed_
         for v in np.unique(y):
-            log_proba[y==v,v] -= self.class_log_count_[v]
-            log_proba[y==v,v] += np.log(self.class_count_[v]-1) if self.class_count_[v] >1 else np.NINF #Can't predict an unseen label
+            log_proba[y==v,v] -= self.class_log_count_smoothed_[v]
+            log_proba[y==v,v] += np.log(self.class_count_[v]-1+self.alpha) #Can't predict an unseen label if0 -NINF
         for i in range(X.shape[0]):
             example, label = X[i], y[i]
             feature_values_count_per_element_ = self.feature_values_count_per_element_.copy()

@@ -46,7 +46,7 @@ def _get_counts(column: np.ndarray, y: np.ndarray, n_features: int, n_classes: i
         counts[column[i], y[i]] += 1
     return counts
 
-# @njit
+@njit
 def compute_total_probability_(class_count_,feature_values_count_,alpha):
     """Computes count for each value of each feature for each class value"""
     total_probability_ = class_count_ + alpha*feature_values_count_.reshape(-1,1)

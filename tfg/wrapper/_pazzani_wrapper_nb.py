@@ -65,18 +65,21 @@ class PazzaniWrapperNB(PazzaniWrapper):
                     self.classifier.add_features(current_best[:,columns_to_delete].reshape(-1,1),y,index=[columns_to_delete])
                 else:
                     action = "ADD"
+                    self.classifier.add_features(columns_to_add,y)
                     self.classifier.remove_feature(columns_to_delete[0])
                     self.classifier.remove_feature(columns_to_delete[1])
                     
-                    self.classifier.add_features(columns_to_add,y)
 
                     neighbor = np.delete(current_best,columns_to_delete,axis=1)
                     neighbor = np.concatenate([neighbor,columns_to_add],axis=1)
 
                     score=self.evaluate(self.classifier,neighbor,y,columns=new_columns,fit=False)
-
-                    self.classifier.remove_feature(neighbor.shape[1]-1)
-                    self.classifier.add_features(current_best[:,columns_to_delete],y,index=columns_to_delete) #We reverse it for insert order
+                    if  self.classifier.n_features_==1:
+                        self.classifier.add_features(current_best[:,columns_to_delete],y) #We reverse it for insert order
+                        self.classifier.remove_feature(0)
+                    else:
+                        self.classifier.remove_feature(neighbor.shape[1]-1)
+                        self.classifier.add_features(current_best[:,columns_to_delete],y,index=columns_to_delete) #We reverse it for insert order
                 
                 if self.verbose==2:
                     print("\tNeighbor: ", new_columns, " Score: ",score)
@@ -102,9 +105,9 @@ class PazzaniWrapperNB(PazzaniWrapper):
                     current_best = np.delete(current_best,best_columns_to_delete,axis=1)
                     current_best = np.concatenate([current_best,best_columns_to_add],axis=1)
                     #Update classifier
+                    self.classifier.add_features(best_columns_to_add,y)
                     self.classifier.remove_feature(best_columns_to_delete[0])
                     self.classifier.remove_feature(best_columns_to_delete[1])
-                    self.classifier.add_features(best_columns_to_add,y)
 
         print("Final best: ", list(current_columns), " Score: ",best_score)
         features = current_columns

@@ -39,9 +39,9 @@ def _get_tables(X: np.array, y: np.array , n_classes: int, alpha: float):
     return smoothed_counts,smoothed_log_counts,np.array(feature_values_count),feature_values_count_per_element,np.array(feature_unique_values_count)
 
 @njit
-def _get_counts(column: np.ndarray, y: np.ndarray, n_features: int, n_classes: int):
+def _get_counts(column: np.ndarray, y: np.ndarray, n_features_: int, n_classes: int):
     """Computes count for each value of each feature for each class value"""
-    counts = np.zeros((n_features, n_classes),dtype=np.float64)
+    counts = np.zeros((n_features_, n_classes),dtype=np.float64)
     for i in range(column.shape[0]):
         counts[column[i], y[i]] += 1
     return counts
@@ -99,7 +99,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
     n_samples_ : int
         Number of samples  
     
-    n_features : int
+    n_features_ : int
         Number of features
     
     n_classes_ : int
@@ -175,7 +175,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         Parameters
         ----------
 
-        X : array-like of shape (n_samples, n_features)
+        X : array-like of shape (n_samples, n_features_)
             Training array that must be encoded unless
             encode_data is set to True
 
@@ -197,7 +197,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
             y = self.class_encoder_.fit_transform(y)
 
         check_X_y(X,y)
-        self.n_samples_, self.n_features = X.shape
+        self.n_samples_, self.n_features_ = X.shape
         self._compute_class_counts(X, y)  
         self._compute_feature_counts(X, y)        
         self._compute_independent_terms()
@@ -208,7 +208,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
 
         Parameters
         ----------
-        X : array-like of shape (n_samples, n_features)
+        X : array-like of shape (n_samples, n_features_)
            Training array that must be encoded unless
            encode_data is set to True
 
@@ -235,7 +235,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
 
         Parameters
         ----------
-        X : array-like of shape (n_samples, n_features)
+        X : array-like of shape (n_samples, n_features_)
            Training array that must be encoded unless
            encode_data is set to True
 
@@ -287,7 +287,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
 
         Parameters
         ----------
-        X : array-like of shape (n_samples, n_features)
+        X : array-like of shape (n_samples, n_features_)
            Training array that must be encoded unless
            encode_data is set to True
 
@@ -309,7 +309,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
             X = self.feature_encoder_.add_features(X,transform=True,index=index)
         check_X_y(X,y)
         
-        self.n_features += X.shape[1]
+        self.n_features_ += X.shape[1]
         tables = _get_tables(X, y, self.n_classes_, self.alpha)
         new_smoothed_counts = tables[0]
         new_smoothed_log_counts = tables[1]
@@ -343,11 +343,11 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
     def remove_feature(self,index):
         """Updates classifierby removing one feature (index)"""
         check_is_fitted(self)
-        if self.n_features <=1:
+        if self.n_features_ <=1:
             raise Exception("Cannot remove only feature from classifier")       
-        if not 0 <= index <= self.n_features:
-            raise Exception(f"Feature index not valid, expected index between 0 and {self.n_features}")       
-        self.n_features-=1
+        if not 0 <= index <= self.n_features_:
+            raise Exception(f"Feature index not valid, expected index between 0 and {self.n_features_}")       
+        self.n_features_-=1
         
         feature_contribution = self.class_count_ + self.alpha*self.feature_unique_values_count_[index]
         feature_contribution = np.log(feature_contribution)
@@ -369,7 +369,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         
         Parameters
         ----------
-        X : array-like of shape (n_samples, n_features)
+        X : array-like of shape (n_samples, n_features_)
            Training array that must be encoded unless
            encode_data is set to True
 

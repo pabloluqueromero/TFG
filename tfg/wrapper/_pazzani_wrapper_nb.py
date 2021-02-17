@@ -109,7 +109,8 @@ class PazzaniWrapperNB(PazzaniWrapper):
                     self.classifier.remove_feature(best_columns_to_delete[0])
                     self.classifier.remove_feature(best_columns_to_delete[1])
 
-        print("Final best: ", list(current_columns), " Score: ",best_score)
+        if self.verbose:
+            print("Final best: ", list(current_columns), " Score: ",best_score)
         features = current_columns
         transformer = lambda X: join_columns(X,columns = features)
         model = self.classifier
@@ -232,7 +233,8 @@ class PazzaniWrapperNB(PazzaniWrapper):
                         current_best = np.concatenate([current_best,best_column_to_add],axis=1)
                         self.classifier.add_features(best_column_to_add,y)
 
-        print("Final best: ", list(current_columns), " Score: ",best_score)
+        if self.verbose:
+            print("Final best: ", list(current_columns), " Score: ",best_score)
         features = current_columns
         transformer = lambda X: join_columns(X,columns = features)
         model = self.classifier

@@ -59,9 +59,9 @@ class PazzaniWrapper:
      
     def search_bsej(self,X,y):
         self.evaluate = memoize(_evaluate,attribute_to_cache="columns")
-        if isinstance(X,pd.DataFrame):
+        if isinstance(X,pd.DataFrame) or isinstance(X,pd.Series):
             X = X.to_numpy()
-        if isinstance(y,pd.DataFrame):
+        if isinstance(y,pd.DataFrame) or isinstance(y,pd.Series):
             y = y.to_numpy()
         X = X.astype(str)
         current_best = X.copy()
@@ -127,9 +127,9 @@ class PazzaniWrapper:
 
     def search_fssj(self,X,y):
         self.evaluate = memoize(_evaluate,attribute_to_cache="columns")
-        if isinstance(X,pd.DataFrame):
+        if isinstance(X,pd.DataFrame) or isinstance(X,pd.Series):
             X = X.to_numpy()
-        if isinstance(y,pd.DataFrame):
+        if isinstance(y,pd.DataFrame) or isinstance(y,pd.Series):
             y = y.to_numpy()
         X = X.astype(str)
         current_best = None

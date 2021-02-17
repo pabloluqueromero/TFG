@@ -84,9 +84,9 @@ class PazzaniWrapper:
                         break
 
         print("Final best: ", list(current_columns), " Score: ",best_score)
-        model = self.classifier.fit(current_best,y)
         features = current_columns
         transformer = lambda X: join_columns(X,columns = features)
+        model = self.classifier.fit(transformer(X),y)
         return transformer, features, model
 
     def _generate_neighbors_fssj(self,current_columns, individual , original_data, available_columns):
@@ -153,9 +153,9 @@ class PazzaniWrapper:
                         stop=True
                         break
         print("Final best: ", list(current_columns), " Score: ",best_score)
-        model = self.classifier.fit(current_best,y)
-        features = current_columns
         transformer = lambda X: join_columns(X,columns = features)
+        model = self.classifier.fit(transformer(X),y)
+        features = current_columns
         return transformer, features, model
 
     def evaluate(self,classifier,cv,X,y,columns):

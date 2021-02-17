@@ -61,6 +61,8 @@ class PazzaniWrapper:
         self.evaluate = memoize(_evaluate,attribute_to_cache="columns")
         if isinstance(X,pd.DataFrame):
             X = X.to_numpy()
+        if isinstance(y,pd.DataFrame):
+            y = y.to_numpy()
         X = X.astype(str)
         current_best = X.copy()
         current_columns = deque(range(X.shape[1]))
@@ -127,6 +129,8 @@ class PazzaniWrapper:
         self.evaluate = memoize(_evaluate,attribute_to_cache="columns")
         if isinstance(X,pd.DataFrame):
             X = X.to_numpy()
+        if isinstance(y,pd.DataFrame):
+            y = y.to_numpy()
         X = X.astype(str)
         current_best = None
         current_columns = deque()

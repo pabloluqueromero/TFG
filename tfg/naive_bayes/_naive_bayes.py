@@ -271,15 +271,16 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
             example, label = X[i], y[i]
             class_count_ = self.class_count_.copy()
             class_count_[label]-=1
-            log_proba[i] += np.log(self.class_count_+self.alpha)
+            log_proba[i] = np.log(class_count_+self.alpha)
             for j in range(X.shape[1]):
                 p = self.smoothed_log_counts_[j][example[j]].copy()
                 p[label] = np.log(max(self.smoothed_counts_[j][example[j]][label]-1,self.alpha))
                 log_proba[i] += p
                 if self.feature_values_count_per_element_[j][example[j]] == 1: 
-                    log_proba[i]  -= np.log(class_count_ + (self.feature_unique_values_count_[j]-1)*self.alpha)
+                    update_value = np.log(class_count_ + (self.feature_unique_values_count_[j]-1)*self.alpha)
                 else:
-                    log_proba[i]  -= np.log(class_count_ + (self.feature_unique_values_count_[j])*self.alpha)
+                    update_value  = np.log(class_count_ + (self.feature_unique_values_count_[j])*self.alpha)
+                log_proba[i] -= np.where(update_value==np.NINF,0,update_value)
         prediction = np.argmax(log_proba ,axis=1)
         return np.sum(prediction == y)/y.shape[0]
 

@@ -74,3 +74,19 @@ def twospirals(n_points, noise=.5):
     return (np.vstack((np.hstack((d1x,d1y)),np.hstack((-d1x,-d1y)))), 
             np.hstack((np.zeros(n_points),np.ones(n_points))).astype(int)) 
 
+
+def onecold(a):
+    n = len(a)
+    s = a.strides[0]
+    strided = np.lib.stride_tricks.as_strided
+    b = np.concatenate((a,a[:-1]))
+    return strided(b[1:], shape=(n-1,n), strides=(s,s))
+    
+def combinations_without_repeat(a):
+    n = len(a)
+    out = np.empty((n,n-1,2),dtype=a.dtype)
+    out[:,:,0] = np.broadcast_to(a[:,None], (n, n-1))
+    out.shape = (n-1,n,2)
+    out[:,:,1] = onecold(a)
+    out.shape = (-1,2)
+    return out  

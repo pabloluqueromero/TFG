@@ -31,13 +31,11 @@ class FeatureOperator(Feature):
         else:
             raise Exception("No matching operator function found")
         
-    def print(self, depth=0):
+    def to_str(self, depth=0):
         s =  '\t' * depth + f"FeatureOperator: {self.operator}\n"
         for child in self.operands:
             s += child.print(depth+1)
         return s
-
-
 
 class FeatureOperand(Feature):
     def __init__(self,feature_index,value):
@@ -50,5 +48,5 @@ class FeatureOperand(Feature):
     def transform(self,X):
         return (X[:,self.feature_index]==self.value).reshape(-1,1)
 
-    def print(self, depth=0):
+    def to_str(self, depth=0):
         return  '\t' * depth + f"FeatureOperand:  index-> {self.feature_index}, value -> {self.value}\n"

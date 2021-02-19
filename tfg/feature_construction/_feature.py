@@ -1,5 +1,6 @@
 import numpy as np
 
+from numba import njit
 from sklearn.base import TransformerMixin
 
 
@@ -37,6 +38,13 @@ class FeatureOperator(Feature):
             s += child.print(depth+1)
         return s
 
+
+
+
+@njit
+def _transform_leaf_node(X,feature_index,value):
+    return (X[:,feature_index]==value).reshape(-1,1)
+
 class FeatureOperand(Feature):
     def __init__(self,feature_index,value):
         self.feature_index = feature_index
@@ -46,7 +54,7 @@ class FeatureOperand(Feature):
         return X
 
     def transform(self,X):
-        return (X[:,self.feature_index]==self.value).reshape(-1,1)
+        return _transform_leaf_node(X,self.feature_index,self.value)
 
     def to_str(self, depth=0):
         return  '\t' * depth + f"FeatureOperand:  index-> {self.feature_index}, value -> {self.value}\n"

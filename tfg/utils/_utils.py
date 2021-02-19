@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from collections import deque
-
+from scipy.stats import entropy
 def concat_columns(d):
     return "-".join(d)
 
@@ -90,3 +90,11 @@ def combinations_without_repeat(a):
     out[:,:,1] = onecold(a)
     out.shape = (-1,2)
     return out  
+
+
+def entropy()
+def symmetrical_uncertainty(X,target,features):
+    SU(X; Y ) =
+    2  GainY (X)
+    H(X) + H(Y )
+    pass

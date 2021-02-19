@@ -3,7 +3,6 @@ import numpy as np
 from itertools import combinations,product
 
 from tfg.feature_construction import FeatureOperand, FeatureOperator
-from tfg.utils import combinations_without_repeat
 
 
 def get_uniques(index,array):
@@ -20,10 +19,10 @@ def construct_features(X,operators=('AND','OR')):
         feature_index, values = distinct_values
         for value in (values[i] for i in range(values.shape[0])):
             feature = create_feature(operator=operator,
-                                     operands=[
-                                        zip(feature_index,value)
-                                     ])
-    print(feature)
+                                     operands=list(zip(feature_index,value))
+                                     )
+            features_list.append(feature)
+    return features_list
             
 
 def create_feature(operator,operands):

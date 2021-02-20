@@ -347,7 +347,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         check_is_fitted(self)
         if self.n_features_ <=1:
             raise Exception("Cannot remove only feature from classifier")       
-        if not 0 <= index <= self.n_features_:
+        if not 0 <= index < self.n_features_:
             raise Exception(f"Feature index not valid, expected index between 0 and {self.n_features_}")       
         self.n_features_-=1
         

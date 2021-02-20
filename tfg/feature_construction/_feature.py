@@ -13,7 +13,7 @@ class FeatureOperator(Feature):
         self.operands = operands
         allowed_operators = ("AND","OR","XOR")
         if self.operator not in allowed_operators:
-            raise ValueError("Unknown operator type: %s, expected one of %s." % (self.strategy, allowed_operators))
+            raise ValueError("Unknown operator type: %s, expected one of %s." % (self.operator, allowed_operators))
         self.get_operator(self.operator)
 
     def fit(self,X):
@@ -35,11 +35,22 @@ class FeatureOperator(Feature):
     def to_str(self, depth=0):
         s =  '\t' * depth + f"FeatureOperator: {self.operator}\n"
         for child in self.operands:
-            s += child.print(depth+1)
+            s += child.to_str(depth+1)
         return s
 
 
 
+class FeatureDummyConstructor(Feature):
+    def __init__(self,index):
+        self.index = index
+    def fit(self,X):
+        return X
+
+    def transform(self,X):
+        return X[:,self.index].reshape(-1,1)
+
+    def to_str(self, depth=0):
+        return  '\t' * depth + f"FeatureDummy:  index-> {self.index}\n"
 
 @njit
 def _transform_leaf_node(X,feature_index,value):

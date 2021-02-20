@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 from collections import deque
 from scipy.stats import entropy
+
+
 def concat_columns(d):
     return "-".join(d)
 
@@ -92,9 +94,30 @@ def combinations_without_repeat(a):
     return out  
 
 
-def entropy()
-def symmetrical_uncertainty(X,target,features):
-    SU(X; Y ) =
-    2  GainY (X)
-    H(X) + H(Y )
-    pass
+def shannon_entropy(column):
+    count = np.bincount(column)
+    return entropy(count, base=2)
+
+
+def info_gain(X,y,feature=0):
+    H_C = shannon_entropy(y)
+    H_X_C = 0
+    feature_values = np.unique(X[:,feature])
+    for value in feature_values:
+        mask = X[:,feature]==value
+        prob = mask.sum()/X.shape[0]
+        H_X_C += prob*shannon_entropy(y[mask])
+    return H_C - H_X_C
+
+
+def symmetrical_uncertainty(X,f1,f2=None,y=None): 
+    if y is None and f2 is None:
+        raise Exception("Either y or f2 must be provided")
+    a = X[:,f1]
+    b = X[:,f2] if f2 else y
+    gain = info_gain(a.reshape(-1,1),b)
+    H_a = shannon_entropy(a)
+    H_b = shannon_entropy(b)
+    if (H_a+H_b)==0:
+        return 0
+    return 2*(gain)/(H_a+H_b)

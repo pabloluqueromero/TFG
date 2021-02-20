@@ -111,7 +111,7 @@ class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
                 current_data = data
                 current_features.extend(selected_features)
             else:
-                for feature_index_to_remove in range(len(current_features),len(current_features)-len(new_X)):
+                for feature_index_to_remove in range(data.shape[1], data.shape[1]-new_X.shape[1],-1):
                     self.classifier.remove_feature(feature_index_to_remove-1)
                 if self.strategy=="eager":
                     break # Stops as soon as no impovement

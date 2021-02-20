@@ -128,8 +128,6 @@ class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
         if isinstance(y,pd.DataFrame):
             y = y.to_numpy()
         if self.encode_data:
-            self.feature_encoder_ = CustomOrdinalFeatureEncoder()
-            self.class_encoder_ = LabelEncoder()
             X = self.feature_encoder_.transform(X)
             y = self.class_encoder_.transform(y)
 
@@ -138,14 +136,3 @@ class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
         for feature_constructor in self.final_feature_constructors:
             new_X.append(feature_constructor.transform(X))
         return np.concatenate(new_X,axis=1),y
-
-
-
-        
-
-
-
-
-
-
-

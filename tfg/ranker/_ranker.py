@@ -12,7 +12,7 @@ from tfg.feature_construction import construct_features
 from tfg.feature_construction import FeatureDummyConstructor
 from tfg.naive_bayes import NaiveBayes 
 from tfg.utils import symmetrical_uncertainty
-from tqdm import tqdm
+from tqdm.autonotebook  import tqdm
 
 
 

@@ -12,6 +12,7 @@ from tfg.feature_construction import construct_features
 from tfg.feature_construction import FeatureDummyConstructor
 from tfg.naive_bayes import NaiveBayes 
 from tfg.utils import symmetrical_uncertainty
+from tqdm import tqdm
 
 
 
@@ -69,14 +70,18 @@ class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
     def filter_features(self,X,y):
         check_is_fitted(self)
         self.classifier = NaiveBayes(encode_data = False)
-        rank_iter = iter(self.rank)
         current_score  = np.NINF
         first_iteration = True
         current_features = []
         current_data = None
+        rank_iter = iter(self.rank)
+        if self.verbose:
+            print()
+            progress_bar = tqdm(total=len(self.rank), bar_format='{l_bar}{bar:20}{r_bar}{bar:-10b}')
         for feature_constructor_index in rank_iter:
             if self.verbose:
-                print(f"Current number of included features: {len(current_features)}   - Current Score: {current_score}")
+                progress_bar.set_postfix({"n_features": len(current_features), "score": current_score})
+                progress_bar.update(1)
             new_X  = [self.all_feature_constructors[feature_constructor_index].transform(X)]
             selected_features = [self.all_feature_constructors[feature_constructor_index]]
             for _ in range(self.block_size-1):
@@ -84,8 +89,11 @@ class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
                     index = next(rank_iter)
                     selected_features.append(self.all_feature_constructors[index])
                     new_X.append(self.all_feature_constructors[index].transform(X))
+                    if self.verbose:
+                            progress_bar.update(1)
                 except:
                     break
+            
             new_X = np.concatenate(new_X,axis=1)
             if first_iteration:
                 current_data = new_X
@@ -107,7 +115,8 @@ class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
                     break # Stops as soon as no impovement
 
         if self.verbose:
-            print(f"Final number of included features: {len(current_features)} - Final Score: {current_score}")
+            progress_bar.close()
+            print(f"\nFinal number of included features: {len(current_features)} - Final Score: {current_score}")
         self.final_feature_constructors = current_features
         return self
 

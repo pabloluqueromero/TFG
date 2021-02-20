@@ -82,6 +82,7 @@ class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
             if self.verbose:
                 progress_bar.set_postfix({"n_features": len(current_features), "score": current_score})
                 progress_bar.update(1)
+                progress_bar.refresh()
             new_X  = [self.all_feature_constructors[feature_constructor_index].transform(X)]
             selected_features = [self.all_feature_constructors[feature_constructor_index]]
             for _ in range(self.block_size-1):
@@ -91,6 +92,7 @@ class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
                     new_X.append(self.all_feature_constructors[index].transform(X))
                     if self.verbose:
                             progress_bar.update(1)
+                            progress_bar.refresh()
                 except:
                     break
             

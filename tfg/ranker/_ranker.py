@@ -105,7 +105,7 @@ class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
                 continue
             data = np.concatenate([current_data,new_X],axis=1)
             self.classifier.add_features(new_X,y)
-            score = self.classifier.leave_one_out_cross_val(data,y,fit=True)
+            score = self.classifier.leave_one_out_cross_val(data,y,fit=False)
             if score > current_score :
                 current_score = score
                 current_data = data

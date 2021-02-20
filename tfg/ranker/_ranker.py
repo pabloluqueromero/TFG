@@ -130,8 +130,8 @@ class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
         if self.encode_data:
             self.feature_encoder_ = CustomOrdinalFeatureEncoder()
             self.class_encoder_ = LabelEncoder()
-            X = self.feature_encoder_.fit_transform(X)
-            y = self.class_encoder_.fit_transform(y)
+            X = self.feature_encoder_.transform(X)
+            y = self.class_encoder_.transform(y)
 
         check_X_y(X,y)
         new_X = []

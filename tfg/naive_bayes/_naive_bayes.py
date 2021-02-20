@@ -195,8 +195,11 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
             self.class_encoder_ = LabelEncoder()
             X = self.feature_encoder_.fit_transform(X)
             y = self.class_encoder_.fit_transform(y)
-
         check_X_y(X,y)
+        if X.dtype!=int:
+            X = X.astype(int)
+        if y.dtype!=int:
+            X = X.astype(int)
         self.n_samples_, self.n_features_ = X.shape
         self._compute_class_counts(X, y)  
         self._compute_feature_counts(X, y)        
@@ -222,6 +225,8 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         check_is_fitted(self)
         if self.encode_data:
             X = self.feature_encoder_.transform(X)
+        if X.dtype!=int:
+            X = X.astype(int)
         check_array(X)
         log_probabilities = _predict(X, self.smoothed_log_counts_,self.feature_values_count_,self.alpha)
         log_probabilities += self.indepent_term_
@@ -248,6 +253,8 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         check_is_fitted(self)
         if isinstance(X,pd.DataFrame):
             X = X.to_numpy()
+        if X.dtype!=int:
+            X = X.astype(int)
         if self.encode_data:
             X = self.feature_encoder_.transform(X)
         log_probabilities = _predict(X, self.smoothed_log_counts_,self.feature_values_count_,self.alpha)
@@ -265,6 +272,10 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
             X = self.feature_encoder_.transform(X)
             y = self.class_encoder_.transform(y)
         
+        if X.dtype!=int:
+            X = X.astype(int)
+        if y.dtype!=int:
+            X = X.astype(int)
         log_alpha = np.log(self.alpha)
         log_proba = np.zeros((X.shape[0],self.n_classes_))
         for i in range(X.shape[0]):
@@ -274,7 +285,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
             log_proba[i] = np.log(class_count_+self.alpha)
             for j in range(X.shape[1]):
                 p = self.smoothed_log_counts_[j][example[j]].copy()
-                p[label] = np.log(max(self.smoothed_counts_[j][example[j]][label]-1,self.alpha))
+                p[label] = np.log(np.max([self.smoothed_counts_[j][example[j]][label]-1,self.alpha]))
                 log_proba[i] += p
                 if self.feature_values_count_per_element_[j][example[j]] == 1: 
                     update_value = np.log(class_count_ + (self.feature_unique_values_count_[j]-1)*self.alpha)
@@ -310,6 +321,10 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
             y = self.class_encoder_.transform(y) #y should the same than the one that was first fitted for now  ----> FUTURE IMPLEMENTATION
             X = self.feature_encoder_.add_features(X,transform=True,index=index)
         check_X_y(X,y)
+        if X.dtype!=int:
+            X = X.astype(int)
+        if y.dtype!=int:
+            X = X.astype(int)
         
         self.n_features_ += X.shape[1]
         tables = _get_tables(X, y, self.n_classes_, self.alpha)

@@ -17,11 +17,12 @@ from tfg.utils import symmetrical_uncertainty
 
 class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
 
-    def __init__(self,strategy="eager",block_size=10,encode_data=True,verbose=0):
+    def __init__(self,strategy="eager",block_size=10,encode_data=True,verbose=0,operators=("AND","OR","XOR")):
         self.strategy = strategy
-        self.block_size = block_size
+        self.block_size = max(block_size,1)
         self.encode_data = encode_data
         self.verbose = verbose
+        self.operators= operators
         allowed_strategies = ("eager","skip")
         if self.strategy not in allowed_strategies:
             raise ValueError("Unknown operator type: %s, expected one of %s." % (self.strategy, allowed_strategies))
@@ -38,7 +39,7 @@ class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
             y = self.class_encoder_.fit_transform(y)
 
         check_X_y(X,y)
-        self.all_feature_constructors = construct_features(X)
+        self.all_feature_constructors = construct_features(X,operators=self.operators)
         if self.verbose:
             print(f"Total number of constructed features: {len(self.all_feature_constructors)}")
         self.all_feature_constructors.extend([FeatureDummyConstructor(j) for j in range(X.shape[1])])
@@ -72,12 +73,13 @@ class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
         current_score  = np.NINF
         first_iteration = True
         current_features = []
+        current_data = None
         for feature_constructor_index in rank_iter:
             if self.verbose:
                 print(f"Current number of included features: {len(current_features)}   - Current Score: {current_score}")
             new_X  = [self.all_feature_constructors[feature_constructor_index].transform(X)]
             selected_features = [self.all_feature_constructors[feature_constructor_index]]
-            for _ in range(self.block_size):
+            for _ in range(self.block_size-1):
                 try:
                     index = next(rank_iter)
                     selected_features.append(self.all_feature_constructors[index])
@@ -86,17 +88,23 @@ class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
                     break
             new_X = np.concatenate(new_X,axis=1)
             if first_iteration:
-                current_score = self.classifier.leave_one_out_cross_val(new_X,y,fit=True)
+                current_data = new_X
+                current_score = self.classifier.leave_one_out_cross_val(current_data,y,fit=True)
                 current_features = selected_features
+                first_iteration=False
+                continue
+            data = np.concatenate([current_data,new_X],axis=1)
             self.classifier.add_features(new_X,y)
-            score = self.classifier.leave_one_out_cross_val(new_X,y,fit=True)
-            if current_score > score:
+            score = self.classifier.leave_one_out_cross_val(data,y,fit=True)
+            if score > current_score :
                 current_score = score
+                current_data = data
                 current_features.extend(selected_features)
             else:
                 for feature_index_to_remove in range(len(current_features),len(current_features)-len(new_X)):
                     self.classifier.remove_feature(feature_index_to_remove-1)
-                break # Stops as soon as no impovement
+                if self.strategy=="eager":
+                    break # Stops as soon as no impovement
 
         if self.verbose:
             print(f"Final number of included features: {len(current_features)} - Final Score: {current_score}")

@@ -6,8 +6,8 @@ from itertools import combinations,product
 from tfg.feature_construction import FeatureOperand, FeatureOperator
 
 def get_unique_combinations(X):
-#     return np.unique(X,axis=0) #-> Slower but might produce less combinations
-    return list(product(*[ pd.unique(X[:,j]) for j in range(X.shape[1])]))
+    return np.unique(X,axis=0) #-> Slower but might produce less combinations
+    # return list(product(*[ pd.unique(X[:,j]) for j in range(X.shape[1])]))
 
 def construct_features(X,operators=('AND','OR')):
     feature_combinations = combinations(np.arange(0,X.shape[1]),2)#combinations_without_repeat(range(X))

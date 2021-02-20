@@ -123,6 +123,7 @@ class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
         return self
 
     def transform(self,X,y):
+        check_is_fitted(self)
         if isinstance(X,pd.DataFrame):
             X = X.to_numpy()
         if isinstance(y,pd.DataFrame):

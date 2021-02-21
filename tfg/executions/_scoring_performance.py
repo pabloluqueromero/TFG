@@ -9,7 +9,7 @@ from tfg.encoder import CustomOrdinalFeatureEncoder
 from tfg.naive_bayes import NaiveBayes
 from tfg.utils import make_discrete
 from time import time
-
+from tqdm.autonotebook import tqdm
 
 def scoring_comparison(datasets,verbose=1):
     column_names = ["dataset",
@@ -20,10 +20,14 @@ def scoring_comparison(datasets,verbose=1):
     data =[]
     clf_no_encoding = NaiveBayes(encode_data=False)
     clf_categorical_sklearn = CategoricalNB()
+    
+    progress_bar = tqdm(total=len(datasets), bar_format='{l_bar}{bar:20}{r_bar}{bar:-10b}')
     for dataset in datasets:
         name,X_train,X_test,y_train,y_test = dataset
         if verbose:
-            print(f"Dataset: {name}")
+            progress_bar.set_description(f"Dataset: {name}")
+            progress_bar,update(1)
+            progress_bar.refresh()
         
         clf_no_encoding.fit(X_train,y_train)
         custom_train = clf_no_encoding.score(X_train,y_train)

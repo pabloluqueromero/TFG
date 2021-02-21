@@ -26,7 +26,7 @@ def scoring_comparison(datasets,verbose=1):
         name,X_train,X_test,y_train,y_test = dataset
         if verbose:
             progress_bar.set_description(f"Dataset: {name}")
-            progress_bar,update(1)
+            progress_bar.update(1)
             progress_bar.refresh()
         
         clf_no_encoding.fit(X_train,y_train)

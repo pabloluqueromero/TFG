@@ -40,7 +40,7 @@ class FeatureOperator(Feature):
 
 
 
-class FeatureDummyConstructor(Feature):
+class DummyFeatureConstructor(Feature):
     def __init__(self,index):
         self.index = index
     def fit(self,X):

@@ -318,7 +318,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         if isinstance(X,pd.DataFrame):
             X = X.to_numpy()
         if self.encode_data:
-            y = self.class_encoder_.transform(y) #y should the same than the one that was first fitted for now  ----> FUTURE IMPLEMENTATION
+            y = self.class_encoder_.transform(y) #y should be the same than the one that was first fitted for now  ----> FUTURE IMPLEMENTATION
             X = self.feature_encoder_.add_features(X,transform=True,index=index)
         check_X_y(X,y)
         if X.dtype!=int:
@@ -335,7 +335,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         new_feature_unique_values_count_ = tables[4]
         new_feature_contribution = compute_total_probability_(self.class_count_,new_feature_unique_values_count_,self.alpha)
         if index:
-            sort_index = np.argsort(index)
+            sort_index = np.argsort(index)[::-1]
             index_with_column = list(enumerate(index))
             for i in sort_index:
                 column,list_insert_index = index_with_column[i]

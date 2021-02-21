@@ -26,12 +26,14 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
         check_is_fitted(self)
         if self.n_features != X.shape[1]:
             raise Exception(f"Expected {self.n_features} features, got {X.shape[1]} instead")
-        for j in range(X.shape[1]):
+        
+        X_copy = np.empty(shape=X.shape,dtype=int)
+        for j in range(X_copy.shape[1]):
             idx = np.searchsorted(self.sorted_categories_[j],X[:,j])
             idx[idx==self.sorted_encoded_[j].shape[0]] = 0
             mask = self.sorted_categories_[j][idx] == X[:,j]
-            X[:,j]= np.where(mask , self.sorted_encoded_[j][idx],self.unknown_values_[j])
-        return X.astype(int)
+            X_copy[:,j]= np.where(mask , self.sorted_encoded_[j][idx],self.unknown_values_[j])
+        return X_copy.astype(int)
 
     def inverse_transform(self,X,y=None):
         check_is_fitted(self)
@@ -39,7 +41,7 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
         check_is_fitted(self)
         if self.n_features != X.shape[1]:
             raise Exception(f"Expected {self.n_features} features, got {X.shape[1]} instead")
-        for j in range(X.shape[1]):
+        for j in range(X_copy.shape[1]):
             inverse_idx = X[:,j]
             mask = inverse_idx==self.sorted_categories_[j].shape[0]
             inverse_idx[mask] = 0
@@ -68,18 +70,23 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
     def transform_columns(self,X,categories):
         if isinstance(X,pd.DataFrame):
             X = X.to_numpy()
-        X = X.copy()
+        
+        if X.dtype=="O":
+            X = X.astype(str)
+        X_copy = np.empty(shape=X.shape,dtype=int)
         check_is_fitted(self)
+
         if len(categories) != X.shape[1]:
             raise Exception(f"Expected {categories} features, got {X.shape[1]} instead")
         if not all(index <self.n_features for index in categories) :
             raise ValueError(f"All values must be between 0 and {self.n_features}")
-        for X_index,j in enumerate(categories):
-            idx = np.searchsorted(self.sorted_categories_[j],X[:,X_index])
-            idx[idx==self.sorted_encoded_[j].shape[0]] = 0
-            mask = self.sorted_categories_[j][idx] == X[:,X_index]
-            X[:,X_index]= np.where(mask , self.sorted_encoded_[j][idx],self.unknown_values_[j])
-        return X.astype(int)
+        for j in range(X.shape[1]):
+            cat = categories[j]
+            idx = np.searchsorted(self.sorted_categories_[cat],X[:,j])
+            idx[idx==self.sorted_encoded_[cat].shape[0]] = 0
+            mask = self.sorted_categories_[cat][idx] == X[:,j]
+            X_copy[:,j]= np.where(mask , self.sorted_encoded_[cat][idx],self.unknown_values_[cat])
+        return X_copy
 
     def add_features(self,X,transform=False,index=None):
         try:
@@ -93,7 +100,7 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
         self.n_features += X.shape[1]
         new_categories = [np.unique(X[:,j]) for j in range(X.shape[1])]
         if index is not None:
-            sort_index = np.argsort(index)
+            sort_index = np.argsort(index)[::-1]
             index_with_column = list(enumerate(index))
             for i in sort_index:
                 column,list_insert_index = index_with_column[i]

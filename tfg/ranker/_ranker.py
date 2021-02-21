@@ -9,7 +9,7 @@ from sklearn.utils.validation import check_is_fitted
 
 from tfg.encoder import CustomOrdinalFeatureEncoder
 from tfg.feature_construction import construct_features
-from tfg.feature_construction import FeatureDummyConstructor
+from tfg.feature_construction import DummyFeatureConstructor
 from tfg.naive_bayes import NaiveBayes 
 from tfg.utils import symmetrical_uncertainty
 from tqdm.autonotebook  import tqdm
@@ -43,7 +43,7 @@ class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
         self.all_feature_constructors = construct_features(X,operators=self.operators)
         if self.verbose:
             print(f"Total number of constructed features: {len(self.all_feature_constructors)}")
-        self.all_feature_constructors.extend([FeatureDummyConstructor(j) for j in range(X.shape[1])])
+        self.all_feature_constructors.extend([DummyFeatureConstructor(j) for j in range(X.shape[1])])
         self.symmetrical_uncertainty_rank = []
         
         for feature_constructor in self.all_feature_constructors:

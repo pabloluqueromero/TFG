@@ -4,11 +4,14 @@ import pandas as pd
 from itertools import product
 from sklearn.datasets import make_classification
 from sklearn.naive_bayes import CategoricalNB, GaussianNB
+from tqdm.autonotebook  import tqdm
 
 from tfg.encoder import CustomOrdinalFeatureEncoder
 from tfg.naive_bayes import NaiveBayes
 from tfg.utils import make_discrete
 from time import time
+
+
 
 
 def evaluate(X_train, y_train, X_test, y_test, clf, fit_time, predict_time, score):
@@ -68,10 +71,12 @@ def timing_comparison(combinations=None, n_iterations=15, verbose=1, seed=200, f
     clf_encoding = NaiveBayes(encode_data=True, alpha=1)
     clf_categorical_sklearn = CategoricalNB(alpha=1)
     clf_gaussian_sklearn = GaussianNB()
-
+    progress_bar = tqdm(total=len(combinations), bar_format='{l_bar}{bar:20}{r_bar}{bar:-10b}')
     for n_features, n_samples in combinations:
         if verbose:
-            print(n_samples, n_features)
+            progress_bar.set_postfix({"n_samples":n_samples, "n_features":n_features})
+            progress_bar.update(1)
+            progress_bar.refresh()
         X, y = make_classification(n_samples=n_samples,
                                    n_features=n_features,
                                    n_informative=n_features-1,
@@ -131,8 +136,6 @@ def timing_comparison(combinations=None, n_iterations=15, verbose=1, seed=200, f
                                                   custom_encoding_nb_fit_time,
                                                   custom_encoding_nb_predict_time,
                                                   custom_encoding_nb_score)
-        if verbose:
-            print("Updating...\n")
 
         update_df(df,
                   "Gaussian",

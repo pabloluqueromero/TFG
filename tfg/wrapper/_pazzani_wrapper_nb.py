@@ -39,11 +39,8 @@ class PazzaniWrapperNB(PazzaniWrapper):
                 combined_columns = combine_columns(X,list(features))
                 yield new_columns,list(columns_to_drop), combined_columns, False
      
-    def search_bsej(self,X,y):
-        self.evaluate = memoize(_evaluate,attribute_to_cache = "columns")
-        if isinstance(X,pd.DataFrame):
-            X = X.to_numpy()
-        X = X.astype(str)
+    def fit_bsej(self,X,y):
+        self.evaluate = memoize(_evaluate,attribute_to_cache="columns")
         current_best = X.copy()
         current_columns = deque(range(X.shape[1]))
         best_score=self.evaluate(self.classifier,current_best,y,columns=current_columns,fit=True)
@@ -111,10 +108,10 @@ class PazzaniWrapperNB(PazzaniWrapper):
 
         if self.verbose:
             print("Final best: ", list(current_columns), " Score: ",best_score)
-        features = current_columns
-        transformer = lambda X: join_columns(X,columns = features)
-        model = self.classifier
-        return transformer, features, model
+        self.features_ = current_columns
+        self.feature_transformer = lambda X: join_columns(X,columns = self.features_)
+        model = self.classifier.fit(self.feature_transformer(X),y)
+        return self
 
     def _generate_neighbors_fssj(self,current_columns, individual , original_data, available_columns):
         if available_columns:
@@ -148,11 +145,8 @@ class PazzaniWrapperNB(PazzaniWrapper):
                 column_to_add = combined_columns
                 yield new_columns,new_available_columns,column_to_delete,column_to_add,True
 
-    def search_fssj(self,X,y):
-        self.evaluate = memoize(_evaluate,attribute_to_cache = "columns")
-        if isinstance(X,pd.DataFrame):
-            X = X.to_numpy()
-        X = X.astype(str)
+    def fit_fssj(self,X,y):
+        self.evaluate = memoize(_evaluate,attribute_to_cache="columns")
         current_best = None
         current_columns = deque()
         available_columns = list(range(X.shape[1]))
@@ -235,10 +229,10 @@ class PazzaniWrapperNB(PazzaniWrapper):
 
         if self.verbose:
             print("Final best: ", list(current_columns), " Score: ",best_score)
-        features = current_columns
-        transformer = lambda X: join_columns(X,columns = features)
-        model = self.classifier
-        return transformer, features, model
+        self.features_ = current_columns
+        self.feature_transformer = lambda X: join_columns(X,columns = self.features_)
+        model = self.classifier.fit(self.feature_transformer(X),y)
+        return self
 
     def evaluate(self,classifier,X,y,fit=True,columns=None):
         return _evaluate(classifier,X,y,fit=True,columns=None)

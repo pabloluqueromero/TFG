@@ -5,10 +5,14 @@ from itertools import combinations
 from itertools import product
 from collections import deque
 from sklearn.model_selection import LeaveOneOut
-
+from sklearn.base import BaseEstimator
 #Local imports
 from tfg.naive_bayes import NaiveBayes
 from tfg.utils import join_columns,concat_columns,flatten,memoize,combine_columns
+
+
+from sklearn.utils import check_X_y, check_array
+from sklearn.utils.validation import check_is_fitted
 
 
 def _evaluate(clf,cv,X,y,columns):
@@ -26,7 +30,7 @@ def _evaluate(clf,cv,X,y,columns):
     return clf.leave_one_out_cross_val(X,y)
     
 
-class PazzaniWrapper:
+class PazzaniWrapper(BaseEstimator):
     def __init__(self,seed=None,cv = None, strategy = "BSEJ",verbose=0):
         self.cv = cv
         self.classifier = NaiveBayes(encode_data=True)
@@ -35,9 +39,17 @@ class PazzaniWrapper:
         allowed_strategies = ("BSEJ","FSSJ")
         if self.strategy not in allowed_strategies:
             raise ValueError("Unknown strategy type: %s, expected one of %s." % (self.strategy, allowed_strategies))
-        self.search = self.search_bsej if strategy=="BSEJ" else self.search_fssj
         self.verbose = verbose
+        self._fit = self.fit_bsej if self.strategy=="BSEJ" else self.fit_fssj
 
+    def fit(self,X,y):
+        if isinstance(X,pd.DataFrame) or isinstance(X,pd.Series):
+            X = X.to_numpy()
+        if isinstance(y,pd.DataFrame) or isinstance(y,pd.Series):
+            y = y.to_numpy()
+        X = X.astype(str)
+        return self._fit(X,y)
+    
     def _generate_neighbors_bsej(self,current_columns,X):
         if X.shape[1]>1:
             for col in range(X.shape[1]):
@@ -57,13 +69,8 @@ class PazzaniWrapper:
                 neighbor = np.concatenate([X,combined_columns],axis=1)
                 yield new_columns, np.delete(neighbor,columns,axis=1)
      
-    def search_bsej(self,X,y):
+    def fit_bsej(self,X,y):
         self.evaluate = memoize(_evaluate,attribute_to_cache="columns")
-        if isinstance(X,pd.DataFrame) or isinstance(X,pd.Series):
-            X = X.to_numpy()
-        if isinstance(y,pd.DataFrame) or isinstance(y,pd.Series):
-            y = y.to_numpy()
-        X = X.astype(str)
         current_best = X.copy()
         current_columns = deque(range(X.shape[1]))
         best_score=self.evaluate(self.classifier,self.cv,current_best,y,columns=current_columns)
@@ -87,10 +94,10 @@ class PazzaniWrapper:
 
         if self.verbose:
             print("Final best: ", list(current_columns), " Score: ",best_score)
-        features = current_columns
-        transformer = lambda X: join_columns(X,columns = features)
-        model = self.classifier.fit(transformer(X),y)
-        return transformer, features, model
+        self.features_ = current_columns
+        self.feature_transformer = lambda X: join_columns(X,columns = self.features_)
+        model = self.classifier.fit(self.feature_transformer(X),y)
+        return self
 
     def _generate_neighbors_fssj(self,current_columns, individual , original_data, available_columns):
         if available_columns:
@@ -125,13 +132,8 @@ class PazzaniWrapper:
                 neighbor = np.concatenate([individual,combined_columns],axis=1)
                 yield new_columns,new_available_columns, np.delete(neighbor,features_index[1],axis=1)
 
-    def search_fssj(self,X,y):
+    def fit_fssj(self,X,y):
         self.evaluate = memoize(_evaluate,attribute_to_cache="columns")
-        if isinstance(X,pd.DataFrame) or isinstance(X,pd.Series):
-            X = X.to_numpy()
-        if isinstance(y,pd.DataFrame) or isinstance(y,pd.Series):
-            y = y.to_numpy()
-        X = X.astype(str)
         current_best = None
         current_columns = deque()
         available_columns = list(range(X.shape[1]))
@@ -159,10 +161,37 @@ class PazzaniWrapper:
                         break
         if self.verbose:
             print("Final best: ", list(current_columns), " Score: ",best_score)
-        features = current_columns
-        transformer = lambda X: join_columns(X,columns = features)
-        model = self.classifier.fit(transformer(X),y)
-        return transformer, features, model
+        self.features_ = current_columns
+        self.feature_transformer = lambda X: join_columns(X,columns = self.features_)
+        model = self.classifier.fit(self.feature_transformer(X),y)
+        return self
 
     def evaluate(self,classifier,cv,X,y,columns):
         return _evaluate(classifier,cv,X,y,columns)
+
+
+    
+    def transform(self,X,y):
+        check_is_fitted(self)
+        if isinstance(X,pd.DataFrame):
+            X = X.to_numpy()
+        if isinstance(y,pd.DataFrame):
+            y = y.to_numpy()
+        check_X_y(X,y)
+        return self.feature_transformer(X),y
+        
+    def predict(self,X,y):
+        X,y = self.transform(X,y)
+        return self.classifier.predict(X,y)
+
+        
+    def predict_proba(self,X,y):
+        X,y = self.transform(X,y)
+        return self.classifier.predict_proba(X,y)
+
+    def score(self,X,y):
+        X,y = self.transform(X,y)
+        return self.classifier.score(X,y)
+
+
+    

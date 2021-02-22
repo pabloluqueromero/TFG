@@ -100,7 +100,7 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
         self.n_features += X.shape[1]
         new_categories = [np.unique(X[:,j]) for j in range(X.shape[1])]
         if index is not None:
-            sort_index = np.argsort(index)[::-1]
+            sort_index = np.argsort(index)
             index_with_column = list(enumerate(index))
             for i in sort_index:
                 column,list_insert_index = index_with_column[i]

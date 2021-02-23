@@ -177,7 +177,7 @@ class PazzaniWrapper(BaseEstimator):
             X = X.to_numpy()
         if isinstance(y,pd.DataFrame):
             y = y.to_numpy()
-        check_X_y(X,y)
+        # check_X_y(X,y)
         return self.feature_transformer(X),y
         
     def predict(self,X,y):

@@ -72,7 +72,7 @@ def timing_comparison(combinations=None, n_iterations=15, verbose=1, seed=200, f
     clf_categorical_sklearn = CategoricalNB(alpha=1)
     clf_gaussian_sklearn = GaussianNB()
     progress_bar = tqdm(total=len(combinations), bar_format='{l_bar}{bar:20}{r_bar}{bar:-10b}')
-    for n_features, n_samples in combinations:
+    for n_samples,n_features  in combinations:
         if verbose:
             progress_bar.set_postfix({"n_samples":n_samples, "n_features":n_features})
             progress_bar.update(1)

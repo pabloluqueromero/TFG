@@ -18,12 +18,14 @@ from tqdm.autonotebook  import tqdm
 
 class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
 
-    def __init__(self,strategy="eager",block_size=10,encode_data=True,verbose=0,operators=("AND","OR","XOR")):
+    def __init__(self,strategy="eager",block_size=10,encode_data=True,verbose=0,operators=("AND","OR","XOR"),max_features = float("inf"),max_iterations=float("inf")):
         self.strategy = strategy
         self.block_size = max(block_size,1)
         self.encode_data = encode_data
         self.verbose = verbose
         self.operators= operators
+        self.max_features = max_features
+        self.max_iterations = max_iterations
         allowed_strategies = ("eager","skip")
         if self.strategy not in allowed_strategies:
             raise ValueError("Unknown operator type: %s, expected one of %s." % (self.strategy, allowed_strategies))
@@ -78,7 +80,9 @@ class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
         if self.verbose:
             print()
             progress_bar = tqdm(total=len(self.rank), bar_format='{l_bar}{bar:20}{r_bar}{bar:-10b}')
+        iteration=0
         for feature_constructor_index in rank_iter:
+            iteration+=1
             if self.verbose:
                 progress_bar.set_postfix({"n_features": len(current_features), "score": current_score})
                 progress_bar.update(1)
@@ -97,7 +101,7 @@ class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
                     break
             
             new_X = np.concatenate(new_X,axis=1)
-            if first_iteration:
+            if iteration==1:
                 current_data = new_X
                 current_score = self.classifier.leave_one_out_cross_val(current_data,y,fit=True)
                 current_features = selected_features
@@ -115,7 +119,9 @@ class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
                     self.classifier.remove_feature(feature_index_to_remove-1)
                 if self.strategy=="eager":
                     break # Stops as soon as no impovement
-
+                else:
+                    if self.max_iterations <= iteration or (len(current_features) + self.block_size) > self.max_features:
+                        break
         if self.verbose:
             progress_bar.close()
             print(f"\nFinal number of included features: {len(current_features)} - Final Score: {current_score}")

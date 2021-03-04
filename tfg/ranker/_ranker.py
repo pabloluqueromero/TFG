@@ -106,6 +106,8 @@ class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
                 current_score = self.classifier.leave_one_out_cross_val(current_data,y,fit=True)
                 current_features = selected_features
                 first_iteration=False
+                if self.max_iterations <= iteration or (len(current_features) + self.block_size) > self.max_features:
+                        break
                 continue
             data = np.concatenate([current_data,new_X],axis=1)
             self.classifier.add_features(new_X,y)
@@ -119,9 +121,9 @@ class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
                     self.classifier.remove_feature(feature_index_to_remove-1)
                 if self.strategy=="eager":
                     break # Stops as soon as no impovement
-                else:
-                    if self.max_iterations <= iteration or (len(current_features) + self.block_size) > self.max_features:
-                        break
+            
+            if self.max_iterations <= iteration or (len(current_features) + self.block_size) > self.max_features:
+                break
         if self.verbose:
             progress_bar.close()
             print(f"\nFinal number of included features: {len(current_features)} - Final Score: {current_score}")

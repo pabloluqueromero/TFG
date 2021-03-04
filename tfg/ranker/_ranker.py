@@ -5,6 +5,7 @@ import pandas as pd
 from sklearn.base import TransformerMixin, BaseEstimator
 from sklearn.base import clone
 from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import OneHotEncoder
 from sklearn.utils import check_X_y, check_array
 from sklearn.utils.validation import check_is_fitted
 
@@ -34,7 +35,8 @@ class RankerLogicalFeatureConstructor(BaseEstimator, TransformerMixin):
                  max_features=float("inf"),
                  max_iterations=float("inf"),
                  classifier=NaiveBayes(encode_data=False),
-                 cross_validation=None):
+                 cross_validation=None,
+                 encoding="ordinal"):
         self.strategy = strategy
         self.block_size = max(block_size, 1)
         self.encode_data = encode_data
@@ -44,11 +46,18 @@ class RankerLogicalFeatureConstructor(BaseEstimator, TransformerMixin):
         self.max_iterations = max_iterations
         self.classifier = classifier
         self.cross_validation = cross_validation
+        self.encoding = encoding
 
+        
         allowed_strategies = ("eager", "skip")
         if self.strategy not in allowed_strategies:
             raise ValueError("Unknown operator type: %s, expected one of %s." % (
                 self.strategy, allowed_strategies))
+
+        allowed_encoders = ("ordinal", "onehot")
+        if self.encoding not in allowed_encoders:
+            raise ValueError("Unknown operator type: %s, expected one of %s." % (
+                self.encoding, allowed_encoders))
 
         if not isinstance(self.classifier, NaiveBayes) and cross_validation is None:
             raise Exception("Incompatible cross validator object and classifier")
@@ -59,7 +68,7 @@ class RankerLogicalFeatureConstructor(BaseEstimator, TransformerMixin):
         if isinstance(y, pd.DataFrame):
             y = y.to_numpy()
         if self.encode_data:
-            self.feature_encoder_ = CustomOrdinalFeatureEncoder()
+            self.feature_encoder_ = CustomOrdinalFeatureEncoder() if self.encoding == "ordinal" else OneHotEncoder(sparse=False,handle_unknown = "ignore")
             self.class_encoder_ = LabelEncoder()
             X = self.feature_encoder_.fit_transform(X)
             y = self.class_encoder_.fit_transform(y)
@@ -76,7 +85,7 @@ class RankerLogicalFeatureConstructor(BaseEstimator, TransformerMixin):
 
         for feature_constructor in self.all_feature_constructors:
             feature = feature_constructor.transform(X)
-            su = symmetrical_uncertainty(X=feature, y=y, f1=0)
+            su = symmetrical_uncertainty(X=feature, y=y, feature1_index=0)
             self.symmetrical_uncertainty_rank.append(su)
         self.rank = np.argsort(self.symmetrical_uncertainty_rank)[::-1]  # Descending order
         self.filter_features(X, y)

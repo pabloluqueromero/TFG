@@ -110,11 +110,11 @@ def info_gain(X,y,feature=0):
     return H_C - H_X_C
 
 
-def symmetrical_uncertainty(X,f1,f2=None,y=None): 
-    if y is None and f2 is None:
+def symmetrical_uncertainty(X,feature1_index,feature2_index=None,y=None): 
+    if y is None and feature2_index is None:
         raise Exception("Either y or f2 must be provided")
-    a = X[:,f1]
-    b = X[:,f2] if f2 else y
+    a = X[:,feature1_index]
+    b = X[:,feature2_index] if feature2_index else y
     gain = info_gain(a.reshape(-1,1),b)
     H_a = shannon_entropy(a)
     H_b = shannon_entropy(b)

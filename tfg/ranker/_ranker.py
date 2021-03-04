@@ -16,6 +16,13 @@ from tfg.utils import symmetrical_uncertainty
 from tqdm.autonotebook import tqdm
 
 
+import warnings
+
+
+#Ignore user warning for n_splits > least populated class count
+warnings.filterwarnings('ignore',category=UserWarning) 
+
+
 class RankerLogicalFeatureConstructor(BaseEstimator, TransformerMixin):
 
     def __init__(self,
@@ -71,8 +78,7 @@ class RankerLogicalFeatureConstructor(BaseEstimator, TransformerMixin):
             feature = feature_constructor.transform(X)
             su = symmetrical_uncertainty(X=feature, y=y, f1=0)
             self.symmetrical_uncertainty_rank.append(su)
-        self.rank = np.argsort(self.symmetrical_uncertainty_rank)[
-            ::-1]  # Descending order
+        self.rank = np.argsort(self.symmetrical_uncertainty_rank)[::-1]  # Descending order
         self.filter_features(X, y)
         return self
 

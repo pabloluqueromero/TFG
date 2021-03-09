@@ -31,8 +31,6 @@ class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
             raise ValueError("Unknown operator type: %s, expected one of %s." % (self.strategy, allowed_strategies))
 
     def fit(self,X,y):
-        if isinstance(X,pd.DataFrame):
-            X = X.to_numpy()
         if isinstance(y,pd.DataFrame):
             y = y.to_numpy()
         if self.encode_data:
@@ -41,6 +39,9 @@ class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
             X = self.feature_encoder_.fit_transform(X)
             y = self.class_encoder_.fit_transform(y)
 
+        if isinstance(X,pd.DataFrame):
+            X = X.to_numpy()
+            
         check_X_y(X,y)
         self.all_feature_constructors = construct_features(X,operators=self.operators)
         if self.verbose:

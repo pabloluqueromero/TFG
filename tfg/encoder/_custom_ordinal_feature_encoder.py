@@ -17,7 +17,7 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
                 self.discretizer = KBinsDiscretizer(n_bins=5,encode="ordinal",strategy="quantile")
                 X.loc[:,numerical_features.columns] = self.discretizer.fit_transform(numerical_features)
                 self.numerical_feature_index_ =  X.columns.get_indexer(numerical_features.columns)
-        
+            X = X.to_numpy()
         X = X.astype(str)
 
         self.n_features = X.shape[1]
@@ -37,7 +37,7 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
             numerical_features = X.select_dtypes("float")
             if len(numerical_features.columns):
                 X.loc[:,numerical_features.columns] = self.discretizer.transform(numerical_features)
-        
+            X = X.to_numpy()
         X = X.astype(str)
         
         X_copy = np.empty(shape=X.shape,dtype=int)
@@ -138,7 +138,7 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
                     self.numerical_feature_index_.extend(new_index)
                     self.discretizer.n_bins_ = np.concatenate([self.discretizer.n_bins_,temp_discretizer.n_bins_],axis=1)
                     self.discretizer.bin_edges_ = np.concatenate([self.discretizer.bin_edges_,temp_discretizer.bin_edges_],axis=1)
-        
+            X = X.to_numpy()
         X = X.astype(str)
         self.n_features += X.shape[1]
         new_categories = [np.unique(X[:,j]) for j in range(X.shape[1])]

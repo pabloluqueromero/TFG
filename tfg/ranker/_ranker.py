@@ -68,10 +68,12 @@ class RankerLogicalFeatureConstructor(BaseEstimator, TransformerMixin):
         if isinstance(y, pd.DataFrame):
             y = y.to_numpy()
         if self.encode_data:
-            self.feature_encoder_ = CustomOrdinalFeatureEncoder() if self.encoding == "ordinal" else OneHotEncoder(sparse=False,handle_unknown = "ignore")
+            self.feature_encoder_ = CustomOrdinalFeatureEncoder()
             self.class_encoder_ = LabelEncoder()
             X = self.feature_encoder_.fit_transform(X)
             y = self.class_encoder_.fit_transform(y)
+            # if self.encoding == "ordinal":
+            #     self.one_hot_encoder = OneHotEncoder(sparse=False,handle_unknown = "ignore")
 
         check_X_y(X, y)
         self.all_feature_constructors = construct_features(

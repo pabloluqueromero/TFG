@@ -3,12 +3,23 @@ import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.exceptions import NotFittedError
 from sklearn.utils.validation import check_is_fitted
+from sklearn.preprocessing import KBinsDiscretizer
+
+
+
 class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
     def fit(self,X, y=None):
+        X = X.copy()
+        self.numerical_feature_index_ =  []
         if isinstance(X,pd.DataFrame):
-            X = X.to_numpy()
-        if X.dtype=="O":
-            X = X.astype(str)
+            numerical_features = X.select_dtypes("float")
+            if len(numerical_features.columns):
+                self.discretizer = KBinsDiscretizer(n_bins=5,encode="ordinal",strategy="quantile")
+                X.loc[:,numerical_features.columns] = self.discretizer.fit_transform(numerical_features)
+                self.numerical_feature_index_ =  X.columns.get_indexer(numerical_features.columns)
+        
+        X = X.astype(str)
+
         self.n_features = X.shape[1]
         self.categories_ = [np.unique(X[:,j]) for j in range(self.n_features)]
         self.sort_index_ = [cat.argsort() for cat in self.categories_]
@@ -18,14 +29,16 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
         return self
     
     def transform(self,X,y=None):
-        if isinstance(X,pd.DataFrame):
-            X = X.to_numpy()
-        X = X.copy()
-        if X.dtype=="O":
-            X = X.astype(str)
         check_is_fitted(self)
         if self.n_features != X.shape[1]:
             raise Exception(f"Expected {self.n_features} features, got {X.shape[1]} instead")
+        X = X.copy()
+        if isinstance(X,pd.DataFrame):
+            numerical_features = X.select_dtypes("float")
+            if len(numerical_features.columns):
+                X.loc[:,numerical_features.columns] = self.discretizer.transform(numerical_features)
+        
+        X = X.astype(str)
         
         X_copy = np.empty(shape=X.shape,dtype=int)
         for j in range(X_copy.shape[1]):
@@ -35,18 +48,19 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
             X_copy[:,j]= np.where(mask , self.sorted_encoded_[j][idx],self.unknown_values_[j])
         return X_copy.astype(int)
 
-    def inverse_transform(self,X,y=None):
-        check_is_fitted(self)
-        X_copy = np.empty(X.shape,dtype=self.categories_[0].dtype)
-        check_is_fitted(self)
-        if self.n_features != X.shape[1]:
-            raise Exception(f"Expected {self.n_features} features, got {X.shape[1]} instead")
-        for j in range(X_copy.shape[1]):
-            inverse_idx = X[:,j]
-            mask = inverse_idx==self.sorted_categories_[j].shape[0]
-            inverse_idx[mask] = 0
-            X_copy[:,j] = np.where(mask,np.nan,self.sorted_categories_[j][inverse_idx])
-        return X_copy
+    '''Translation methods to be implemented and corrected'''
+    # def inverse_transform(self,X,y=None):
+    #     check_is_fitted(self)
+    #     X_copy = np.empty(X.shape,dtype=self.categories_[0].dtype)
+    #     check_is_fitted(self)
+    #     if self.n_features != X.shape[1]:
+    #         raise Exception(f"Expected {self.n_features} features, got {X.shape[1]} instead")
+    #     for j in range(X_copy.shape[1]):
+    #         inverse_idx = X[:,j]
+    #         mask = inverse_idx==self.sorted_categories_[j].shape[0]
+    #         inverse_idx[mask] = 0
+    #         X_copy[:,j] = np.where(mask,np.nan,self.sorted_categories_[j][inverse_idx])
+    #     return X_copy
     
     # def inverse_transform_columns(self,X,columns=None):
     #     check_is_fitted(self)
@@ -96,7 +110,36 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
             if transform:
                 return self.transform(X)
             return self
+        X = X.copy()
+        if isinstance(X,pd.DataFrame):
+            numerical_features = X.select_dtypes("float")
+            if len(numerical_features.columns):
+                temp_discretizer = KBinsDiscretizer(n_bins=5,encode="ordinal",strategy="quantile")
+                X.loc[:,numerical_features.columns] = temp_discretizer.fit_transform(numerical_features)
+                new_index = X.columns.get_indexer(numerical_features.columns)
+                if index:
+                    index_with_column = list(enumerate(index))
+                    numerical_index = np.array(index)[new_index]
+                    sort_index = np.argsort(numerical_index)
+                    numerical_index_with_column = [index_with_column[i] for i in numerical_index] 
+                    last = 0 
+                    for i in sort_index:
+                        feature,list_insert_index = numerical_index_with_column[i]
+                        while last <= len(self.numerical_feature_index_) and list_insert_index < self.numerical_feature_index_[last] :
+                            last+=1
+                        self.numerical_feature_index_.insert(last,list_insert_index)
+                        self.discretizer.n_bins_= np.insert( self.discretizer.n_bins_,last,temp_discretizer.n_bins_[i],axis=1)
+                        self.discretizer.bin_edges_= np.insert( self.discretizer.n_bins_,last,temp_discretizer.bin_edges_[i],axis=1)
+                        for n in range(last+1,len(self.numerical_feature_index_)):
+                            self.numerical_feature_index_[n]+=1
+                        
+                else:
+                    new_index = X.columns.get_indexer(numerical_features.columns)+self.n_features
+                    self.numerical_feature_index_.extend(new_index)
+                    self.discretizer.n_bins_ = np.concatenate([self.discretizer.n_bins_,temp_discretizer.n_bins_],axis=1)
+                    self.discretizer.bin_edges_ = np.concatenate([self.discretizer.bin_edges_,temp_discretizer.bin_edges_],axis=1)
         
+        X = X.astype(str)
         self.n_features += X.shape[1]
         new_categories = [np.unique(X[:,j]) for j in range(X.shape[1])]
         if index is not None:
@@ -124,4 +167,12 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
         self.sorted_categories_ = [self.categories_[j][self.sort_index_[j]] for j in range(self.n_features)]
         self.sorted_encoded_ = [np.arange(self.categories_[j].shape[0])[self.sort_index_[j]] for j in range(self.n_features)]
         self.unknown_values_ = [cat.shape[0] for cat in self.categories_]
+        
+        for i in range(self.numerical_feature_index_):
+            el = self.numerical_feature_index_[i]
+            if el==index:
+                del self.numerical_feature_index_[i]
+                self.discretizer.bin_edges_ = np.delete(self.discretizer.bin_edges,i,axis=1)
+                self.discretizer.n_bin_ = np.delete(self.discretizer.bin_edges,i,axis=1)
+                break;
 

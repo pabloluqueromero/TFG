@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+import warnings
+
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.exceptions import NotFittedError
 from sklearn.utils.validation import check_is_fitted
@@ -7,6 +9,7 @@ from sklearn.preprocessing import KBinsDiscretizer
 
 
 
+warnings.filterwarnings('ignore',category=UserWarning)
 class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
     def fit(self,X, y=None):
         X = X.copy()
@@ -16,6 +19,7 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
             if len(numerical_features.columns):
                 self.discretizer = KBinsDiscretizer(n_bins=5,encode="ordinal",strategy="quantile")
                 X.loc[:,numerical_features.columns] = self.discretizer.fit_transform(numerical_features)
+                X.loc[:,numerical_features.columns] = X.loc[:,numerical_features.columns].astype(int)
                 self.numerical_feature_index_ =  X.columns.get_indexer(numerical_features.columns)
             X = X.to_numpy()
         X = X.astype(str)
@@ -37,6 +41,7 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
             numerical_features = X.select_dtypes("float")
             if len(numerical_features.columns):
                 X.loc[:,numerical_features.columns] = self.discretizer.transform(numerical_features)
+                X.loc[:,numerical_features.columns] = X.loc[:,numerical_features.columns].astype(int)
             X = X.to_numpy()
         X = X.astype(str)
         
@@ -116,6 +121,7 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
             if len(numerical_features.columns):
                 temp_discretizer = KBinsDiscretizer(n_bins=5,encode="ordinal",strategy="quantile")
                 X.loc[:,numerical_features.columns] = temp_discretizer.fit_transform(numerical_features)
+                X.loc[:,numerical_features.columns] = X.loc[:,numerical_features.columns].astype(int)
                 new_index = X.columns.get_indexer(numerical_features.columns)
                 if index:
                     index_with_column = list(enumerate(index))

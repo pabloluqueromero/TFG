@@ -20,7 +20,7 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
                 self.discretizer = KBinsDiscretizer(n_bins=5,encode="ordinal",strategy="quantile")
                 X.loc[:,numerical_features.columns] = self.discretizer.fit_transform(numerical_features)
                 X.loc[:,numerical_features.columns] = X.loc[:,numerical_features.columns].astype(int)
-                self.numerical_feature_index_ =  X.columns.get_indexer(numerical_features.columns)
+                self.numerical_feature_index_ =  list(X.columns.get_indexer(numerical_features.columns))
             X = X.to_numpy()
         X = X.astype(str)
 
@@ -188,3 +188,18 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
             pass
 
 
+    def inverse_transform_element(self,feature_index,value):
+        check_is_fitted(self)
+        try:
+            value = self.sorted_categories_[feature_index][value]
+            try:
+                i = self.numerical_feature_index_.index(feature_index)
+                if int(value)==0:
+                    value = [np.NINF,self.discretizer.bin_edges_[i][0]]
+                else:
+                    value = self.discretizer.bin_edges_[i][int(value)-1:int(value)+1]
+            except:
+                pass
+            return value
+        except:
+            return np.nan

@@ -2,10 +2,13 @@
 import numpy as np
 import pandas as pd
 
+from collections import OrderedDict
+from json import dumps
 from sklearn.base import TransformerMixin, BaseEstimator
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import check_X_y, check_array
 from sklearn.utils.validation import check_is_fitted
+# from yaml import dump
 
 from tfg.encoder import CustomOrdinalFeatureEncoder
 from tfg.feature_construction import construct_features
@@ -146,3 +149,21 @@ class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
         for feature_constructor in self.final_feature_constructors:
             new_X.append(feature_constructor.transform(X))
         return np.concatenate(new_X,axis=1),y
+
+
+
+
+
+    def translate_features(self,categories=None,path=".",filename="selected_features"):
+        check_is_fitted(self)
+        if path[-1]=="/":
+            path = path[:-1]
+
+        translated_features = []
+        with open(f"{path}/{filename}.json", 'w') as f:
+            for feature in self.final_feature_constructors:
+                od = OrderedDict()
+                od["type"] = "DummyFeature" if isinstance(feature,DummyFeatureConstructor)  else "LogicalFeature" 
+                od["detail"] = feature.get_dict_translation(self.feature_encoder_,categories)
+                translated_features.append(od)
+            f.write(dumps(translated_features)) 

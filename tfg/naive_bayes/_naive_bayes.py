@@ -186,8 +186,6 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         -------
         self : object
         """
-        if isinstance(X,pd.DataFrame):
-            X = X.to_numpy()
         if isinstance(y,pd.DataFrame):
             y = y.to_numpy()
         if self.encode_data:
@@ -195,6 +193,8 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
             self.class_encoder_ = LabelEncoder()
             X = self.feature_encoder_.fit_transform(X)
             y = self.class_encoder_.fit_transform(y)
+        if isinstance(X,pd.DataFrame):
+            X = X.to_numpy()
         check_X_y(X,y)
         if X.dtype!=int:
             X = X.astype(int)

@@ -1,1 +1,0 @@
-[{"type": "LogicalFeature", "detail": {"operator": "OR", "operand_0": {"feature": "Glucose", "value": [125.0, 147.0]}, "operand_1": {"feature": "Age", "value": "52"}}}, {"type": "LogicalFeature", "detail": {"operator": "OR", "operand_0": {"feature": "Glucose", "value": [125.0, 147.0]}, "operand_1": {"feature": "Age", "value": "44"}}}]

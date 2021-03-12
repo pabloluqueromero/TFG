@@ -53,7 +53,7 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
             X_copy[:,j]= np.where(mask , self.sorted_encoded_[j][idx],self.unknown_values_[j])
         return X_copy.astype(int)
 
-    '''Translation methods to be implemented and corrected'''
+    '''Translation methods to be implemented and corrected not needed for the moment'''
     # def inverse_transform(self,X,y=None):
     #     check_is_fitted(self)
     #     X_copy = np.empty(X.shape,dtype=self.categories_[0].dtype)
@@ -86,7 +86,11 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
         check_is_fitted(self)
         return self.sorted_categories_
 
+
     def transform_columns(self,X,categories):
+        '''Method used to transform new columns wwhen dinamiccally adding features to the transformer.
+           It is assumed that variables that need to be discretized have been taken cared of in previous
+           steps'''
         if isinstance(X,pd.DataFrame):
             X = X.to_numpy()
         
@@ -174,11 +178,13 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
         self.sorted_encoded_ = [np.arange(self.categories_[j].shape[0])[self.sort_index_[j]] for j in range(self.n_features)]
         self.unknown_values_ = [cat.shape[0] for cat in self.categories_]
         
-        for i in range(self.numerical_feature_index_):
-            el = self.numerical_feature_index_[i]
-            if el==index:
-                del self.numerical_feature_index_[i]
-                self.discretizer.bin_edges_ = np.delete(self.discretizer.bin_edges,i,axis=1)
-                self.discretizer.n_bin_ = np.delete(self.discretizer.bin_edges,i,axis=1)
-                break;
+        #Remove if it is a continuos feature
+        try:
+            i = self.numerical_feature_index_.index(index)
+            del self.numerical_feature_index_[i]
+            self.discretizer.bin_edges_ = np.delete(self.discretizer.bin_edges,i,axis=1)
+            self.discretizer.n_bin_ = np.delete(self.discretizer.bin_edges,i,axis=1)
+        except ValueError:
+            pass
+
 

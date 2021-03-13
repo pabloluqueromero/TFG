@@ -3,7 +3,6 @@ import numpy as np
 
 from tfg.naive_bayes import NaiveBayes
 from tfg.feature_construction import DummyFeatureConstructor
-from tfg.feature_construction._feature import FeatureOperand
 from tfg.feature_construction._constructor import create_feature
 from tfg.utils import compute_sufs
 

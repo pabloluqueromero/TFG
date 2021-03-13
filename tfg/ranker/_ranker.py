@@ -54,7 +54,7 @@ class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
         
         for feature_constructor in self.all_feature_constructors:
             feature = feature_constructor.transform(X)
-            su = symmetrical_uncertainty(X=feature,y=y,f1=0)
+            su = symmetrical_uncertainty(f1=feature,f2=y)
             self.symmetrical_uncertainty_rank.append(su)
         self.rank = np.argsort(self.symmetrical_uncertainty_rank)[::-1] #Descending order
         self.filter_features(X,y)

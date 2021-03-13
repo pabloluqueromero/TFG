@@ -53,20 +53,21 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
             X_copy[:,j]= np.where(mask , self.sorted_encoded_[j][idx],self.unknown_values_[j])
         return X_copy.astype(int)
 
-    '''Translation methods to be implemented and corrected not needed for the moment'''
-    # def inverse_transform(self,X,y=None):
-    #     check_is_fitted(self)
-    #     X_copy = np.empty(X.shape,dtype=self.categories_[0].dtype)
-    #     check_is_fitted(self)
-    #     if self.n_features != X.shape[1]:
-    #         raise Exception(f"Expected {self.n_features} features, got {X.shape[1]} instead")
-    #     for j in range(X_copy.shape[1]):
-    #         inverse_idx = X[:,j]
-    #         mask = inverse_idx==self.sorted_categories_[j].shape[0]
-    #         inverse_idx[mask] = 0
-    #         X_copy[:,j] = np.where(mask,np.nan,self.sorted_categories_[j][inverse_idx])
-    #     return X_copy
+    def inverse_transform(self,X,y=None):
+        '''Inverse transform (numerical features cannot be restored)'''
+        check_is_fitted(self)
+        X_copy = np.empty(X.shape,dtype=self.categories_[0].dtype)
+        check_is_fitted(self)
+        if self.n_features != X.shape[1]:
+            raise Exception(f"Expected {self.n_features} features, got {X.shape[1]} instead")
+        for j in range(X_copy.shape[1]):
+            inverse_idx = X[:,j]
+            mask = inverse_idx==self.sorted_categories_[j].shape[0]
+            inverse_idx[mask] = 0
+            X_copy[:,j] = np.where(mask,np.nan,self.sorted_categories_[j][inverse_idx])
+        return X_copy
     
+    '''Translation method to be implemented and corrected not needed for the moment'''
     # def inverse_transform_columns(self,X,columns=None):
     #     check_is_fitted(self)
     #     if columns == None:

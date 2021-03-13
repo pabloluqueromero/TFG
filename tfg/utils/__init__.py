@@ -11,6 +11,9 @@ from ._utils import info_gain
 from ._utils import symmetrical_uncertainty
 from ._utils import shannon_entropy
 from ._utils import compute_sufs
+from ._utils import translate_features
+
+
 
 
 
@@ -28,4 +31,5 @@ __all__ = [
     "info_gain",
     "symmetrical_uncertainty",
     "compute_sufs"
+    "translate_features"
 ]

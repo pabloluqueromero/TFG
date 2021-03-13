@@ -199,7 +199,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         if X.dtype!=int:
             X = X.astype(int)
         if y.dtype!=int:
-            X = X.astype(int)
+            y = y.astype(int)
         self.n_samples_, self.n_features_ = X.shape
         self._compute_class_counts(X, y)  
         self._compute_feature_counts(X, y)        
@@ -251,12 +251,12 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
             sample
         """
         check_is_fitted(self)
-        if isinstance(X,pd.DataFrame):
-            X = X.to_numpy()
         if X.dtype!=int:
             X = X.astype(int)
         if self.encode_data:
             X = self.feature_encoder_.transform(X)
+        if isinstance(X,pd.DataFrame):
+            X = X.to_numpy()
         log_probabilities = _predict(X, self.smoothed_log_counts_,self.feature_values_count_,self.alpha)
         log_probabilities += self.indepent_term_
         log_prob_x = logsumexp(log_probabilities, axis=1)
@@ -266,11 +266,11 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         """Efficient LOO computation"""
         if fit:
             self.fit(X,y)
-        if isinstance(X,pd.DataFrame):
-            X = X.to_numpy()
         if self.encode_data:
             X = self.feature_encoder_.transform(X)
             y = self.class_encoder_.transform(y)
+        if isinstance(X,pd.DataFrame):
+            X = X.to_numpy()
         
         if X.dtype!=int:
             X = X.astype(int)
@@ -315,11 +315,13 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         self : object
         """
         check_is_fitted(self)
-        if isinstance(X,pd.DataFrame):
-            X = X.to_numpy()
+        if isinstance(y,pd.DataFrame):
+            y = y.to_numpy()
         if self.encode_data:
             y = self.class_encoder_.transform(y) #y should be the same than the one that was first fitted for now  ----> FUTURE IMPLEMENTATION
             X = self.feature_encoder_.add_features(X,transform=True,index=index)
+        if isinstance(X,pd.DataFrame):
+            X = X.to_numpy()
         check_X_y(X,y)
         if X.dtype!=int:
             X = X.astype(int)

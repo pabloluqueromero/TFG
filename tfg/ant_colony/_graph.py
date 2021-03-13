@@ -5,9 +5,11 @@ import networkx as nx
 import numpy as np
 import random
 
-from tfg.utils import symmetrical_uncertainty
-from tfg.encoder import CustomOrdinalFeatureEncoder
 from sklearn.preprocessing import LabelEncoder
+
+from tfg.encoder import CustomOrdinalFeatureEncoder
+from tfg.feature_construction import DummyFeatureConstructor
+from tfg.utils import symmetrical_uncertainty
 
 
 class AntFeatureGraph:
@@ -76,57 +78,31 @@ class AntFeatureGraph:
             initial.append((node,values, heuristic, pheromone))
         return initial
 
-    def update_pheromone_matrix(self, updated_edges):
-        pass
+    def update_pheromone_matrix_evaporation(self, evaporation_rate):
+        update_factor = (1-evaporation_rate)
+        self.pheromone_matrix_selection = {k:v*update_factor for k,v in self.pheromone_matrix_selection.items()}
+        self.pheromone_matrix_attribute_completion = {k:v*update_factor for k,v in self.pheromone_matrix_attribute_completion.items()}
+        self.initial_heuristic =  {k:v*update_factor for k,v in self.initial_heuristic.items()}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-######################################################################
-#
-#
-#                               TESTS    
-#               
-#
-######################################################################
-def get_X_y(base_path, name, data, test, label):
-    full_data_path = base_path+name+"/"+data
-    full_test_path = base_path+name+"/"+test
-    has_test = os.path.exists(base_path+name+"/"+test)
-    assert pd.read_csv(full_data_path)[label].name == label
-    if has_test:
-        train = pd.read_csv(full_data_path)
-        test = pd.read_csv(full_test_path)
-        df = train.append(test)
-
-    else:
-        df = pd.read_csv(full_data_path)
-    X = df.drop([label], axis=1)
-    y = df[label]
-    return X, y
-
-
-base_path, data = "../Dataset/UCIREPO/", ["iris", "Species"]
-
-X, y = get_X_y(base_path, data[0], data[0] +
-               ".data.csv", test="as", label=data[1])
-
-feature_encoder_ = CustomOrdinalFeatureEncoder()
-label_encoder_ = LabelEncoder()
-X = feature_encoder_.fit_transform(X)
-y = label_encoder_.fit_transform(y)
-afg = AntFeatureGraph(seed=2).compute_graph(X, y, ("OR", "AND"))
-# neighbours = afg.get_neighbours((1, 1), "CONSTRUCTION")
-# print(neighbours)
-random.seed(2222)
-Ant(ant_id=1, alpha=0.5, beta=0.3).run(X, y, afg,random)
+    def intensify(self,features,intensification_factor):
+        previous = None
+        for feature in features:
+            if isinstance(feature,DummyFeatureConstructor):
+                next_node = self.inverse_nodes[(feature.feature_index,None)]
+                if previous is None:
+                    self.initial_pheromone[next_node] += intensification_factor
+                else:
+                    self.pheromone_matrix_selection[frozenset([previous,next_node])] += intensification_factor
+            else:
+                operands = feature.operands
+                next_node = self.inverse_nodes[(operands[0].feature_index,operands[0].value)]
+                if previous is None:
+                    self.initial_pheromone[next_node] += intensification_factor
+                else:
+                    self.pheromone_matrix_selection[frozenset([previous,next_node])] += intensification_factor
+            
+                previous = next_node
+                next_node = self.inverse_nodes[(operands[1].feature_index,operands[1].value)]
+                edge = frozenset([previous,next_node,feature.operator])
+                self.pheromone_matrix_attribute_completion[edge] += intensification_factor
+                previous = next_node

@@ -1,7 +1,9 @@
 import pandas as pd
 import numpy as np
-from collections import deque
+from collections import OrderedDict, deque
 from scipy.stats import entropy
+from tfg.feature_construction import DummyFeatureConstructor
+from json import dumps
 
 
 def concat_columns(d):
@@ -93,7 +95,6 @@ def combinations_without_repeat(a):
     out.shape = (-1,2)
     return out  
 
-
 def shannon_entropy(column):
     count = np.bincount(column)
     return entropy(count, base=2)
@@ -136,3 +137,19 @@ def compute_sufs(current_su,current_features,new_feature,y,beta=0.5,minimum=None
 
     su = current_su+class_su-penalisation 
     return su if minimum is None else max(su,minimum)
+
+
+
+
+def translate_features(features,feature_encoder,categories=None,path=".",filename="selected_features"):
+    if path[-1]=="/":
+        path = path[:-1]
+
+    translated_features = []
+    with open(f"{path}/{filename}.json", 'w') as f:
+        for feature in features:
+            od = OrderedDict()
+            od["type"] = "DummyFeature" if isinstance(feature,DummyFeatureConstructor)  else "LogicalFeature" 
+            od["detail"] = feature.get_dict_translation(feature_encoder,categories)
+            translated_features.append(od)
+        f.write(dumps(translated_features)) 

@@ -7,7 +7,6 @@ from tfg.feature_construction._feature import FeatureOperand
 from tfg.feature_construction._constructor import create_feature
 from tfg.utils import compute_sufs
 
-
 class Ant:
     def __init__(self, ant_id, alpha, beta):
         self.alpha = alpha
@@ -53,12 +52,12 @@ class Ant:
                 else:
                     classifier.fit(feature_constructor.transform(X), y)
                     is_fitted = True
-                    
-                score = classifier.leave_one_out_cross_val(X, y)
+                features = np.concatenate([f.transform(X) for f in self.current_features]+[feature_constructor.transform(X)],axis=1)
+                score = classifier.leave_one_out_cross_val(features, y,fit=False)
                 if score <= current_score:
                     break
                 current_su = su
-                selected_node.add(node_id)
+                selected_nodes.add(node_id)
                 self.current_features.append(feature_constructor)
                 current_score = score
             else:
@@ -87,8 +86,8 @@ class Ant:
                 else:
                     classifier.fit(feature_constructor.transform(X), y)
                     is_fitted = True
-                    
-                score = classifier.leave_one_out_cross_val(X, y)
+                features = np.concatenate([f.transform(X) for f in self.current_features]+[feature_constructor.transform(X)],axis=1)   
+                score = classifier.leave_one_out_cross_val(features, y)
                 if score <= current_score:
                     break
                 current_su = su
@@ -113,7 +112,11 @@ class Ant:
             
             probabilities = np.array([(np.power(neighbours[i][2],self.alpha))*np.power(su[i],self.beta)
                                     for i in range(len(neighbours))])
-            probabilities /= probabilities.sum()
+            try:
+                probabilities /= probabilities.sum()
+            except:
+                print("aqui")
+                pass
             index = self.choose_next(probabilities, random_generator)
             
             su = su[index]
@@ -122,5 +125,5 @@ class Ant:
         return self.final_score
 
     def run(self, X, y, graph, random_generator):
-        print(f"Ant [{self.ant_id}] running in thread [{threading.get_ident()}]")
+        # print(f"Ant [{self.ant_id}] running in thread [{threading.get_ident()}]")
         return self.explore(X, y, graph,random_generator)

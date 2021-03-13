@@ -2,8 +2,6 @@
 import numpy as np
 import pandas as pd
 
-from collections import OrderedDict
-from json import dumps
 from sklearn.base import TransformerMixin, BaseEstimator
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import check_X_y, check_array
@@ -54,7 +52,7 @@ class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
         
         for feature_constructor in self.all_feature_constructors:
             feature = feature_constructor.transform(X)
-            su = symmetrical_uncertainty(f1=feature,f2=y)
+            su = symmetrical_uncertainty(f1=feature.flatten(),f2=y)
             self.symmetrical_uncertainty_rank.append(su)
         self.rank = np.argsort(self.symmetrical_uncertainty_rank)[::-1] #Descending order
         self.filter_features(X,y)
@@ -149,21 +147,3 @@ class RankerLogicalFeatureConstructor(BaseEstimator,TransformerMixin):
         for feature_constructor in self.final_feature_constructors:
             new_X.append(feature_constructor.transform(X))
         return np.concatenate(new_X,axis=1),y
-
-
-
-
-
-    def translate_features(self,categories=None,path=".",filename="selected_features"):
-        check_is_fitted(self)
-        if path[-1]=="/":
-            path = path[:-1]
-
-        translated_features = []
-        with open(f"{path}/{filename}.json", 'w') as f:
-            for feature in self.final_feature_constructors:
-                od = OrderedDict()
-                od["type"] = "DummyFeature" if isinstance(feature,DummyFeatureConstructor)  else "LogicalFeature" 
-                od["detail"] = feature.get_dict_translation(self.feature_encoder_,categories)
-                translated_features.append(od)
-            f.write(dumps(translated_features)) 

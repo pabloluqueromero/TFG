@@ -40,7 +40,8 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
         if isinstance(X,pd.DataFrame):
             numerical_features = X.select_dtypes("float")
             if len(numerical_features.columns):
-                X.loc[:,numerical_features.columns] = self.discretizer.transform(numerical_features)
+                discretized_features = self.discretizer.transform(numerical_features)
+                X.loc[:,numerical_features.columns] = discretized_features
                 X.loc[:,numerical_features.columns] = X.loc[:,numerical_features.columns].astype(int)
             X = X.to_numpy()
         X = X.astype(str)

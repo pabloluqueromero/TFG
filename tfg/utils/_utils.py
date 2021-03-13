@@ -124,3 +124,15 @@ def symmetrical_uncertainty(f1,f2,X=None):
     if (H_a+H_b)==0:
         return 0
     return 2*(gain)/(H_a+H_b)
+
+
+
+def compute_sufs(current_su,current_features,new_feature,y,beta=0.5,minimum=None):
+    class_su = symmetrical_uncertainty(f1=new_feature,f2=y)
+    penalisation = beta*sum( 
+                    max(symmetrical_uncertainty(current_features[j],new_feature),
+                        symmetrical_uncertainty(new_feature,current_features[j]))
+                    for j in range(len(current_features)))
+
+    su = current_su+class_su-penalisation 
+    return su if minimum is None else max(su,minimum)

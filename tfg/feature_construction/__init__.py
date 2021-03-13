@@ -3,6 +3,7 @@ from ._feature import FeatureOperator
 from ._feature import FeatureOperand
 from ._feature import DummyFeatureConstructor
 from ._constructor import construct_features
+from ._constructor import create_feature
 
 __all__ =[
     "Feature",
@@ -10,4 +11,5 @@ __all__ =[
     "FeatureOperand",
     "DummyFeatureConstructor",
     "construct_features"
+    "create_feature"
 ]

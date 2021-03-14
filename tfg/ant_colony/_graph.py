@@ -43,13 +43,14 @@ class AntFeatureGraph:
         self.allowed_steps = ("CONSTRUCTION", "SELECTION")
         return self
 
-    def get_neighbours(self, node,nodes_to_filter, step):
+    def get_neighbours(self, node, nodes_to_filter, step):
         if step not in self.allowed_steps:
             raise ValueError("Unknown step type: %s, expected one of %s." % (
                 step, self.allowed_steps))
         node_id = self.inverse_nodes[node]
         feature, value = node
         neighbours = []
+        pheromones = []
         if step == "CONSTRUCTION":
             # Optimisable could save index
             for neighbour, values in filter(lambda x: x[1][0] != feature and x[1][1] != None, self.nodes.items()):
@@ -60,23 +61,27 @@ class AntFeatureGraph:
                     if edge not in self.pheromone_matrix_attribute_completion:
                         self.pheromone_matrix_attribute_completion[edge] = random.random()
                     neighbours.append(
-                        (neighbour,values, operator, self.pheromone_matrix_attribute_completion[edge]))# (id,(feature_index,value),"OPERATOR",pheromone)
+                        (neighbour,values, operator))# (id,(feature_index,value),"OPERATOR")
+                    pheromones.append(self.pheromone_matrix_attribute_completion[edge])
         else:
             for neighbour, values in filter(lambda x: x[0] not in nodes_to_filter and x[0] != node_id, self.nodes.items()):
                 edge = frozenset([neighbour, node_id])
                 if edge not in self.pheromone_matrix_selection:
                     self.pheromone_matrix_selection[edge] = random.random()
                 # (id,(feature_index,value),pheromone)
-                neighbours.append((neighbour,values, self.pheromone_matrix_selection[edge]))
-        return neighbours
+                neighbours.append((neighbour,values))
+                pheromones.append(self.pheromone_matrix_selection[edge])
+        return neighbours,np.array(pheromones)
 
     def get_initial_nodes(self):
         initial = []
+        heuristic = []
+        pheromone = []
         for node, values in self.nodes.items():
-            heuristic = self.initial_heuristic[node]
-            pheromone = self.initial_pheromone[node]
-            initial.append((node,values, heuristic, pheromone))
-        return initial
+            heuristic.append(self.initial_heuristic[node])
+            pheromone.append(self.initial_pheromone[node])
+            initial.append((node,values))
+        return initial,np.array(pheromone),np.array(heuristic)
 
     def update_pheromone_matrix_evaporation(self, evaporation_rate):
         update_factor = (1-evaporation_rate)
@@ -105,4 +110,5 @@ class AntFeatureGraph:
                 next_node = self.inverse_nodes[(operands[1].feature_index,operands[1].value)]
                 edge = frozenset([previous,next_node,feature.operator])
                 self.pheromone_matrix_attribute_completion[edge] += intensification_factor
-                previous = next_node
+            previous = next_node
+        return

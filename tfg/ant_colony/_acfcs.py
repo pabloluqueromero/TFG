@@ -46,7 +46,7 @@ class ACFCS(ClassifierMixin,BaseEstimator):
         y = self.label_encoder_.fit_transform(y)
 
         self.afg = AntFeatureGraph(seed=self.seed).compute_graph(X, y, ("XOR","OR", "AND"))
-
+        print(f"Number of nodes: {len(self.afg.nodes)}")
         random.seed(self.seed)
         best_score = 0
         best_features = []
@@ -54,42 +54,40 @@ class ACFCS(ClassifierMixin,BaseEstimator):
         iterator = tqdm(range(self.iterations))
         iteration_n=0
         beta = self.beta
+        distance_from_best = -1
         for iteration in iterator:
             iteration_n+=1
-            iterator.set_postfix({"best_score":best_score,"n_features":len(best_features)})
+            iterator.set_postfix({"best_score":best_score,
+                                  "n_features":len(best_features),
+                                  "p_matrix_c": len(self.afg.pheromone_matrix_attribute_completion),
+                                  "p_matrix_s": len(self.afg.pheromone_matrix_selection),
+                                  "distance_from_best": distance_from_best
+                                  })
             ants = [Ant(ant_id=i,alpha=self.alpha,beta=beta) for i in range(self.ants)]
             beta*=self.beta_evaporation_rate
             results = []
-            if self.parallel:
-                with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-                    futures = []
-                    for ant in ants:
-                        futures.append(
-                            executor.submit(
-                                ant.run, X=X,y=y,graph=self.afg,random_generator=random))
-                    for future,ant in zip(concurrent.futures.as_completed(futures),ants):
-                        results.append(future.result())
-            else:
-                for ant in ants:
-                    results.append(ant.run(X=X,y=y,graph=self.afg,random_generator=random))
+            for ant in ants:
+                    results.append(ant.run(X=X,y=y,graph=self.afg,random_generator=random,parallel=self.parallel))
+            results = np.array(results)
             best_ant = np.argmax(results)
+            distance_from_best = np.mean(np.abs(results-best_score))
+            self.afg.update_pheromone_matrix_evaporation(self.evaporation_rate)
             if results[best_ant] > best_score:
+                ant = ants[best_ant]
                 iterations_without_improvement = 0
                 best_score = results[best_ant]
                 best_features = ant.current_features
+                self.afg.intensify(best_features,self.intensification_factor)
             else:
                 iterations_without_improvement+=1
                 if iterations_without_improvement > self.early_stopping:
                     break
             
-            self.afg.update_pheromone_matrix_evaporation(self.evaporation_rate)
-            self.afg.intensify(best_features,self.intensification_factor)
             
         translate_features(features=best_features,
                             feature_encoder = self.feature_encoder_,
                             categories=self.categories_,
                             path="./features_translated")
-        print(best_score)
         return self
 
 
@@ -123,7 +121,9 @@ class ACFCS(ClassifierMixin,BaseEstimator):
 #     return X, y
 
 
-# base_path, data = "../Dataset/UCIREPO/", ["mushroom", "class"]
+# # base_path, data = "../Dataset/UCIREPO/", ["anneal", "label"]
+# base_path, data = "../Dataset/UCIREPO/", ["wisconsin", "diagnosis"]
+# # base_path, data = "../Dataset/UCIREPO/", ["iris", "Species"]
 
 # X, y = get_X_y(base_path, data[0], data[0] +
 #                ".data.csv", test="as", label=data[1])
@@ -154,15 +154,15 @@ class ACFCS(ClassifierMixin,BaseEstimator):
 # #     iterations=100, 
 # #     early_stopping=20,
 # #     seed = 3).fit(X, y)
-# ACFCS(ants=10, 
+# ACFCS(ants=20, 
 #     evaporation_rate=0.1,
-#     intensification_factor=1,
-#     alpha=1.5, 
-#     beta=1.1, 
+#     intensification_factor=3,
+#     alpha=1, 
+#     beta=0.9, 
 #     beta_evaporation_rate=0.1,
 #     iterations=100, 
-#     early_stopping=5,
+#     early_stopping=20,
 #     seed = 3,
 #     parallel=False).fit(X, y)
 # print(time()-st)
-# afg.update_pheromone_matrix_evaporation(0.05)
+# # afg.update_pheromone_matrix_evaporation(0.05)

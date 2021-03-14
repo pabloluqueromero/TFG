@@ -10,6 +10,12 @@ from ._utils import combinations_without_repeat
 from ._utils import info_gain
 from ._utils import symmetrical_uncertainty
 from ._utils import shannon_entropy
+from ._utils import compute_sufs
+from ._utils import translate_features
+from ._utils import mutual_information_class_conditioned
+
+
+
 
 
 __all__ = [
@@ -24,5 +30,8 @@ __all__ = [
     "combinations_without_repeat",
     "shannon_entropy",
     "info_gain",
-    "symmetrical_uncertainty"
+    "symmetrical_uncertainty",
+    "compute_sufs",
+    "translate_features",
+    "mutual_information_class_conditioned"
 ]

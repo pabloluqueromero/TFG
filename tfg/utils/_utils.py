@@ -1,8 +1,12 @@
 import pandas as pd
 import numpy as np
-from collections import deque
-from scipy.stats import entropy
 
+from collections import OrderedDict, deque
+from scipy.stats import entropy
+from sklearn.metrics import normalized_mutual_info_score
+from json import dumps
+
+from tfg.feature_construction import DummyFeatureConstructor
 
 def concat_columns(d):
     return "-".join(d)
@@ -93,7 +97,6 @@ def combinations_without_repeat(a):
     out.shape = (-1,2)
     return out  
 
-
 def shannon_entropy(column):
     count = np.bincount(column)
     return entropy(count, base=2)
@@ -110,14 +113,57 @@ def info_gain(X,y,feature=0):
     return H_C - H_X_C
 
 
-def symmetrical_uncertainty(X,f1,f2=None,y=None): 
-    if y is None and f2 is None:
-        raise Exception("Either y or f2 must be provided")
-    a = X[:,f1]
-    b = X[:,f2] if f2 else y
+def symmetrical_uncertainty(f1,f2,X=None):
+    '''SU 
+       f1: feature 1 (int or array-like),
+       f2: feature 2, (int or array-like)''' 
+    if (isinstance(f1,int) or isinstance(f2,int)) and X is None:
+        raise Exception("X must be provided for feature indexation")
+    a = X[:,f1] if isinstance(f1,int) else f1
+    b = X[:,f2] if isinstance(f2,int) else f2
     gain = info_gain(a.reshape(-1,1),b)
     H_a = shannon_entropy(a)
     H_b = shannon_entropy(b)
     if (H_a+H_b)==0:
         return 0
     return 2*(gain)/(H_a+H_b)
+
+
+
+def compute_sufs(current_su,current_features,new_feature,y,beta=0.5,minimum=None):
+    class_su = symmetrical_uncertainty(f1=new_feature,f2=y)
+    penalisation = beta*sum( 
+                    max(symmetrical_uncertainty(current_features[j],new_feature),
+                        symmetrical_uncertainty(new_feature,current_features[j]))
+                    for j in range(len(current_features)))
+
+    su = current_su+class_su-penalisation 
+    return su if minimum is None else max(su,minimum)
+
+
+
+
+def translate_features(features,feature_encoder,categories=None,path=".",filename="selected_features"):
+    if path[-1]=="/":
+        path = path[:-1]
+
+    translated_features = []
+    with open(f"{path}/{filename}.json", 'w') as f:
+        for feature in features:
+            od = OrderedDict()
+            od["type"] = "DummyFeature" if isinstance(feature,DummyFeatureConstructor)  else "LogicalFeature" 
+            od["detail"] = feature.get_dict_translation(feature_encoder,categories)
+            translated_features.append(od)
+        f.write(dumps(translated_features)) 
+
+
+def mutual_information_class_conditioned(f1,f2,y):
+    values, counts = np.unique(y,return_counts=True)
+    counts = counts/counts.sum()
+    score = []
+    for i in range(values.shape[0]):
+        value = values[i]
+        mask = y == value
+        score.append(normalized_mutual_info_score(f1[mask],f2[mask]))
+    score = np.array(score)
+    return (score * counts).sum()

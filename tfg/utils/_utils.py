@@ -1,10 +1,12 @@
 import pandas as pd
 import numpy as np
+
 from collections import OrderedDict, deque
 from scipy.stats import entropy
-from tfg.feature_construction import DummyFeatureConstructor
+from sklearn.metrics import normalized_mutual_info_score
 from json import dumps
 
+from tfg.feature_construction import DummyFeatureConstructor
 
 def concat_columns(d):
     return "-".join(d)
@@ -153,3 +155,15 @@ def translate_features(features,feature_encoder,categories=None,path=".",filenam
             od["detail"] = feature.get_dict_translation(feature_encoder,categories)
             translated_features.append(od)
         f.write(dumps(translated_features)) 
+
+
+def mutual_information_class_conditioned(f1,f2,y):
+    values, counts = np.unique(y,return_counts=True)
+    counts = counts/counts.sum()
+    score = []
+    for i in range(values.shape[0]):
+        value = values[i]
+        mask = y == value
+        score.append(normalized_mutual_info_score(f1[mask],f2[mask]))
+    score = np.array(score)
+    return (score * counts).sum()

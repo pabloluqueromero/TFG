@@ -198,8 +198,8 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
                 i = self.numerical_feature_index_.index(feature_index)
                 if int(value)==0:
                     value = [np.NINF,self.discretizer.bin_edges_[i][1]]
-                elif int(value)==self.discretizer.bin_edges_[i]-2:
-                    value = self.discretizer.bin_edges_[i][int(value):np.INF]
+                elif int(value)==len(self.discretizer.bin_edges_[i])-2:
+                    value = [self.discretizer.bin_edges_[i][int(value)],np.Inf]
                 else:
                     value = self.discretizer.bin_edges_[i][int(value):int(value)+2]
             except:

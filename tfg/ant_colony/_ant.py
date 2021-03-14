@@ -22,7 +22,13 @@ class Ant:
         return index-1
 
     def compute_probability(self,pheromones,heuristics):
-        probabilities= np.power(pheromones,self.alpha)*np.power(heuristics,self.beta)
+        heuristics = np.power(heuristics,self.beta)
+        if heuristics.sum() == 0:
+            heuristics+=1
+        pheromones = np.power(pheromones,self.alpha)
+        if pheromones.sum() == 0:
+            pheromones+=1
+        probabilities= pheromones*heuristics
         return probabilities/probabilities.sum()
 
     def compute_neighbour_sufs(self,neighbour,selected_node,current_su,X,y):
@@ -60,9 +66,11 @@ class Ant:
                 # Need to construct next feature and compute heuristic value for the feature
                 neighbours,pheromones = graph.get_neighbours(selected_node, constructed_nodes, step="CONSTRUCTION")
                 # Compute heuristic
-                su = []
+                
+                if len(neighbours)==0:
+                    break
                 if parallel:
-                    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
                         futures = []
                         for neighbour in neighbours:
                             futures.append(
@@ -71,12 +79,11 @@ class Ant:
                                                                 selected_node = selected_node,
                                                                 current_su = current_su,
                                                                 X=X,y=y))
-                        for future in concurrent.futures.as_completed(futures):
-                            su.append(future.result())
+                        concurrent.futures.wait(futures, timeout=None, return_when='ALL_COMPLETED')
+                        su = [future.result() for future in futures]
                 else:
-                    for neighbour in neighbours:
-                        su.append(self.compute_neighbour_sufs(neighbour,selected_node,current_su,X,y))
-                        
+                    su = [self.compute_neighbour_sufs(neighbour,selected_node,current_su,X,y) for neighbour in neighbours]
+                
                 probabilities = self.compute_probability(pheromones,np.array(su))
                 index = self.choose_next(probabilities, random_generator)
                 
@@ -105,8 +112,11 @@ class Ant:
             #Select next
             neighbours,pheromones = graph.get_neighbours(
                 selected_node, selected_nodes, step="SELECTION")
+
             # Compute heuristic
             su = []
+            # if len(neighbours)==0:
+            #     break
             for neighbour in neighbours:
                 if neighbour[1][1] is None:
                     #Original variable

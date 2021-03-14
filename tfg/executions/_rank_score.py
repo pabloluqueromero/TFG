@@ -1,0 +1,183 @@
+import os
+import numpy as np
+import pandas as pd
+
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+from tqdm.autonotebook import tqdm
+
+from tfg.encoder import CustomOrdinalFeatureEncoder
+from tfg.feature_construction import DummyFeatureConstructor
+from tfg.naive_bayes import NaiveBayes
+from tfg.ranker import RankerLogicalFeatureConstructor
+
+
+def get_X_y(base_path, name, data, test, label):
+    full_data_path = base_path+name+"/"+data
+    full_test_path = base_path+name+"/"+test
+    has_test = os.path.exists(base_path+name+"/"+test)
+    assert pd.read_csv(full_data_path)[label].name == label
+    if has_test:
+        train = pd.read_csv(full_data_path)
+        test = pd.read_csv(full_test_path)
+        df = train.append(test)
+
+    else:
+        df = pd.read_csv(full_data_path)
+    X = df.drop([label], axis=1)
+    y = df[label]
+    return X, y
+
+
+def ranker_score_comparison(databases, seed, test_size, base_path, params, n_iterations=30):
+    result = []
+    database_tqdm = tqdm(databases)
+
+    # Instantiate ranker
+    r = RankerLogicalFeatureConstructor()
+    nb = NaiveBayes(encode_data=True)
+    for database in database_tqdm:
+        name, label = database
+        if os.path.exists(base_path+name):
+            test = f"{name}.test.csv"
+            data = f"{name}.data.csv"
+            X, y = get_X_y(base_path, name, data, test, label)
+
+            database_tqdm.set_postfix({"DATABASE": name})
+
+            seed_tqdm = tqdm(range(n_iterations), leave=False)
+
+            # Set up data structures to store results
+            nb_score = np.zeros(shape=(len(params), n_iterations))
+            r_score = np.zeros(shape=(len(params), n_iterations))
+            r_combinations = np.zeros(shape=(len(params), n_iterations))
+            r_selected = np.zeros(shape=(len(params), n_iterations))
+            r_dummy = np.zeros(shape=(len(params), n_iterations))
+            r_total_constructed = np.zeros(shape=(len(params), n_iterations))
+            r_total_selected = np.zeros(shape=(len(params), n_iterations))
+            r_original_selected = np.zeros(shape=(len(params), n_iterations))
+
+            for i in seed_tqdm:
+                X_train, X_test, y_train, y_test = train_test_split(
+                    X, y,
+                    test_size=test_size,
+                    random_state=seed+i,
+                    stratify=y)
+                c = CustomOrdinalFeatureEncoder()
+                X_train = c.fit_transform(X_train)
+                X_test = c.transform(X_test)
+                l = LabelEncoder()
+                y_train = l.fit_transform(y_train)
+                y_test = l.transform(y_test)
+                nb.fit(X=X_train, y=y_train)
+                naive_bayes_score = nb.score(X_test, y_test)
+
+                conf_index = 0
+                for conf in params:
+                    seed_tqdm.set_postfix({"seed": i, "config": conf_index})
+                    r.set_params(**conf)
+                    # Fit
+                    if conf_index == 0:
+                        r.fit(X_train, y_train)
+                    else:
+                        r.filter_features(r.feature_encoder_.transform(
+                            X_train), r.class_encoder_.transform(y_train))
+
+                    # score
+                    ranker_score = r.score(X_test, y_test)
+
+                    # Get data
+                    n_original_features = len(list(filter(lambda x: isinstance(
+                        x, DummyFeatureConstructor), r.final_feature_constructors)))
+                    n_combinations = len(r.all_feature_constructors)
+                    n_selected = len(r.final_feature_constructors)
+
+                    # Update
+                    nb_score[conf_index, i] = naive_bayes_score
+                    r_score[conf_index, i] = ranker_score
+                    r_combinations[conf_index, i] = n_combinations
+                    r_selected[conf_index, i] = n_selected
+                    r_dummy[conf_index, i] = n_original_features
+
+                    conf_index += 1
+
+            # Insert to final result averaged metrics for this database
+            for conf_index, conf in enumerate(params):
+                row = [name,
+                       X.shape[1],
+                       np.mean(nb_score[conf_index]),
+                       np.mean(r_score[conf_index]),
+                       conf,
+                       np.mean(r_combinations[conf_index]),
+                       np.mean(r_selected[conf_index]),
+                       np.mean(r_dummy[conf_index])]
+                result.append(row)
+
+        else:
+            print(f"{name} doesnt' exist")
+    columns = ["Database", "Number of attributes", "NBScore", "Ranker Score",
+               "Configuration", "Combinations", "Selected_attributes", "Original"]
+    result = pd.DataFrame(result, columns=columns)
+    return result
+
+
+# databases = [
+#     # ["abalone", "Rings"],
+#     ["adult", "income"],
+#     ["anneal", "label"],
+#     ["audiology", "label"],
+#     ["balance-scale", "label"],
+#     ["krkopt", "Optimal depth-of-win for White"],
+#     ["iris", "Species"],
+#     ["horse-colic", "surgery"],
+#     ["glass", "Type"],
+#     ["krkp", "label"],
+#     ["mushroom", "class"],
+#     ["voting", "Class Name"],
+#     ["credit", "A16"],
+#     ["pima", "Outcome"],
+#     ["wine", "class"],
+#     ["wisconsin", "diagnosis"]
+# ]
+
+
+# # databases = [ [database[0]+"/"+database[0],database[1]]for database in databases]
+# # base_path = "../input/dataset/"
+# base_path = "../Dataset/UCIREPO/"
+
+# params = [
+#     {"strategy": "eager", "block_size": 1, "max_iterations": float(
+#         "inf"), "max_features": float("inf"), "verbose": 0},
+#     {"strategy": "eager", "block_size": 2, "max_iterations": float(
+#         "inf"), "max_features": float("inf"), "verbose": 0},
+#     {"strategy": "eager", "block_size": 5, "max_iterations": float(
+#         "inf"), "max_features": float("inf"), "verbose": 0},
+#     {"strategy": "eager", "block_size": 10, "max_iterations": float(
+#         "inf"), "max_features": float("inf"), "verbose": 0},
+#     {"strategy": "skip", "block_size": 1, "max_iterations": 10,
+#         "max_features": float("inf"), "verbose": 0},
+#     {"strategy": "skip", "block_size": 2, "max_iterations": 10,
+#         "max_features": float("inf"), "verbose": 0},
+#     {"strategy": "skip", "block_size": 5, "max_iterations": 10,
+#         "max_features": float("inf"), "verbose": 0},
+#     {"strategy": "skip", "block_size": 10, "max_iterations": 10,
+#         "max_features": float("inf"), "verbose": 0},
+#     {"strategy": "skip", "block_size": 1, "max_iterations": 20,
+#         "max_features": 20, "verbose": 0},
+#     {"strategy": "skip", "block_size": 2, "max_iterations": 20,
+#         "max_features": 20, "verbose": 0},
+#     {"strategy": "skip", "block_size": 5, "max_iterations": 20,
+#         "max_features": 20, "verbose": 0},
+#     {"strategy": "skip", "block_size": 10,
+#         "max_iterations": 100, "max_features": 50, "verbose": 0},
+# ]
+# seed = 4
+# test_size = 0.3
+# df = ranker_score_comparison(databases=databases,
+#                       base_path=base_path,
+#                       test_size=test_size,
+#                       params=params,
+#                       seed=seed,
+#                       )
+# df.to_csv("result.csv", index=False)
+

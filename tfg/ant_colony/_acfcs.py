@@ -32,7 +32,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
                 path=None,
                 filename=None,
                 verbose=0,
-                graph_strategy = "full"):
+                graph_strategy = "mutual_info"):
         self.ants = ants
         self.evaporation_rate = evaporation_rate
         self.intensification_factor = intensification_factor
@@ -50,7 +50,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.graph_strategy = graph_strategy
 
         allowed_graph_strategy = ("full","mutual_info")
-        if self.allowed_graph_strategy not in allowed_graph_strategy:
+        if self.graph_strategy not in allowed_graph_strategy:
             raise ValueError("Unknown graph strategy type: %s, expected one of %s." % (self.graph_strategy, allowed_graph_strategy))
 
     def fit(self,X,y):

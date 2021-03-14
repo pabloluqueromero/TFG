@@ -103,6 +103,7 @@ def shannon_entropy(column):
 
 
 def info_gain(X,y,feature=0):
+    '''Info gain: H(Y) - H(X|Y)'''
     H_C = shannon_entropy(y)
     H_X_C = 0
     feature_values = np.unique(X[:,feature])
@@ -115,6 +116,7 @@ def info_gain(X,y,feature=0):
 
 def symmetrical_uncertainty(f1,f2,X=None):
     '''SU 
+       Formula: 2*I(X,Y)/(H(X)+H(Y)
        f1: feature 1 (int or array-like),
        f2: feature 2, (int or array-like)''' 
     if (isinstance(f1,int) or isinstance(f2,int)) and X is None:
@@ -131,6 +133,11 @@ def symmetrical_uncertainty(f1,f2,X=None):
 
 
 def compute_sufs(current_su,current_features,new_feature,y,beta=0.5,minimum=None):
+    '''
+    MIFS adapted to work with SU.
+    Example:
+        SU({X1,X2,X3}|Y) = sum(SU(Xi|Y)) - beta * (SU(X1,X2),SU(X2,X3))
+    '''
     class_su = symmetrical_uncertainty(f1=new_feature,f2=y)
     penalisation = beta*sum( 
                     max(symmetrical_uncertainty(current_features[j],new_feature),

@@ -11,7 +11,43 @@ from sklearn.preprocessing import KBinsDiscretizer
 
 warnings.filterwarnings('ignore',category=UserWarning)
 class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
+    """Ordinal encoder.
+
+    Ordinal encoder using numpy's searchsorted method to encode data to an integer ordinal representation.
+    Automatic handling of unseen values (transformed to n, where n is the number of unique values for a feature)
+
+    Discretizes in 5 intervales using quantile strategy, numerical features are detected only 
+    when the provided features are wrapped in a pandas DataFrame and have dtype float.
+
+    Attributes
+    ----------
+    n_features : int
+        Number of features
+    
+    categories_ : array-like
+        For each feature it contains the unique values
+    
+    sort_index_: array-like
+        Same shape as categories, contains the index for sorting the values of each feature
+    
+    sorted_categories_ : array-like
+        Sorted values for each category in categories[i]
+
+    sorted_encoded_ : array-like
+        Position sorted_encoded[i,j] contains the value used to encode sorted_categories[i,j]
+    
+    unknown_values_ : array-like of shape (n_features)
+        Contains the encoded values for each feature to handle unseen values.
+
+    discretizer : KBinsDiscretizer
+        Discretizer used to encode numerical features
+
+    numerical_feature_index_: array-like of shape (n_numerical_features)
+        Contains the index of numerical features, used to know which columns
+        ought to be treated as numerical.
+    """
     def fit(self,X, y=None):
+        '''Fit the transformer'''
         X = X.copy()
         self.numerical_feature_index_ =  []
         if isinstance(X,pd.DataFrame):
@@ -33,6 +69,7 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
         return self
     
     def transform(self,X,y=None):
+        '''Transforms features '''
         check_is_fitted(self)
         if self.n_features != X.shape[1]:
             raise Exception(f"Expected {self.n_features} features, got {X.shape[1]} instead")
@@ -55,7 +92,7 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
         return X_copy.astype(int)
 
     def inverse_transform(self,X,y=None):
-        '''Inverse transform (numerical features cannot be restored)'''
+        '''Inverse transform (numerical features are not restored)'''
         check_is_fitted(self)
         X_copy = np.empty(X.shape,dtype=self.categories_[0].dtype)
         check_is_fitted(self)
@@ -84,10 +121,6 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
     def fit_transform(self, X, y=None):
         return self.fit(X,y).transform(X,y)
 
-    def get_index(self):
-        check_is_fitted(self)
-        return self.sorted_categories_
-
 
     def transform_columns(self,X,categories):
         '''Method used to transform new columns wwhen dinamiccally adding features to the transformer.
@@ -114,6 +147,7 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
         return X_copy
 
     def add_features(self,X,transform=False,index=None):
+        '''Adds features to the learned one at given index, if index is not provided then they are appended at the end'''
         try:
             check_is_fitted(self)
         except NotFittedError as e:
@@ -172,6 +206,7 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
             return self.transform_columns(X,categories=index)
             
     def remove_feature(self,index):
+        '''Removes feature at given index'''
         check_is_fitted(self)
         self.n_features -=1 
         del self.categories_[index] 
@@ -191,6 +226,7 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
 
 
     def inverse_transform_element(self,feature_index,value):
+        '''Used to translate a single value of a given feature'''
         check_is_fitted(self)
         try:
             value = self.sorted_categories_[feature_index][value]

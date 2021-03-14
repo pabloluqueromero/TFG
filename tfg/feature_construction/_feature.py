@@ -6,10 +6,12 @@ from sklearn.base import TransformerMixin
 
 
 class Feature(TransformerMixin):
+    '''Equivalent to an abstract class'''
     def get_dict_translation(self,encoder=None,categories=None):
         pass
 
 class FeatureOperator(Feature):
+    '''Component used to build complex logical features of arbitrary depth'''
     def __init__(self,operator,operands):
         self.operator = operator
         self.operands = operands
@@ -18,7 +20,9 @@ class FeatureOperator(Feature):
             raise ValueError("Unknown operator type: %s, expected one of %s." % (self.operator, allowed_operators))
         self._get_operator(self.operator)
 
+
     def fit(self,X):
+        '''Symbolic as fit is not really needed'''
         return X
 
     def transform(self,X):
@@ -41,6 +45,7 @@ class FeatureOperator(Feature):
         return s
     
     def get_dict_translation(self,encoder=None,categories=None):
+        '''Translate to human readable representation in dictionary'''
         od = OrderedDict()
         od["operator"] = self.operator
         for i,operand in enumerate(self.operands):
@@ -50,6 +55,8 @@ class FeatureOperator(Feature):
 
 
 class DummyFeatureConstructor(Feature):
+    '''Dummy feature constructor used for compatibility.
+       It only extracts a single feature from the dataset without any transformation'''
     def __init__(self,feature_index):
         self.feature_index = feature_index
     def fit(self,X):
@@ -69,6 +76,7 @@ def _transform_leaf_node(X,feature_index,value):
     return (X[:,feature_index]==value).reshape(-1,1)
 
 class FeatureOperand(Feature):
+    '''Represent a leaf node of a complex logical feature, a single value of a single feature'''
     def __init__(self,feature_index,value):
         self.feature_index = feature_index
         self.value = value

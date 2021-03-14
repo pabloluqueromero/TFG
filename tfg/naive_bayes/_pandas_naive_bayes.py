@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 
 class PandasNaiveBayes:
+    '''This class is faulty, it doesn't apply smoothing and may not behave correctly. It will be removed in future versions.
+       Please refer to tfg.naive_bayes.NaiveBayes for a solid classifier'''
     def __init__(self, attributes: list, class_to_predict: str):
         self.attributes = attributes
         self.class_to_predict = class_to_predict

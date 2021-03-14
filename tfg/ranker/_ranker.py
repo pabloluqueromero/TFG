@@ -17,7 +17,80 @@ from tqdm.autonotebook  import tqdm
 
 
 class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstimator):
+    """First proposal of a hybrid Ranker and Wrapper.
 
+    Follows 3 steps to build a ranker based on symmetrical uncertainty (SU) of every possible logical feature of depth 1
+    (1 operator, 2 operands), using XOR, AND and OR operator.
+        - Find out combinations of values in database of every pair of features Xi, Xj:
+            - Example: 
+                - Xi = [1,2,3,2]
+                - Xj = ['a','b','c','a']
+                Possible combinations:
+                    [(1,'a'),(2,'b'),(3,'c'),(2,'a')]
+        - Apply operator to every combination:
+            - Example: 
+                - Xi = [1,2,3,2]
+                - Xj = ['a','b','c','a']
+                Possible combinations:
+                    [(1,'a','AND'),(2,'b','AND'),(3,'c','AND'),(2,'a','AND'),
+                    (1,'a','OR'),(2,'b','OR'),(3,'c','OR'),(2,'a','OR'),
+                    (1,'a','XOR'),(2,'b','XOR'),(3,'c','XOR'),(2,'a','XOR')]
+        - Add original variables to the list
+        - Evaluate SU for every value in the list, and rank them
+        - Go over the list following one of the two strategies proposed and evaluate 
+          the subset based on a leave one out cross validation directly with the NaiveBayes classifier.
+
+    Parameters
+    ----------
+    strategy : str {eager,skip}
+        After the ranking is built if the eager strategy is chosen we stop considering attributes
+        when there is no improvement from one iteration to the next
+    
+    block_size : int, default=1
+        Number of features that are added in each iteration
+    
+    encode_data : boolean
+        Whether or not to encode the received data. If set to false the classifier 
+        expects data to be encoded with an ordinal encoder.
+
+    verbose : {boolean,int}
+        If set to true it displays information of the remaining time 
+        and inside variables.
+        
+    operators : array-like, deafult = ("XOR","AND","OR")
+        Operators used for the constructed features.
+
+    max_features : int, deafult = inf
+        Maximum number of features to include in the selected subset
+
+    max_iterations : int, deafult = inf
+        Maximum number of iterations in the wrapper step.
+           
+    Attributes
+    ----------
+    feature_encoder_ : CustomOrdinalFeatureEncoder or None
+        Encodes data in ordinal way with unseen values handling if encode_data is set to True.
+    
+    class_encoder_ : LabelEncoder or None
+        Encodes Data in ordinal way for the class if encode_data is set to True.
+
+    all_feature_constructors: array-like
+        List of FeatureConstructor objects with all the possible logical 
+        features
+    
+    symmetrical_uncertainty_rank: array-like
+        SU for every feature in all_feature_constructors
+
+    rank : array-like
+        Array of indexes corresponding to the sorted SU rank (in descending order).
+    
+    final_feature_constructors:
+        Selected feature subset (list of constructors)
+
+    classifier: NaiveBayes
+        Classifier used in the wrapper and to perform predictions after fitting.
+
+    """
     def __init__(self,strategy="eager",block_size=10,encode_data=True,verbose=0,operators=("AND","OR","XOR"),max_features = float("inf"),max_iterations=float("inf")):
         self.strategy = strategy
         self.block_size = max(block_size,1)

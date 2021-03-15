@@ -11,7 +11,7 @@ from sklearn.preprocessing import KBinsDiscretizer
 
 warnings.filterwarnings('ignore',category=UserWarning)
 class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
-    """Ordinal encoder.
+    """Ordinal encoder
 
     Ordinal encoder using numpy's searchsorted method to encode data to an integer ordinal representation.
     Automatic handling of unseen values (transformed to n, where n is the number of unique values for a feature)
@@ -44,7 +44,7 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
 
     numerical_feature_index_: array-like of shape (n_numerical_features)
         Contains the index of numerical features, used to know which columns
-        ought to be treated as numerical.
+        ought to be treated as a numerical feature.
     """
     def fit(self,X, y=None):
         '''Fit the transformer'''

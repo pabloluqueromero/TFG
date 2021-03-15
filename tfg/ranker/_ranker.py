@@ -144,6 +144,7 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
         return self.classifier.score(X,y)
 
     def filter_features(self,X,y):
+        '''After the rank is built this perform the greedy wrapper search'''
         check_is_fitted(self)
         self.classifier = NaiveBayes(encode_data = False)
         current_score  = np.NINF
@@ -172,6 +173,7 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
                             progress_bar.update(1)
                             progress_bar.refresh()
                 except:
+                    #Block size does not divide the number of elements in the rank
                     break
             
             new_X = np.concatenate(new_X,axis=1)

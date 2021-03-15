@@ -7,12 +7,37 @@ from tfg.feature_construction._constructor import create_feature
 from tfg.utils import compute_sufs
 
 class Ant:
+    """ Basic building block for the Ant Colony Feature Construction and Selection algorithm.
+
+    Logical representation of an ant which performs a heuristic exploration on the graph based on previous knowledge to
+    optimise the subset feature selection and creation. 
+
+    Parameters
+    ----------
+    alpha : float
+        Importance accorded to  the pheromone trail
+    
+    beta : float
+        Importance accorded to  the dynamically computed heuristic
+
+    ant_id : int
+        Parameter to uniquely identify the ant.
+    
+    Attributes
+    ----------
+    current_features : array-like of Features
+        Features obtained by the end of the exploration
+
+    final_score : float
+        Leave one out croos-validation accuracy score obtained with the selected feature subset    
+    """
     def __init__(self, ant_id, alpha, beta):
         self.alpha = alpha
         self.beta = beta
         self.ant_id = ant_id
 
     def choose_next(self, probabilities, random_generator):
+        '''Selects index based on roulette wheel selection'''
         n = random_generator.uniform(0.0, 1.0)
         cumulative_sum = 0
         index = 0
@@ -22,6 +47,17 @@ class Ant:
         return index-1
 
     def compute_probability(self,pheromones,heuristics):
+        '''Computes the probability based on the formula
+           p(edge_ij) = normalized(pheromone_ij^alpha * heuristic_ij^beta)
+           
+           Note:
+           Some constructed features may produce features with no positive values if 
+           the constructed features contains a combination of values that is not present in the database
+           or if the particular operator doesn't apply (may happen with the XOR operator).
+
+           For that we check that the sum of the heuristic is larger than zero which will avoid division by 0 error,
+           although unlikely the situation may also occur with the pheromone trail if the random value generation yields a zero.
+        '''
         heuristics = np.power(heuristics,self.beta)
         if heuristics.sum() == 0:
             heuristics+=1
@@ -32,6 +68,7 @@ class Ant:
         return probabilities/probabilities.sum()
 
     def compute_neighbour_sufs(self,neighbour,selected_node,current_su,X,y):
+        '''Dynamical computation of the SU for the feature subset based on the adapted MIFS for the symmetrical uncertainty'''
         operator = neighbour[2] # Get operator
         operands = [selected_node,neighbour[1]] #Get operands (index,value)
         feature = create_feature(operator,operands)
@@ -39,6 +76,23 @@ class Ant:
 
 
     def explore(self, X, y, graph, random_generator,parallel):
+        '''
+        Search method that follows the following steps:
+            1. The initial node is connected to all the others (roulette wheel selection is performed)
+            2. There are 2 type of nodes (corresponding to an original feature (2.1) or corresponding to a value of a feature (2.2)):
+                2.1. If the selected node is an original feature we add it to the selected subset and go to step 3.
+                2.2. If the selected node is part of a logical feature then we select another node (the CONSTRUCTION step will not return full original features)
+            3. Compute the score
+                3.1. If it improves the previous one
+                    3.1.1 Add the feature to the current subset
+                    3.1.2 Update the score
+                    3.1.3 Select another node (SELECTION step) 
+                    3.1.4 Go to step 2
+                3.2. If not, the exploration ends
+
+        Note: Threading does not speed up the calculations as they are CPU bound and in python only I/O operations will benefit from this parallelism
+              GPU improvement would reduce the time of the exploration.
+        '''
         self.current_features = []
         selected_nodes = set()
         constructed_nodes = set()

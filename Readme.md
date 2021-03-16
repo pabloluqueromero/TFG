@@ -117,7 +117,7 @@ Use this space to show useful examples of how a project can be used. Additional 
 
 <!-- CONTRIBUTING -->
 ## Contributing
-Any contributions or comments are welcome and the code is made available to the community for feature research. Feel
+Any contributions or comments are welcome and the code is made available to the community for feature research.
 
 
 

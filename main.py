@@ -21,7 +21,15 @@ data = [
     ["credit","A16"],
     ["pima","Outcome"],
     ["wine","class"],
-    ["wisconsin","diagnosis"]
+    ["wisconsin","diagnosis"],
+    ["car-evaluation","safety"],
+    ["connect-4","class"],
+    ["lenses","ContactLens"],
+    ["cmc","Contraceptive"],
+    ["cylinder-bands","band type"],
+    ["derm","class"],
+    ["tictactoe","class"],
+    ["spam","class"]
 ]
 
 graphs_folder = "out/graphs/"
@@ -34,11 +42,11 @@ for directory in [graphs_folder,csv_folder]:
         os.makedirs(directory)
 
 #Time comparison
-file_name = "time_performace"
-result = time_comparison()
-get_graphs(df = result, 
-           folder =graphs_folder)
-result.to_csv(csv_folder+"time_performace.csv",index=False)
+# file_name = "time_performace"
+# result = time_comparison()
+# get_graphs(df = result, 
+#            folder =graphs_folder)
+# result.to_csv(csv_folder+"time_performace.csv",index=False)
 
 #Scoring comparisons CustomNaiveBayes vs Categorical
 result = scoring_comparison(base_path,datasets=data,test_size=0.3,seed=5,n_iterations=30)
@@ -59,10 +67,10 @@ params = [
     {"strategy":"skip","block_size":5,"max_features":20,"verbose":0},
     {"strategy":"skip","block_size":10,"max_features":20,"verbose":0},
 ]
-result = ranker_score_comparison(base_path=base_path,
-                                 datasets=data,
-                                 test_size=0.3,
-                                 seed=5,
-                                 n_iterations=30,
-                                 params = params)
-result.to_csv(csv_folder+"ranker_score_comparison.csv",index=False)
+# result = ranker_score_comparison(base_path=base_path,
+#                                  datasets=data,
+#                                  test_size=0.3,
+#                                  seed=5,
+#                                  n_iterations=30,
+#                                  params = params)
+# result.to_csv(csv_folder+"ranker_score_comparison.csv",index=False)

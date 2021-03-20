@@ -57,10 +57,11 @@ def time_comparison(combinations=None, n_iterations=15, verbose=1, seed=200):
 
     results = []
     if combinations is None:
-        columns = range(10, 40010, 5000)
-        rows = [10, 100, 1000]
-        combinations = list(product(rows, columns)) + \
-            list(product(columns, rows))
+        # columns = range(10, 40010, 5000)
+        # rows = [10, 100, 1000]
+        # combinations = list(product(rows, columns)) + \
+        #     list(product(columns, rows))
+        combinations = []
         combinations += list(product([10,100,1000], [500000]))
         combinations += list(product([500000],[10,100,1000]))
 
@@ -69,11 +70,15 @@ def time_comparison(combinations=None, n_iterations=15, verbose=1, seed=200):
     clf_categorical_sklearn = CategoricalNB(alpha=1)
     clf_gaussian_sklearn = GaussianNB()
     progress_bar = tqdm(total=len(combinations), bar_format='{l_bar}{bar:20}{r_bar}{bar:-10b}')
+    X = []
+    y = []
     for n_samples,n_features  in combinations:
         if verbose:
             progress_bar.set_postfix({"n_samples":n_samples, "n_features":n_features})
             progress_bar.update(1)
             progress_bar.refresh()
+        del X
+        del y
         X, y = make_classification(n_samples=n_samples,
                                    n_features=n_features,
                                    flip_y=0.01,
@@ -162,6 +167,7 @@ def time_comparison(combinations=None, n_iterations=15, verbose=1, seed=200):
                   custom_no_encoding_nb_predict_time,
                   custom_no_encoding_nb_score,
                   custom_no_encoding_nb_errors)
-    results =  pd.DataFrame(results,columns=column_names)
-    results.drop_duplicates(["Classifier","n_samples","n_features"],inplace=True)
-    return results
+        results_df =  pd.DataFrame(results,columns=column_names)
+        results_df.drop_duplicates(["Classifier","n_samples","n_features"],inplace=True)
+        results_df.to_csv("backup.csv")
+    return results_df

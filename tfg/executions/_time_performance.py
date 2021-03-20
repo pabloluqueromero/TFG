@@ -57,11 +57,9 @@ def time_comparison(combinations=None, n_iterations=15, verbose=1, seed=200):
 
     results = []
     if combinations is None:
-        # columns = range(10, 40010, 5000)
-        # rows = [10, 100, 1000]
-        # combinations = list(product(rows, columns)) + \
-        #     list(product(columns, rows))
-        combinations = []
+        columns = range(10, 40010, 5000)
+        rows = [10, 100, 1000]
+        combinations = list(product(rows, columns)) + list(product(columns, rows))
         combinations += list(product([10,100,1000], [500000]))
         combinations += list(product([500000],[10,100,1000]))
 

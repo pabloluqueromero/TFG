@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+import os
+import plotly.express as px
 
 from collections import OrderedDict, deque
 from scipy.stats import entropy
@@ -88,6 +90,7 @@ def onecold(a):
     b = np.concatenate((a,a[:-1]))
     return strided(b[1:], shape=(n-1,n), strides=(s,s))
     
+
 def combinations_without_repeat(a):
     n = len(a)
     out = np.empty((n,n-1,2),dtype=a.dtype)
@@ -96,6 +99,8 @@ def combinations_without_repeat(a):
     out[:,:,1] = onecold(a)
     out.shape = (-1,2)
     return out  
+
+
 
 def shannon_entropy(column):
     count = np.bincount(column)
@@ -173,4 +178,83 @@ def mutual_information_class_conditioned(f1,f2,y):
         mask = y == value
         score.append(normalized_mutual_info_score(f1[mask],f2[mask]))
     score = np.array(score)
+
     return (score * counts).sum()
+
+
+
+def get_X_y_from_database(base_path, name, data, test, label):
+    full_data_path = base_path+name+"/"+data
+    full_test_path = base_path+name+"/"+test
+    has_test = os.path.exists(base_path+name+"/"+test)
+    assert pd.read_csv(full_data_path)[label].name == label
+    if has_test:
+        train = pd.read_csv(full_data_path)
+        test = pd.read_csv(full_test_path)
+        df = train.append(test)
+
+    else:
+        df = pd.read_csv(full_data_path)
+    X = df.drop([label], axis=1)
+    y = df[label]
+    return X, y
+
+
+
+def get_graphs(df,folder):
+    #FIT
+    filename = "fit_time_fix_n_samples.png"
+    fig = px.line(df[df["n_samples"].isin([10,100,1000])],
+                x="n_features", 
+                y="Average Fit Time", 
+                color='Classifier',
+                facet_col="n_samples", 
+                width=1000,)
+    fig.write_image(folder+filename)
+
+    filename = "fit_time_fix_n_features.png"
+    fig = px.line(df[df["n_features"].isin([10,100])],
+                x="n_samples", 
+                y="Average Fit Time", 
+                color='Classifier',
+                facet_col="n_features", 
+                width=1000,)
+    fig.write_image(folder+filename)
+    
+    filename = "fit_time_fix_n_features_max.png"
+    fig = px.line(df[df["n_features"].isin([1000])],
+                x="n_samples", 
+                y="Average Fit Time", 
+                color='Classifier',
+                facet_col="n_features", 
+                width=1000,)
+    fig.write_image(folder+filename)
+    
+    #Predict
+    filename = "predict_time_fix_n_samples.png"
+    fig = px.line(df[df["n_samples"].isin([10,100,1000])],
+                x="n_features", 
+                y="Average Predict Time", 
+                color='Classifier',
+                facet_col="n_samples", 
+                width=1000,)
+    fig.write_image(folder+filename)
+
+    filename = "predict_time_fix_n_features.png"
+    fig = px.line(df[df["n_features"].isin([10,100])],
+                x="n_samples", 
+                y="Average Predict Time", 
+                color='Classifier',
+                facet_col="n_features", 
+                width=1000,)
+    fig.write_image(folder+filename)
+    
+    filename = "predict_time_fix_n_features_max.png"
+    fig = px.line(df[df["n_features"].isin([1000])],
+                x="n_samples", 
+                y="Average Predict Time", 
+                color='Classifier',
+                facet_col="n_features", 
+                width=1000,)
+    fig.write_image(folder+filename)
+    

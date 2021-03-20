@@ -19,6 +19,11 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
     Discretizes in 5 intervales using quantile strategy, numerical features are detected only 
     when the provided features are wrapped in a pandas DataFrame and have dtype float.
 
+    Parameters
+    ----------
+    n_intervals : int, default=5
+        Discretize numerical data using the specified number of intervals
+    
     Attributes
     ----------
     n_features : int
@@ -46,6 +51,8 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
         Contains the index of numerical features, used to know which columns
         ought to be treated as a numerical feature.
     """
+    def __init__(self,n_intervals=5):
+        self.n_intervals = n_intervals
     def fit(self,X, y=None):
         '''Fit the transformer'''
         X = X.copy()
@@ -53,7 +60,7 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
         if isinstance(X,pd.DataFrame):
             numerical_features = X.select_dtypes("float")
             if len(numerical_features.columns):
-                self.discretizer = KBinsDiscretizer(n_bins=5,encode="ordinal",strategy="quantile")
+                self.discretizer = KBinsDiscretizer(n_bins=self.n_intervals,encode="ordinal",strategy="quantile")
                 X.loc[:,numerical_features.columns] = self.discretizer.fit_transform(numerical_features)
                 X.loc[:,numerical_features.columns] = X.loc[:,numerical_features.columns].astype(int)
                 self.numerical_feature_index_ =  list(X.columns.get_indexer(numerical_features.columns))
@@ -159,7 +166,7 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
         if isinstance(X,pd.DataFrame):
             numerical_features = X.select_dtypes("float")
             if len(numerical_features.columns):
-                temp_discretizer = KBinsDiscretizer(n_bins=5,encode="ordinal",strategy="quantile")
+                temp_discretizer = KBinsDiscretizer(n_bins=self.n_intervals,encode="ordinal",strategy="quantile")
                 X.loc[:,numerical_features.columns] = temp_discretizer.fit_transform(numerical_features)
                 X.loc[:,numerical_features.columns] = X.loc[:,numerical_features.columns].astype(int)
                 new_index = X.columns.get_indexer(numerical_features.columns)

@@ -10,40 +10,24 @@ from tfg.encoder import CustomOrdinalFeatureEncoder
 from tfg.feature_construction import DummyFeatureConstructor
 from tfg.naive_bayes import NaiveBayes
 from tfg.ranker import RankerLogicalFeatureConstructor
+from tfg.utils import get_X_y_from_database
 
 
-def get_X_y(base_path, name, data, test, label):
-    full_data_path = base_path+name+"/"+data
-    full_test_path = base_path+name+"/"+test
-    has_test = os.path.exists(base_path+name+"/"+test)
-    assert pd.read_csv(full_data_path)[label].name == label
-    if has_test:
-        train = pd.read_csv(full_data_path)
-        test = pd.read_csv(full_test_path)
-        df = train.append(test)
-
-    else:
-        df = pd.read_csv(full_data_path)
-    X = df.drop([label], axis=1)
-    y = df[label]
-    return X, y
-
-
-def ranker_score_comparison(databases, seed, test_size, base_path, params, n_iterations=30):
+def ranker_score_comparison(datasets, seed, test_size, base_path, params, n_iterations=30):
     result = []
-    database_tqdm = tqdm(databases)
+    dataset_tqdm = tqdm(datasets)
 
     # Instantiate ranker
     r = RankerLogicalFeatureConstructor()
     nb = NaiveBayes(encode_data=True)
-    for database in database_tqdm:
+    for database in dataset_tqdm:
         name, label = database
         if os.path.exists(base_path+name):
             test = f"{name}.test.csv"
             data = f"{name}.data.csv"
-            X, y = get_X_y(base_path, name, data, test, label)
+            X, y = get_X_y_from_database(base_path, name, data, test, label)
 
-            database_tqdm.set_postfix({"DATABASE": name})
+            dataset_tqdm.set_postfix({"DATABASE": name})
 
             seed_tqdm = tqdm(range(n_iterations), leave=False)
 

@@ -13,6 +13,8 @@ from ._utils import shannon_entropy
 from ._utils import compute_sufs
 from ._utils import translate_features
 from ._utils import mutual_information_class_conditioned
+from ._utils import get_X_y_from_database
+from ._utils import get_graphs
 
 
 
@@ -33,5 +35,7 @@ __all__ = [
     "symmetrical_uncertainty",
     "compute_sufs",
     "translate_features",
-    "mutual_information_class_conditioned"
+    "mutual_information_class_conditioned",
+    "get_X_y_from_database",
+    "get_graphs",
 ]

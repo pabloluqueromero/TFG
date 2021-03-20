@@ -26,15 +26,14 @@ def evaluate(X_train, y_train, X_test, y_test, clf, fit_time, predict_time, scor
     return 0
 
 
-def update_df(df,
+def update_df(results,
               clf,
               rows,
               columns,
               nb_fit_time,
               nb_predict_time,
               nb_score,
-              nb_errors,
-              filename):
+              nb_errors):
     row = [clf,
            rows,
            columns,
@@ -42,24 +41,21 @@ def update_df(df,
            np.std(nb_fit_time),
            0 if nb_errors else np.mean(nb_predict_time),
            0 if nb_errors else np.std(nb_predict_time),
-           0 if nb_errors else np.mean(nb_score),
-           nb_errors]
-    df = df.append([row])
-    if filename:
-        df.to_csv(filename)
+           0 if nb_errors else np.mean(nb_score)]
+    results = results.append(row)
 
 
-def timing_comparison(combinations=None, n_iterations=15, verbose=1, seed=200, filename=None):
+def time_comparison(combinations=None, n_iterations=15, verbose=1, seed=200):
     column_names = ["Classifier",
-                    "n_sampples",
+                    "n_samples",
                     "n_features",
-                    "average_fit_time",
-                    "std_fit_time",
-                    "average_predict_time",
-                    "std_predict_time",
-                    "score"]
+                    "Average Fit Time",
+                    "STD Fit Time",
+                    "Average Predict Time",
+                    "STD Predict Time",
+                    "Score"]
 
-    df = pd.DataFrame(columns=column_names)
+    results = []
     if combinations is None:
         columns = range(10, 40010, 5000)
         rows = [10, 100, 1000]
@@ -137,42 +133,40 @@ def timing_comparison(combinations=None, n_iterations=15, verbose=1, seed=200, f
                                                   custom_encoding_nb_predict_time,
                                                   custom_encoding_nb_score)
 
-        update_df(df,
+        update_df(results,
                   "Gaussian",
                   n_samples,
                   n_features,
                   gaussian_nb_fit_time,
                   gaussian_nb_predict_time,
                   gaussian_nb_score,
-                  gaussian_nb_errors,
-                  filename)
-        update_df(df,
+                  gaussian_nb_errors)
+        update_df(results,
                   "Categorical",
                   n_samples,
                   n_features,
                   categorical_nb_fit_time,
                   categorical_nb_predict_time,
                   categorical_nb_score,
-                  categorical_nb_errors,
-                  filename)
+                  categorical_nb_errors)
 
-        update_df(df,
-                  "Custom_nb_encoding",
+        update_df(results,
+                  "Custom with encoding",
                   n_samples,
                   n_features,
                   custom_encoding_nb_fit_time,
                   custom_encoding_nb_predict_time,
                   custom_encoding_nb_score,
-                  custom_encoding_nb_errors,
-                  filename)
+                  custom_encoding_nb_errors)
 
-        update_df(df,
-                  "Custom_nb_no_encoding",
+        update_df(results,
+                  "Custom without encoding",
                   n_samples,
                   n_features,
                   custom_no_encoding_nb_fit_time,
                   custom_no_encoding_nb_predict_time,
                   custom_no_encoding_nb_score,
-                  custom_no_encoding_nb_errors,
-                  filename)
-    return df
+                  custom_no_encoding_nb_errors)
+    results =  pd.DataFrame(results,columns=column_names)
+    results.drop_duplicates(["Classifier","n_samples","n_features"],inplace=True)
+    return results

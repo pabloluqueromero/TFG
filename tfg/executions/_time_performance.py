@@ -61,7 +61,8 @@ def time_comparison(combinations=None, n_iterations=15, verbose=1, seed=200):
         rows = [10, 100, 1000]
         combinations = list(product(rows, columns)) + \
             list(product(columns, rows))
-        combinations += [(500000, 100), (500000, 10)]
+        combinations += list(product([10,100,1000], [500000]))
+        combinations += list(product([500000],[10,100,1000]))
 
     clf_no_encoding = NaiveBayes(encode_data=False, alpha=1)
     clf_encoding = NaiveBayes(encode_data=True, alpha=1)
@@ -75,12 +76,6 @@ def time_comparison(combinations=None, n_iterations=15, verbose=1, seed=200):
             progress_bar.refresh()
         X, y = make_classification(n_samples=n_samples,
                                    n_features=n_features,
-                                   n_informative=n_features-1,
-                                   n_redundant=0,
-                                   n_repeated=0,
-                                   n_classes=2,
-                                   n_clusters_per_class=2,
-                                   weights=None,
                                    flip_y=0.01,
                                    class_sep=1.0,
                                    hypercube=True,

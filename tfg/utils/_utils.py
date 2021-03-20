@@ -213,16 +213,7 @@ def get_graphs(df,folder):
     fig.write_image(folder+filename)
 
     filename = "fit_time_fix_n_features.png"
-    fig = px.line(df[df["n_features"].isin([10,100])],
-                x="n_samples", 
-                y="Average Fit Time", 
-                color='Classifier',
-                facet_col="n_features", 
-                width=1000,)
-    fig.write_image(folder+filename)
-    
-    filename = "fit_time_fix_n_features_max.png"
-    fig = px.line(df[df["n_features"].isin([1000])],
+    fig = px.line(df[df["n_features"].isin([10,100,1000])],
                 x="n_samples", 
                 y="Average Fit Time", 
                 color='Classifier',
@@ -241,16 +232,7 @@ def get_graphs(df,folder):
     fig.write_image(folder+filename)
 
     filename = "predict_time_fix_n_features.png"
-    fig = px.line(df[df["n_features"].isin([10,100])],
-                x="n_samples", 
-                y="Average Predict Time", 
-                color='Classifier',
-                facet_col="n_features", 
-                width=1000,)
-    fig.write_image(folder+filename)
-    
-    filename = "predict_time_fix_n_features_max.png"
-    fig = px.line(df[df["n_features"].isin([1000])],
+    fig = px.line(df[df["n_features"].isin([10,100,1000])],
                 x="n_samples", 
                 y="Average Predict Time", 
                 color='Classifier',

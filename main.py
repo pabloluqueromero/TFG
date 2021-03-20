@@ -35,7 +35,7 @@ for directory in [graphs_folder,csv_folder]:
 
 #Time comparison
 file_name = "time_performace"
-result = time_comparison([(100,200),(100,1000)])
+result = time_comparison()
 get_graphs(df = result, 
            folder =graphs_folder)
 result.to_csv(csv_folder+"time_performace.csv",index=False)

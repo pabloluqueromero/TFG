@@ -50,13 +50,18 @@ def scoring_comparison(base_path,datasets,verbose=1,test_size=0.3,seed=None,n_it
             if verbose:
                 datasets_iter.set_postfix({"Dataset": dataset_name, "seed":iteration})
                 datasets_iter.refresh()
-            
-            X_train,X_test,y_train,y_test = train_test_split(X,y,
+            try:
+                X_train,X_test,y_train,y_test = train_test_split(X,y,
                                                              test_size=test_size,
                                                              random_state=seed+iteration,
                                                              shuffle=True,
                                                              stratify=y)
-
+            except:
+                #Not enough values to stratify y
+                X_train,X_test,y_train,y_test = train_test_split(X,y,
+                                                                test_size=test_size,
+                                                                random_state=seed+iteration,
+                                                                shuffle=True)
             #Fit
             clf_no_encoding.fit(X_train,y_train)
             clf_categorical_sklearn.min_categories = [1+np.max(np.concatenate([X_train[:,j],X_test[:,j]])) for j in range(X_train.shape[1])]

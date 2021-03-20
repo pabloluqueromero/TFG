@@ -42,11 +42,19 @@ def ranker_score_comparison(datasets, seed, test_size, base_path, params, n_iter
             r_original_selected = np.zeros(shape=(len(params), n_iterations))
 
             for i in seed_tqdm:
-                X_train, X_test, y_train, y_test = train_test_split(
-                    X, y,
-                    test_size=test_size,
-                    random_state=seed+i,
-                    stratify=y)
+                try:
+                    X_train, X_test, y_train, y_test = train_test_split(
+                        X, y,
+                        test_size=test_size,
+                        random_state=seed+i,
+                        stratify=y)
+                except:
+                    #Not enough values to stratify y
+                    X_train, X_test, y_train, y_test = train_test_split(
+                        X, y,
+                        test_size=test_size,
+                        random_state=seed+i)
+
                 c = CustomOrdinalFeatureEncoder()
                 X_train = c.fit_transform(X_train)
                 X_test = c.transform(X_test)

@@ -71,7 +71,9 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
                     X.loc[:,numerical_features.columns] = X.loc[:,numerical_features.columns].astype(int)
                     self.numerical_feature_index_ =  list(X.columns.get_indexer(numerical_features.columns))
             X = X.to_numpy()
-        X = X.astype(str)
+        
+        if X.dtype=="O":
+            X = X.astype(str)
 
         self.n_features = X.shape[1]
         self.categories_ = [np.unique(X[:,j]) for j in range(self.n_features)]
@@ -88,13 +90,16 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
             raise Exception(f"Expected {self.n_features} features, got {X.shape[1]} instead")
         X = X.copy()
         if isinstance(X,pd.DataFrame):
-            numerical_features = X.select_dtypes("float")
-            if len(numerical_features.columns):
-                discretized_features = self.discretizer.transform(numerical_features)
-                X.loc[:,numerical_features.columns] = discretized_features
-                X.loc[:,numerical_features.columns] = X.loc[:,numerical_features.columns].astype(int)
-            X = X.to_numpy()
-        X = X.astype(str)
+            if self.discretize:
+                numerical_features = X.select_dtypes("float")
+                if len(numerical_features.columns):
+                    discretized_features = self.discretizer.transform(numerical_features)
+                    X.loc[:,numerical_features.columns] = discretized_features
+                    X.loc[:,numerical_features.columns] = X.loc[:,numerical_features.columns].astype(int)
+                X = X.to_numpy()
+        
+        if X.dtype=="O":
+            X = X.astype(str)
         
         X_copy = np.empty(shape=X.shape,dtype=int)
         for j in range(X_copy.shape[1]):
@@ -137,7 +142,7 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
 
     def transform_columns(self,X,categories):
         '''Method used to transform new columns wwhen dinamiccally adding features to the transformer.
-           It is assumed that variables that need to be discretized have been taken cared of in previous
+           It is assumed that variables that need to be discretized have been taken care of in previous
            steps'''
         if isinstance(X,pd.DataFrame):
             X = X.to_numpy()
@@ -200,7 +205,9 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
                         self.discretizer.n_bins_ = np.concatenate([self.discretizer.n_bins_,temp_discretizer.n_bins_],axis=1)
                         self.discretizer.bin_edges_ = np.concatenate([self.discretizer.bin_edges_,temp_discretizer.bin_edges_],axis=1)
             X = X.to_numpy()
-        X = X.astype(str)
+        
+        if X.dtype=="O":
+            X = X.astype(str)
         self.n_features += X.shape[1]
         new_categories = [np.unique(X[:,j]) for j in range(X.shape[1])]
         if index is not None:

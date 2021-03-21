@@ -5,11 +5,10 @@ from itertools import product
 from sklearn.datasets import make_classification
 from sklearn.naive_bayes import CategoricalNB,GaussianNB
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
 from time import time
 from tqdm.autonotebook import tqdm
 
-from tfg.encoder import CustomOrdinalFeatureEncoder
+from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
 from tfg.naive_bayes import NaiveBayes
 from tfg.utils import make_discrete
 from tfg.utils import get_X_y_from_database
@@ -27,7 +26,7 @@ def scoring_comparison(base_path,datasets,verbose=1,test_size=0.3,seed=None,n_it
     
     datasets_iter = tqdm(datasets, bar_format='{l_bar}{bar:20}{r_bar}{bar:-10b}')
     c = CustomOrdinalFeatureEncoder()
-    l = LabelEncoder()
+    l = CustomLabelEncoder()
     for dataset in datasets_iter:
         dataset_name, label = dataset
         data_filename = f"{dataset_name}.data.csv"

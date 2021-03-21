@@ -49,8 +49,8 @@ for directory in [graphs_folder,csv_folder]:
 # result.to_csv(csv_folder+"time_performace.csv",index=False)
 
 #Scoring comparisons CustomNaiveBayes vs Categorical
-result = scoring_comparison(base_path,datasets=data,test_size=0.3,seed=5,n_iterations=30)
-result.to_csv(csv_folder+"score_comparison_simple_nb.csv",index=False)
+# result = scoring_comparison(base_path,datasets=data,test_size=0.3,seed=5,n_iterations=30)
+# result.to_csv(csv_folder+"score_comparison_simple_nb.csv",index=False)
 
 #Ranker comparisons
 params = [
@@ -67,10 +67,10 @@ params = [
     {"strategy":"skip","block_size":5,"max_features":20,"verbose":0},
     {"strategy":"skip","block_size":10,"max_features":20,"verbose":0},
 ]
-# result = ranker_score_comparison(base_path=base_path,
-#                                  datasets=data,
-#                                  test_size=0.3,
-#                                  seed=5,
-#                                  n_iterations=30,
-#                                  params = params)
-# result.to_csv(csv_folder+"ranker_score_comparison.csv",index=False)
+result = ranker_score_comparison(base_path=base_path,
+                                 datasets=data,
+                                 test_size=0.3,
+                                 seed=5,
+                                 n_iterations=30,
+                                 params = params)
+result.to_csv(csv_folder+"ranker_score_comparison.csv",index=False)

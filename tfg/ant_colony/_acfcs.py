@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 
 from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
-from sklearn.preprocessing import LabelEncoder
 from sklearn.utils.validation import check_is_fitted
 
 from tqdm.autonotebook import tqdm
@@ -12,7 +11,7 @@ from tqdm.autonotebook import tqdm
 from tfg.ant_colony import AntFeatureGraph
 from tfg.ant_colony import AntFeatureGraphMI
 from tfg.ant_colony import Ant
-from tfg.encoder import CustomOrdinalFeatureEncoder
+from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
 from tfg.naive_bayes import NaiveBayes
 from tfg.utils import translate_features
 
@@ -55,7 +54,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
 
     def fit(self,X,y):
         self.feature_encoder_ = CustomOrdinalFeatureEncoder()
-        self.label_encoder_ = LabelEncoder()
+        self.label_encoder_ = CustomLabelEncoder()
 
         self.categories_ = None
         if isinstance(X,pd.DataFrame):

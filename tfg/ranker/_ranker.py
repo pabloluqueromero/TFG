@@ -3,11 +3,10 @@ import numpy as np
 import pandas as pd
 
 from sklearn.base import TransformerMixin, BaseEstimator, ClassifierMixin
-from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import check_X_y, check_array
 from sklearn.utils.validation import check_is_fitted
 
-from tfg.encoder import CustomOrdinalFeatureEncoder
+from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
 from tfg.feature_construction import construct_features
 from tfg.feature_construction import DummyFeatureConstructor
 from tfg.naive_bayes import NaiveBayes 
@@ -108,7 +107,7 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
             y = y.to_numpy()
         if self.encode_data:
             self.feature_encoder_ = CustomOrdinalFeatureEncoder()
-            self.class_encoder_ = LabelEncoder()
+            self.class_encoder_ = CustomLabelEncoder()
             X = self.feature_encoder_.fit_transform(X)
             y = self.class_encoder_.fit_transform(y)
 

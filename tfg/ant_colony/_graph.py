@@ -4,10 +4,8 @@ import networkx as nx
 import numpy as np
 import random
 
-from sklearn.preprocessing import LabelEncoder
 
 from tfg.ant_colony import Ant
-from tfg.encoder import CustomOrdinalFeatureEncoder
 from tfg.feature_construction import DummyFeatureConstructor
 from tfg.utils import symmetrical_uncertainty
 from tfg.utils import mutual_information_class_conditioned

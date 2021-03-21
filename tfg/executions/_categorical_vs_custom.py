@@ -2,7 +2,6 @@ import os
 import numpy as np
 import pandas as pd
 
-from sklearn.preprocessing import LabelEncoder
 from sklearn.naive_bayes import CategoricalNB
 from sklearn.model_selection import train_test_split
 from tqdm.autonotebook import tqdm

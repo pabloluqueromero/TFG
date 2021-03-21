@@ -2,11 +2,10 @@ import os
 import numpy as np
 import pandas as pd
 
-from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from tqdm.autonotebook import tqdm
 
-from tfg.encoder import CustomOrdinalFeatureEncoder
+from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
 from tfg.feature_construction import DummyFeatureConstructor
 from tfg.naive_bayes import NaiveBayes
 from tfg.ranker import RankerLogicalFeatureConstructor
@@ -58,7 +57,7 @@ def ranker_score_comparison(datasets, seed, test_size, base_path, params, n_iter
                 c = CustomOrdinalFeatureEncoder()
                 X_train = c.fit_transform(X_train)
                 X_test = c.transform(X_test)
-                l = LabelEncoder()
+                l = CustomLabelEncoder()
                 y_train = l.fit_transform(y_train)
                 y_test = l.transform(y_test)
                 nb.fit(X=X_train, y=y_train)

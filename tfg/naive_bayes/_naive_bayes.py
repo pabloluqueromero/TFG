@@ -9,7 +9,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import check_X_y, check_array
 from sklearn.utils.validation import check_is_fitted
 #Local Imports
-from tfg.encoder import CustomOrdinalFeatureEncoder
+from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
   
 #For unseen values we want that log(0) = -inf
 np.seterr(divide='ignore')
@@ -194,7 +194,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
             y = y.to_numpy()
         if self.encode_data:
             self.feature_encoder_ = CustomOrdinalFeatureEncoder(n_intervals = self.n_intervals)
-            self.class_encoder_ = LabelEncoder()
+            self.class_encoder_ = CustomLabelEncoder()
             X = self.feature_encoder_.fit_transform(X)
             y = self.class_encoder_.fit_transform(y)
         if isinstance(X,pd.DataFrame):

@@ -90,7 +90,15 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
         Classifier used in the wrapper and to perform predictions after fitting.
 
     """
-    def __init__(self,strategy="eager",block_size=10,encode_data=True,verbose=0,operators=("AND","OR","XOR"),max_features = float("inf"),max_iterations=float("inf")):
+    def __init__(self,
+                 strategy="eager",
+                 block_size=10,
+                 encode_data=True,
+                 n_intervals = 5,
+                 verbose=0,
+                 operators=("AND","OR","XOR"),
+                 max_features = float("inf"),
+                 max_iterations=float("inf")):
         self.strategy = strategy
         self.block_size = max(block_size,1)
         self.encode_data = encode_data
@@ -98,6 +106,7 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
         self.operators= operators
         self.max_features = max_features
         self.max_iterations = max_iterations
+        self.n_intervals = n_intervals
         allowed_strategies = ("eager","skip")
         if self.strategy not in allowed_strategies:
             raise ValueError("Unknown operator type: %s, expected one of %s." % (self.strategy, allowed_strategies))
@@ -145,7 +154,7 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
     def filter_features(self,X,y):
         '''After the rank is built this perform the greedy wrapper search'''
         check_is_fitted(self)
-        self.classifier = NaiveBayes(encode_data = False)
+        self.classifier = NaiveBayes(encode_data = False,n_intervals=self.n_intervals)
         current_score  = np.NINF
         first_iteration = True
         current_features = []

@@ -6,12 +6,12 @@ from tfg.executions import ranker_score_comparison
 
 base_path = "../Dataset/UCIREPO/"
 data = [
-    ["abalone","Rings"],
-    ["adult","income"],
-    ["anneal","label"],
-    ["audiology","label"],
+    # ["abalone","Rings"],
+    # ["adult","income"],
+    # ["anneal","label"],
+    # ["audiology","label"],
     ["balance-scale","label"],
-    ["krkopt","Optimal depth-of-win for White"],
+    # ["krkopt","Optimal depth-of-win for White"],
     ["iris","Species"],
     ["horse-colic","surgery"],
     ["glass","Type"],
@@ -67,10 +67,33 @@ params = [
     {"strategy":"skip","block_size":5,"max_features":20,"verbose":0},
     {"strategy":"skip","block_size":10,"max_features":20,"verbose":0},
 ]
-result = ranker_score_comparison(base_path=base_path,
-                                 datasets=data,
-                                 test_size=0.3,
-                                 seed=5,
-                                 n_iterations=30,
-                                 params = params)
-result.to_csv(csv_folder+"ranker_score_comparison.csv",index=False)
+# result = ranker_score_comparison(base_path=base_path,
+#                                  datasets=data,
+#                                  test_size=0.3,
+#                                  seed=5,
+#                                  n_iterations=30,
+#                                  params = params,
+#                                  n_intervals = 5)
+# result.to_csv(csv_folder+"ranker_score_comparison.csv",index=False)
+params = [
+    {"strategy":"eager","block_size":1,"verbose":0},
+    {"strategy":"eager","block_size":2,"verbose":0},
+    {"strategy":"eager","block_size":5,"verbose":0},
+    {"strategy":"eager","block_size":10,"verbose":0},
+    {"strategy":"skip","block_size":1,"max_iterations":10,"verbose":0},
+    {"strategy":"skip","block_size":2,"max_iterations":10,"verbose":0},
+    {"strategy":"skip","block_size":5,"max_iterations":10,"verbose":0},
+    {"strategy":"skip","block_size":10,"max_iterations":10,"verbose":0},
+    {"strategy":"skip","block_size":1,"max_features":20,"verbose":0},
+    {"strategy":"skip","block_size":2,"max_features":20,"verbose":0},
+    {"strategy":"skip","block_size":5,"max_features":20,"verbose":0},
+    {"strategy":"skip","block_size":10,"max_features":20,"verbose":0},
+]
+for data_i in data[::-1]:
+  result = ranker_score_comparison(base_path=base_path,
+                                  datasets=[data_i],
+                                  test_size=0.3,
+                                  seed=5,
+                                  n_iterations=30,
+                                  params = params)
+  result.to_csv(csv_folder+f"ranker_score_comparison_{data_i[0]}.csv",index=False)

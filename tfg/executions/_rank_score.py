@@ -12,13 +12,13 @@ from tfg.ranker import RankerLogicalFeatureConstructor
 from tfg.utils import get_X_y_from_database
 
 
-def ranker_score_comparison(datasets, seed, test_size, base_path, params, n_iterations=30):
+def ranker_score_comparison(datasets, seed, test_size, base_path, params, n_iterations=30,n_intervals=5):
     result = []
     dataset_tqdm = tqdm(datasets)
 
     # Instantiate ranker
-    r = RankerLogicalFeatureConstructor()
-    nb = NaiveBayes(encode_data=True)
+    r = RankerLogicalFeatureConstructor(n_intervals = n_intervals)
+    nb = NaiveBayes(encode_data=True,n_intervals = n_intervals)
     for database in dataset_tqdm:
         name, label = database
         if os.path.exists(base_path+name):

@@ -54,13 +54,13 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
 
     def fit(self,X,y):
         self.feature_encoder_ = CustomOrdinalFeatureEncoder()
-        self.label_encoder_ = CustomLabelEncoder()
+        self.class_encoder_ = CustomLabelEncoder()
 
         self.categories_ = None
         if isinstance(X,pd.DataFrame):
             self.categories_ = X.columns
         X = self.feature_encoder_.fit_transform(X)
-        y = self.label_encoder_.fit_transform(y)
+        y = self.class_encoder_.fit_transform(y)
 
         GraphObject = AntFeatureGraph if self.graph_strategy=="full" else AntFeatureGraphMI
         self.afg = GraphObject(seed=self.seed).compute_graph(X, y, ("XOR","OR", "AND"))

@@ -45,18 +45,3 @@ class CustomLabelEncoder(LabelEncoder):
                 continue
             else:
                 return n[0]
-
-
-
-
-a = np.array(['Francia','Espak','Italia','Espak'])
-cl = CustomLabelEncoder()
-a_transformed = cl.fit_transform(a)
-print(a_transformed)
-print(cl.inverse_transform(a_transformed))
-
-print("\nb")
-b = np.array(['Fncia','Espak','Italia','Espak'])
-b_transformed = cl.transform(b)
-print(b_transformed)
-print(cl.inverse_transform(b_transformed))

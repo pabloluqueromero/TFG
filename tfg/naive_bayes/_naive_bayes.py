@@ -5,7 +5,6 @@ import pandas as pd
 from numba import njit
 from scipy.special import logsumexp
 from sklearn.base import BaseEstimator, ClassifierMixin
-from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import check_X_y, check_array
 from sklearn.utils.validation import check_is_fitted
 #Local Imports

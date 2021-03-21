@@ -64,7 +64,7 @@ def time_comparison(combinations=None, n_iterations=15, verbose=1, seed=200):
         combinations += list(product([500000],[10,100,1000]))
 
     clf_no_encoding = NaiveBayes(encode_data=False, alpha=1)
-    clf_encoding = NaiveBayes(encode_data=True, alpha=1)
+    clf_encoding = NaiveBayes(encode_data=True, alpha=1,discretize=False)
     clf_categorical_sklearn = CategoricalNB(alpha=1)
     clf_gaussian_sklearn = GaussianNB()
     progress_bar = tqdm(total=len(combinations), bar_format='{l_bar}{bar:20}{r_bar}{bar:-10b}')

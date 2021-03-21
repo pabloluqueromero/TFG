@@ -87,7 +87,10 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
     encode_data : bool, default=True
         Encode data when data is not encoded by default with an OrdinalEncoder
     
-    n_intervals : int, default=5
+    discretize : bool, default=True
+        Discretize numerical data
+    
+    n_intervals : int or None, default=5
         Discretize numerical data using the specified number of intervals
     
     Attributes
@@ -140,10 +143,11 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         Array where `feature_values_count_per_element_[i]` is an array  of shape (where `feature_values_count_per_element_[i][j]`
         contains the count of the jth value for the ith feature. Assuming ordinal encoding, some values might be equal to 0
     """
-    def __init__(self, alpha=1.0, encode_data=True, n_intervals=5):
+    def __init__(self, alpha=1.0, encode_data=True, n_intervals=5,discretize=True):
         self.alpha = alpha
         self.encode_data = encode_data
         self.n_intervals = n_intervals
+        self.discretize = discretize
         super().__init__()
 
 
@@ -192,7 +196,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         if isinstance(y,pd.DataFrame):
             y = y.to_numpy()
         if self.encode_data:
-            self.feature_encoder_ = CustomOrdinalFeatureEncoder(n_intervals = self.n_intervals)
+            self.feature_encoder_ = CustomOrdinalFeatureEncoder(n_intervals = self.n_intervals, discretize= self.discretize)
             self.class_encoder_ = CustomLabelEncoder()
             X = self.feature_encoder_.fit_transform(X)
             y = self.class_encoder_.fit_transform(y)

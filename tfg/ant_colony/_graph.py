@@ -183,8 +183,9 @@ class AntFeatureGraph:
         return
 
 class AntFeatureGraphMI:
-    def __init__(self, seed):
+    def __init__(self, seed, connections=2):
         self.seed = seed
+        self.connections = connections
 
     def _initialize_initial_matrix(self,X,y):
         self.initial_heuristic = np.empty(len(self.nodes))
@@ -233,7 +234,7 @@ class AntFeatureGraphMI:
         self._initialize_nodes(X)
         self.inverse_nodes = {v: k for k, v in self.nodes.items()}
         self.operators = operators
-        self._initialize_neighbours_info(X,y)
+        self._initialize_neighbours_info(X,y,k = self.connections)
         self._initialize_initial_matrix(X,y)
         self._initialize_pheromone_matrix()
         self.allowed_steps = ("CONSTRUCTION", "SELECTION")

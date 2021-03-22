@@ -31,7 +31,8 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
                 path=None,
                 filename=None,
                 verbose=0,
-                graph_strategy = "mutual_info"):
+                graph_strategy = "mutual_info",
+                connections = 2):
         self.ants = ants
         self.evaporation_rate = evaporation_rate
         self.intensification_factor = intensification_factor
@@ -47,6 +48,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.filename = filename
         self.verbose=verbose
         self.graph_strategy = graph_strategy
+        self.connections = connections
 
         allowed_graph_strategy = ("full","mutual_info")
         if self.graph_strategy not in allowed_graph_strategy:
@@ -62,8 +64,10 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
         X = self.feature_encoder_.fit_transform(X)
         y = self.class_encoder_.fit_transform(y)
 
-        GraphObject = AntFeatureGraph if self.graph_strategy=="full" else AntFeatureGraphMI
-        self.afg = GraphObject(seed=self.seed).compute_graph(X, y, ("XOR","OR", "AND"))
+        if self.graph_strategy=="full":
+                self.afg = AntFeatureGraph(seed=self.seed).compute_graph(X, y, ("XOR","OR", "AND"))
+        else:
+                self.afg = AntFeatureGraphMI(seed=self.seed,connections=self.connections).compute_graph(X, y, ("XOR","OR", "AND"))
         print(f"Number of nodes: {len(self.afg.nodes)}")
         random.seed(self.seed)
         best_score = 0

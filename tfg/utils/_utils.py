@@ -204,7 +204,7 @@ def get_X_y_from_database(base_path, name, data, test, label):
 def get_graphs(df,folder):
     #FIT
     filename = "fit_time_fix_n_samples.png"
-    fig = px.line(df[df["n_samples"].isin([10,100,1000])],
+    fig = px.line(df[df["n_samples"].isin([10,100,1000])].sort_values(['n_samples','n_features']),
                 x="n_features", 
                 y="Average Fit Time", 
                 color='Classifier',
@@ -213,17 +213,17 @@ def get_graphs(df,folder):
     fig.write_image(folder+filename)
 
     filename = "fit_time_fix_n_features.png"
-    fig = px.line(df[df["n_features"].isin([10,100,1000])],
+    fig = px.line(df[df["n_features"].isin([10,100,1000])].sort_values(['n_features','n_samples']),
                 x="n_samples", 
                 y="Average Fit Time", 
                 color='Classifier',
                 facet_col="n_features", 
-                width=1000,)
+                width=1000)
     fig.write_image(folder+filename)
     
     #Predict
     filename = "predict_time_fix_n_samples.png"
-    fig = px.line(df[df["n_samples"].isin([10,100,1000])],
+    fig = px.line(df[df["n_samples"].isin([10,100,1000])].sort_values(['n_samples','n_features']),
                 x="n_features", 
                 y="Average Predict Time", 
                 color='Classifier',
@@ -232,7 +232,7 @@ def get_graphs(df,folder):
     fig.write_image(folder+filename)
 
     filename = "predict_time_fix_n_features.png"
-    fig = px.line(df[df["n_features"].isin([10,100,1000])],
+    fig = px.line(df[df["n_features"].isin([10,100,1000])].sort_values(['n_features','n_samples']),
                 x="n_samples", 
                 y="Average Predict Time", 
                 color='Classifier',

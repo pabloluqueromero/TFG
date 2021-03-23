@@ -46,22 +46,24 @@ def ranker_score_comparison(datasets, seed, test_size, base_path, params, n_iter
                         X, y,
                         test_size=test_size,
                         random_state=seed+i,
-                        stratify=y)
+                        stratify=y,
+                        shuffle=True)
                 except:
                     #Not enough values to stratify y
                     X_train, X_test, y_train, y_test = train_test_split(
                         X, y,
                         test_size=test_size,
-                        random_state=seed+i)
+                        random_state=seed+i,
+                        shuffle=True)
 
+                nb.fit(X=X_train, y=y_train)
+                naive_bayes_score = nb.score(X_test, y_test)
                 c = CustomOrdinalFeatureEncoder()
                 X_train = c.fit_transform(X_train)
                 X_test = c.transform(X_test)
                 l = CustomLabelEncoder()
                 y_train = l.fit_transform(y_train)
                 y_test = l.transform(y_test)
-                nb.fit(X=X_train, y=y_train)
-                naive_bayes_score = nb.score(X_test, y_test)
 
                 conf_index = 0
                 for conf in params:
@@ -103,6 +105,7 @@ def ranker_score_comparison(datasets, seed, test_size, base_path, params, n_iter
                        np.mean(r_selected[conf_index]),
                        np.mean(r_dummy[conf_index])]
                 result.append(row)
+                print(np.mean(nb_score[conf_index]))
 
         else:
             print(f"{name} doesnt' exist")

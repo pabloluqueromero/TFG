@@ -105,7 +105,6 @@ def ranker_score_comparison(datasets, seed, test_size, base_path, params, n_iter
                        np.mean(r_selected[conf_index]),
                        np.mean(r_dummy[conf_index])]
                 result.append(row)
-                print(np.mean(nb_score[conf_index]))
 
         else:
             print(f"{name} doesnt' exist")

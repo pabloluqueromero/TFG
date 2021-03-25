@@ -227,11 +227,11 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         y : array-like of shape (n_samples)
             Predicted label for each sample.
         """
-        if isinstance(X,pd.DataFrame):
-            X = X.to_numpy()
         check_is_fitted(self)
         if self.encode_data:
             X = self.feature_encoder_.transform(X)
+        if isinstance(X,pd.DataFrame):
+            X = X.to_numpy()
         if X.dtype!=int:
             X = X.astype(int)
         check_array(X)

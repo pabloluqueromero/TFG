@@ -21,12 +21,13 @@ def scoring_comparison(base_path,datasets,verbose=1,test_size=0.3,seed=None,n_it
                     "categorical_training_score",
                     "categorical_test_score"]
     data =[]
-    clf_no_encoding = NaiveBayes(encode_data=False)
+    clf_no_encoding = NaiveBayes(encode_data=True)
     clf_categorical_sklearn = CategoricalNB()
     
     datasets_iter = tqdm(datasets, bar_format='{l_bar}{bar:20}{r_bar}{bar:-10b}')
     c = CustomOrdinalFeatureEncoder()
     l = CustomLabelEncoder()
+    
     for dataset in datasets_iter:
         dataset_name, label = dataset
         data_filename = f"{dataset_name}.data.csv"
@@ -60,11 +61,13 @@ def scoring_comparison(base_path,datasets,verbose=1,test_size=0.3,seed=None,n_it
                 X_train,X_test,y_train,y_test = train_test_split(X,y,
                                                                 test_size=test_size,
                                                                 random_state=seed+iteration,
-                                                                shuffle=True)
+                                                                shuffle=True
+                                                                )
             #Fit
             clf_no_encoding.fit(X_train,y_train)
             clf_categorical_sklearn.min_categories = [1+np.max(np.concatenate([X_train[:,j],X_test[:,j]])) for j in range(X_train.shape[1])]
             clf_categorical_sklearn.fit(X_train,y_train)
+            
             
             #Predict
             custom_train.append(clf_no_encoding.score(X_train,y_train))

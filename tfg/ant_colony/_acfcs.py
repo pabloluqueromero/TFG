@@ -68,7 +68,8 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
                 self.afg = AntFeatureGraph(seed=self.seed).compute_graph(X, y, ("XOR","OR", "AND"))
         else:
                 self.afg = AntFeatureGraphMI(seed=self.seed,connections=self.connections).compute_graph(X, y, ("XOR","OR", "AND"))
-        print(f"Number of nodes: {len(self.afg.nodes)}")
+        if self.verbose:
+            print(f"Number of nodes: {len(self.afg.nodes)}")
         random.seed(self.seed)
         best_score = 0
         self.best_features = []
@@ -117,24 +118,21 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
         check_is_fitted(self)
         if isinstance(y,pd.DataFrame):
             y = y.to_numpy()
-        if self.encode_data:
-            X = self.feature_encoder_.transform(X)
-            y = self.class_encoder_.transform(y)
-        if isinstance(X,pd.DataFrame):
-            X = X.to_numpy()
+        X = self.feature_encoder_.transform(X)
+        y = self.class_encoder_.transform(y)
         X = np.concatenate([ f.transform(X) for f in self.best_features],axis=1)
         return X,y
 
     def predict(self,X,y):
         X,y = self.transform(X,y)
-        return self.classifier.predict(X,y)
+        return self.classifier_.predict(X,y)
 
         
     def predict_proba(self,X,y):
         X,y = self.transform(X,y)
-        return self.classifier.predict_proba(X,y)
+        return self.classifier_.predict_proba(X,y)
 
     def score(self,X,y):
         X,y = self.transform(X,y)
-        return self.classifier.score(X,y)
+        return self.classifier_.score(X,y)
  

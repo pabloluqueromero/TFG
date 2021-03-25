@@ -58,7 +58,6 @@ def acfs_score_comparison(datasets, seed, test_size, base_path, params, n_iterat
 
                 nb.fit(X_train, y_train)
                 naive_bayes_score = nb.score(X_test, y_test)
-                print(naive_bayes_score)
                 conf_index  = 0
                 for conf in params:
                     seed_tqdm.set_postfix({"seed": i, "config": conf_index})

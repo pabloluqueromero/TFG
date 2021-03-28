@@ -110,10 +110,39 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
                                 categories=self.categories_,
                                 path=self.path,
                                 filename=self.filename)
-        self.classifier_ = NaiveBayes()
+
+
+        self.classifier_ = NaiveBayes(encode_data=False)
         self.classifier_.fit(np.concatenate([ f.transform(X) for f in self.best_features],axis=1),y)
+        self.backwards_fss(X,y)
         return self
 
+    def backwards_fss(self,X,y):
+        check_is_fitted(self)
+        improvement = True
+        best_features = np.concatenate([ f.transform(X) for f in self.best_features],axis=1)
+        best_score = self.classifier_.leave_one_out_cross_val(best_features,y,fit=False)
+        while improvement and best_features.shape[1] >1:
+            improvement = False
+            feature = None
+            for i in range(best_features.shape[1]):
+                feature = best_features[:,i].reshape(-1,1)
+                current_features = np.delete(best_features,i,axis=1)
+                self.classifier_.remove_feature(i)
+                current_score = self.classifier_.leave_one_out_cross_val(current_features,y,fit=False)
+                self.classifier_.add_features(feature,y,[i])
+                if current_score > best_score:
+                    feature_index = i
+                    improvement = True
+                    best_score = current_score
+                
+            if improvement:
+                best_features = np.delete(best_features,feature_index,axis=1)
+                self.classifier_.remove_feature(feature_index)
+                del self.best_features[feature_index]
+        return
+                
+               
     def transform(self,X,y):
         check_is_fitted(self)
         if isinstance(y,pd.DataFrame):

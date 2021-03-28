@@ -242,8 +242,8 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
             try:
                 i = self.numerical_feature_index_.index(index)
                 del self.numerical_feature_index_[i]
-                self.discretizer.bin_edges_ = np.delete(self.discretizer.bin_edges,i,axis=1)
-                self.discretizer.n_bin_ = np.delete(self.discretizer.bin_edges,i,axis=1)
+                self.discretizer.bin_edges_ = np.delete(self.discretizer.bin_edges_,i,axis=1)
+                self.discretizer.n_bin_ = np.delete(self.discretizer.bin_edges_,i,axis=1)
             except ValueError:
                 pass
 

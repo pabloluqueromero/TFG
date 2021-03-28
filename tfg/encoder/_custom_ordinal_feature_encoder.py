@@ -19,6 +19,15 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
     Discretizes in 5 intervales using quantile strategy, numerical features are detected only 
     when the provided features are wrapped in a pandas DataFrame and have dtype float.
 
+    Parameters
+    ----------
+    
+    discretize : bool, default=True
+        Discretize numerical data using the specified number of intervals
+    
+    n_intervals : int or None, default=5
+        Discretize numerical data
+    
     Attributes
     ----------
     n_features : int
@@ -46,19 +55,25 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
         Contains the index of numerical features, used to know which columns
         ought to be treated as a numerical feature.
     """
+    def __init__(self,n_intervals=5, discretize=True):
+        self.n_intervals = n_intervals
+        self.discretize = discretize
     def fit(self,X, y=None):
         '''Fit the transformer'''
         X = X.copy()
         self.numerical_feature_index_ =  []
         if isinstance(X,pd.DataFrame):
-            numerical_features = X.select_dtypes("float")
-            if len(numerical_features.columns):
-                self.discretizer = KBinsDiscretizer(n_bins=5,encode="ordinal",strategy="quantile")
-                X.loc[:,numerical_features.columns] = self.discretizer.fit_transform(numerical_features)
-                X.loc[:,numerical_features.columns] = X.loc[:,numerical_features.columns].astype(int)
-                self.numerical_feature_index_ =  list(X.columns.get_indexer(numerical_features.columns))
+            if self.discretize:
+                numerical_features = X.select_dtypes("float")
+                if len(numerical_features.columns):
+                    self.discretizer = KBinsDiscretizer(n_bins=self.n_intervals,encode="ordinal",strategy="quantile")
+                    X.loc[:,numerical_features.columns] = self.discretizer.fit_transform(numerical_features)
+                    X.loc[:,numerical_features.columns] = X.loc[:,numerical_features.columns].astype(int)
+                    self.numerical_feature_index_ =  list(X.columns.get_indexer(numerical_features.columns))
             X = X.to_numpy()
-        X = X.astype(str)
+        
+        if X.dtype=="O":
+            X = X.astype(str)
 
         self.n_features = X.shape[1]
         self.categories_ = [np.unique(X[:,j]) for j in range(self.n_features)]
@@ -75,13 +90,16 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
             raise Exception(f"Expected {self.n_features} features, got {X.shape[1]} instead")
         X = X.copy()
         if isinstance(X,pd.DataFrame):
-            numerical_features = X.select_dtypes("float")
-            if len(numerical_features.columns):
-                discretized_features = self.discretizer.transform(numerical_features)
-                X.loc[:,numerical_features.columns] = discretized_features
-                X.loc[:,numerical_features.columns] = X.loc[:,numerical_features.columns].astype(int)
-            X = X.to_numpy()
-        X = X.astype(str)
+            if self.discretize:
+                numerical_features = X.select_dtypes("float")
+                if len(numerical_features.columns):
+                    discretized_features = self.discretizer.transform(numerical_features)
+                    X.loc[:,numerical_features.columns] = discretized_features
+                    X.loc[:,numerical_features.columns] = X.loc[:,numerical_features.columns].astype(int)
+                X = X.to_numpy()
+        
+        if X.dtype=="O":
+            X = X.astype(str)
         
         X_copy = np.empty(shape=X.shape,dtype=int)
         for j in range(X_copy.shape[1]):
@@ -124,7 +142,7 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
 
     def transform_columns(self,X,categories):
         '''Method used to transform new columns wwhen dinamiccally adding features to the transformer.
-           It is assumed that variables that need to be discretized have been taken cared of in previous
+           It is assumed that variables that need to be discretized have been taken care of in previous
            steps'''
         if isinstance(X,pd.DataFrame):
             X = X.to_numpy()
@@ -159,33 +177,37 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
         if isinstance(X,pd.DataFrame):
             numerical_features = X.select_dtypes("float")
             if len(numerical_features.columns):
-                temp_discretizer = KBinsDiscretizer(n_bins=5,encode="ordinal",strategy="quantile")
-                X.loc[:,numerical_features.columns] = temp_discretizer.fit_transform(numerical_features)
-                X.loc[:,numerical_features.columns] = X.loc[:,numerical_features.columns].astype(int)
-                new_index = X.columns.get_indexer(numerical_features.columns)
-                if index:
-                    index_with_column = list(enumerate(index))
-                    numerical_index = np.array(index)[new_index]
-                    sort_index = np.argsort(numerical_index)
-                    numerical_index_with_column = [index_with_column[i] for i in numerical_index] 
-                    last = 0 
-                    for i in sort_index:
-                        feature,list_insert_index = numerical_index_with_column[i]
-                        while last <= len(self.numerical_feature_index_) and list_insert_index < self.numerical_feature_index_[last] :
-                            last+=1
-                        self.numerical_feature_index_.insert(last,list_insert_index)
-                        self.discretizer.n_bins_= np.insert( self.discretizer.n_bins_,last,temp_discretizer.n_bins_[i],axis=1)
-                        self.discretizer.bin_edges_= np.insert( self.discretizer.n_bins_,last,temp_discretizer.bin_edges_[i],axis=1)
-                        for n in range(last+1,len(self.numerical_feature_index_)):
-                            self.numerical_feature_index_[n]+=1
-                        
-                else:
-                    new_index = X.columns.get_indexer(numerical_features.columns)+self.n_features
-                    self.numerical_feature_index_.extend(new_index)
-                    self.discretizer.n_bins_ = np.concatenate([self.discretizer.n_bins_,temp_discretizer.n_bins_],axis=1)
-                    self.discretizer.bin_edges_ = np.concatenate([self.discretizer.bin_edges_,temp_discretizer.bin_edges_],axis=1)
+                
+                if self.discretize:
+                    temp_discretizer = KBinsDiscretizer(n_bins=self.n_intervals,encode="ordinal",strategy="quantile")
+                    X.loc[:,numerical_features.columns] = temp_discretizer.fit_transform(numerical_features)
+                    X.loc[:,numerical_features.columns] = X.loc[:,numerical_features.columns].astype(int)
+                    new_index = X.columns.get_indexer(numerical_features.columns)
+                    if index:
+                        index_with_column = list(enumerate(index))
+                        numerical_index = np.array(index)[new_index]
+                        sort_index = np.argsort(numerical_index)
+                        numerical_index_with_column = [index_with_column[i] for i in numerical_index] 
+                        last = 0 
+                        for i in sort_index:
+                            feature,list_insert_index = numerical_index_with_column[i]
+                            while last <= len(self.numerical_feature_index_) and list_insert_index < self.numerical_feature_index_[last] :
+                                last+=1
+                            self.numerical_feature_index_.insert(last,list_insert_index)
+                            self.discretizer.n_bins_= np.insert( self.discretizer.n_bins_,last,temp_discretizer.n_bins_[i],axis=1)
+                            self.discretizer.bin_edges_= np.insert( self.discretizer.n_bins_,last,temp_discretizer.bin_edges_[i],axis=1)
+                            for n in range(last+1,len(self.numerical_feature_index_)):
+                                self.numerical_feature_index_[n]+=1
+                            
+                    else:
+                        new_index = X.columns.get_indexer(numerical_features.columns)+self.n_features
+                        self.numerical_feature_index_.extend(new_index)
+                        self.discretizer.n_bins_ = np.concatenate([self.discretizer.n_bins_,temp_discretizer.n_bins_],axis=1)
+                        self.discretizer.bin_edges_ = np.concatenate([self.discretizer.bin_edges_,temp_discretizer.bin_edges_],axis=1)
             X = X.to_numpy()
-        X = X.astype(str)
+        
+        if X.dtype=="O":
+            X = X.astype(str)
         self.n_features += X.shape[1]
         new_categories = [np.unique(X[:,j]) for j in range(X.shape[1])]
         if index is not None:
@@ -216,13 +238,14 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
         self.unknown_values_ = [cat.shape[0] for cat in self.categories_]
         
         #Remove if it is a continuos feature
-        try:
-            i = self.numerical_feature_index_.index(index)
-            del self.numerical_feature_index_[i]
-            self.discretizer.bin_edges_ = np.delete(self.discretizer.bin_edges,i,axis=1)
-            self.discretizer.n_bin_ = np.delete(self.discretizer.bin_edges,i,axis=1)
-        except ValueError:
-            pass
+        if self.discretize:
+            try:
+                i = self.numerical_feature_index_.index(index)
+                del self.numerical_feature_index_[i]
+                self.discretizer.bin_edges_ = np.delete(self.discretizer.bin_edges_,i,axis=1)
+                self.discretizer.n_bin_ = np.delete(self.discretizer.bin_edges_,i,axis=1)
+            except ValueError:
+                pass
 
 
     def inverse_transform_element(self,feature_index,value):
@@ -230,16 +253,17 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
         check_is_fitted(self)
         try:
             value = self.sorted_categories_[feature_index][value]
-            try:
-                i = self.numerical_feature_index_.index(feature_index)
-                if int(value)==0:
-                    value = [np.NINF,self.discretizer.bin_edges_[i][1]]
-                elif int(value)==len(self.discretizer.bin_edges_[i])-2:
-                    value = [self.discretizer.bin_edges_[i][int(value)],np.Inf]
-                else:
-                    value = self.discretizer.bin_edges_[i][int(value):int(value)+2]
-            except:
-                pass
-            return value
+            if self.discretize:
+                try:
+                    i = self.numerical_feature_index_.index(feature_index)
+                    if int(value)==0:
+                        value = [np.NINF,self.discretizer.bin_edges_[i][1]]
+                    elif int(value)==len(self.discretizer.bin_edges_[i])-2:
+                        value = [self.discretizer.bin_edges_[i][int(value)],np.Inf]
+                    else:
+                        value = self.discretizer.bin_edges_[i][int(value):int(value)+2]
+                except:
+                    pass
+                return value
         except:
             return np.nan

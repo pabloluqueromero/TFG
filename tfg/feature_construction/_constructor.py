@@ -7,8 +7,8 @@ from tfg.feature_construction import FeatureOperand, FeatureOperator
 
 def get_unique_combinations(X):
     '''Gets all the possible pairs of values vi and vj such that vi belong to Xi and vj belongs to Xj for every pair of features '''
-    return np.unique(X,axis=0) #-> Slower but might produce less combinations (only combinations that appear in the database)
-    # return list(product(*[ pd.unique(X[:,j]) for j in range(X.shape[1])])) # All possible combinations even though some might not appear
+    # return np.unique(X,axis=0) #-> Slower but might produce less combinations (only combinations that appear in the database)
+    return list(product(*[ pd.unique(X[:,j]) for j in range(X.shape[1])])) # All possible combinations even though some might not appear
 
 def construct_features(X,operators=('AND','OR','XOR')):
     '''For each combination returned by get_unique_combinations it generates 3 features with the specified operators)'''

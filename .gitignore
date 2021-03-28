@@ -29,3 +29,6 @@ results/RANKER_UCI_DATABASE/new/Resultados.csv
 prueba.py
 selected_features.json
 features_translated/*
+Fichero_resultado.csv
+to_table.py
+score.tex

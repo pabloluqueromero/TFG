@@ -2,48 +2,31 @@ import os
 import numpy as np
 import pandas as pd
 
-from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from tqdm.autonotebook import tqdm
 
-from tfg.encoder import CustomOrdinalFeatureEncoder
+from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
 from tfg.feature_construction import DummyFeatureConstructor
 from tfg.naive_bayes import NaiveBayes
 from tfg.ranker import RankerLogicalFeatureConstructor
+from tfg.utils import get_X_y_from_database
 
 
-def get_X_y(base_path, name, data, test, label):
-    full_data_path = base_path+name+"/"+data
-    full_test_path = base_path+name+"/"+test
-    has_test = os.path.exists(base_path+name+"/"+test)
-    assert pd.read_csv(full_data_path)[label].name == label
-    if has_test:
-        train = pd.read_csv(full_data_path)
-        test = pd.read_csv(full_test_path)
-        df = train.append(test)
-
-    else:
-        df = pd.read_csv(full_data_path)
-    X = df.drop([label], axis=1)
-    y = df[label]
-    return X, y
-
-
-def ranker_score_comparison(databases, seed, test_size, base_path, params, n_iterations=30):
+def ranker_score_comparison(datasets, seed, test_size, base_path, params, n_iterations=30,n_intervals=5):
     result = []
-    database_tqdm = tqdm(databases)
+    dataset_tqdm = tqdm(datasets)
 
     # Instantiate ranker
-    r = RankerLogicalFeatureConstructor()
-    nb = NaiveBayes(encode_data=True)
-    for database in database_tqdm:
+    r = RankerLogicalFeatureConstructor(n_intervals = n_intervals)
+    nb = NaiveBayes(encode_data=True,n_intervals = n_intervals)
+    for database in dataset_tqdm:
         name, label = database
         if os.path.exists(base_path+name):
             test = f"{name}.test.csv"
             data = f"{name}.data.csv"
-            X, y = get_X_y(base_path, name, data, test, label)
+            X, y = get_X_y_from_database(base_path, name, data, test, label)
 
-            database_tqdm.set_postfix({"DATABASE": name})
+            dataset_tqdm.set_postfix({"DATABASE": name})
 
             seed_tqdm = tqdm(range(n_iterations), leave=False)
 
@@ -58,19 +41,29 @@ def ranker_score_comparison(databases, seed, test_size, base_path, params, n_ite
             r_original_selected = np.zeros(shape=(len(params), n_iterations))
 
             for i in seed_tqdm:
-                X_train, X_test, y_train, y_test = train_test_split(
-                    X, y,
-                    test_size=test_size,
-                    random_state=seed+i,
-                    stratify=y)
+                try:
+                    X_train, X_test, y_train, y_test = train_test_split(
+                        X, y,
+                        test_size=test_size,
+                        random_state=seed+i,
+                        stratify=y,
+                        shuffle=True)
+                except:
+                    #Not enough values to stratify y
+                    X_train, X_test, y_train, y_test = train_test_split(
+                        X, y,
+                        test_size=test_size,
+                        random_state=seed+i,
+                        shuffle=True)
+
+                nb.fit(X=X_train, y=y_train)
+                naive_bayes_score = nb.score(X_test, y_test)
                 c = CustomOrdinalFeatureEncoder()
                 X_train = c.fit_transform(X_train)
                 X_test = c.transform(X_test)
-                l = LabelEncoder()
+                l = CustomLabelEncoder()
                 y_train = l.fit_transform(y_train)
                 y_test = l.transform(y_test)
-                nb.fit(X=X_train, y=y_train)
-                naive_bayes_score = nb.score(X_test, y_test)
 
                 conf_index = 0
                 for conf in params:

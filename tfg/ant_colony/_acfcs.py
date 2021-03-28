@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 
 from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
-from sklearn.preprocessing import LabelEncoder
 from sklearn.utils.validation import check_is_fitted
 
 from tqdm.autonotebook import tqdm
@@ -12,7 +11,7 @@ from tqdm.autonotebook import tqdm
 from tfg.ant_colony import AntFeatureGraph
 from tfg.ant_colony import AntFeatureGraphMI
 from tfg.ant_colony import Ant
-from tfg.encoder import CustomOrdinalFeatureEncoder
+from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
 from tfg.naive_bayes import NaiveBayes
 from tfg.utils import translate_features
 
@@ -32,7 +31,8 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
                 path=None,
                 filename=None,
                 verbose=0,
-                graph_strategy = "mutual_info"):
+                graph_strategy = "mutual_info",
+                connections = 2):
         self.ants = ants
         self.evaporation_rate = evaporation_rate
         self.intensification_factor = intensification_factor
@@ -48,6 +48,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.filename = filename
         self.verbose=verbose
         self.graph_strategy = graph_strategy
+        self.connections = connections
 
         allowed_graph_strategy = ("full","mutual_info")
         if self.graph_strategy not in allowed_graph_strategy:
@@ -55,17 +56,20 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
 
     def fit(self,X,y):
         self.feature_encoder_ = CustomOrdinalFeatureEncoder()
-        self.label_encoder_ = LabelEncoder()
+        self.class_encoder_ = CustomLabelEncoder()
 
         self.categories_ = None
         if isinstance(X,pd.DataFrame):
             self.categories_ = X.columns
         X = self.feature_encoder_.fit_transform(X)
-        y = self.label_encoder_.fit_transform(y)
+        y = self.class_encoder_.fit_transform(y)
 
-        GraphObject = AntFeatureGraph if self.graph_strategy=="full" else AntFeatureGraphMI
-        self.afg = GraphObject(seed=self.seed).compute_graph(X, y, ("XOR","OR", "AND"))
-        print(f"Number of nodes: {len(self.afg.nodes)}")
+        if self.graph_strategy=="full":
+                self.afg = AntFeatureGraph(seed=self.seed).compute_graph(X, y, ("XOR","OR", "AND"))
+        else:
+                self.afg = AntFeatureGraphMI(seed=self.seed,connections=self.connections).compute_graph(X, y, ("XOR","OR", "AND"))
+        if self.verbose:
+            print(f"Number of nodes: {len(self.afg.nodes)}")
         random.seed(self.seed)
         best_score = 0
         self.best_features = []
@@ -106,32 +110,58 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
                                 categories=self.categories_,
                                 path=self.path,
                                 filename=self.filename)
-        self.classifier_ = NaiveBayes()
+
+
+        self.classifier_ = NaiveBayes(encode_data=False)
         self.classifier_.fit(np.concatenate([ f.transform(X) for f in self.best_features],axis=1),y)
+        self.backwards_fss(X,y)
         return self
 
+    def backwards_fss(self,X,y):
+        check_is_fitted(self)
+        improvement = True
+        best_features = np.concatenate([ f.transform(X) for f in self.best_features],axis=1)
+        best_score = self.classifier_.leave_one_out_cross_val(best_features,y,fit=False)
+        while improvement and best_features.shape[1] >1:
+            improvement = False
+            feature = None
+            for i in range(best_features.shape[1]):
+                feature = best_features[:,i].reshape(-1,1)
+                current_features = np.delete(best_features,i,axis=1)
+                self.classifier_.remove_feature(i)
+                current_score = self.classifier_.leave_one_out_cross_val(current_features,y,fit=False)
+                self.classifier_.add_features(feature,y,[i])
+                if current_score > best_score:
+                    feature_index = i
+                    improvement = True
+                    best_score = current_score
+                
+            if improvement:
+                best_features = np.delete(best_features,feature_index,axis=1)
+                self.classifier_.remove_feature(feature_index)
+                del self.best_features[feature_index]
+        return
+                
+               
     def transform(self,X,y):
         check_is_fitted(self)
         if isinstance(y,pd.DataFrame):
             y = y.to_numpy()
-        if self.encode_data:
-            X = self.feature_encoder_.transform(X)
-            y = self.class_encoder_.transform(y)
-        if isinstance(X,pd.DataFrame):
-            X = X.to_numpy()
+        X = self.feature_encoder_.transform(X)
+        y = self.class_encoder_.transform(y)
         X = np.concatenate([ f.transform(X) for f in self.best_features],axis=1)
         return X,y
 
     def predict(self,X,y):
         X,y = self.transform(X,y)
-        return self.classifier.predict(X,y)
+        return self.classifier_.predict(X,y)
 
         
     def predict_proba(self,X,y):
         X,y = self.transform(X,y)
-        return self.classifier.predict_proba(X,y)
+        return self.classifier_.predict_proba(X,y)
 
     def score(self,X,y):
         X,y = self.transform(X,y)
-        return self.classifier.score(X,y)
+        return self.classifier_.score(X,y)
  

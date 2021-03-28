@@ -4,10 +4,8 @@ import networkx as nx
 import numpy as np
 import random
 
-from sklearn.preprocessing import LabelEncoder
 
 from tfg.ant_colony import Ant
-from tfg.encoder import CustomOrdinalFeatureEncoder
 from tfg.feature_construction import DummyFeatureConstructor
 from tfg.utils import symmetrical_uncertainty
 from tfg.utils import mutual_information_class_conditioned
@@ -185,8 +183,9 @@ class AntFeatureGraph:
         return
 
 class AntFeatureGraphMI:
-    def __init__(self, seed):
+    def __init__(self, seed, connections=2):
         self.seed = seed
+        self.connections = connections
 
     def _initialize_initial_matrix(self,X,y):
         self.initial_heuristic = np.empty(len(self.nodes))
@@ -225,8 +224,7 @@ class AntFeatureGraphMI:
                     continue
                 mi.append((j,mutual_information_class_conditioned(X[:,j],X[:,i],y)))
             mi = sorted(mi,key = lambda x:x[1],reverse=False) # The greater the mutual information score the more correlation which we want to avoid
-            self.neighbour_features_[i]=set()
-            self.neighbour_features_[i].update(list(zip(*mi[:k]))[0])
+            self.neighbour_features_[i]=list(zip(*mi[:k]))[0]
         
 
 
@@ -236,7 +234,7 @@ class AntFeatureGraphMI:
         self._initialize_nodes(X)
         self.inverse_nodes = {v: k for k, v in self.nodes.items()}
         self.operators = operators
-        self._initialize_neighbours_info(X,y)
+        self._initialize_neighbours_info(X,y,k = self.connections)
         self._initialize_initial_matrix(X,y)
         self._initialize_pheromone_matrix()
         self.allowed_steps = ("CONSTRUCTION", "SELECTION")
@@ -265,20 +263,10 @@ class AntFeatureGraphMI:
                         neighbours.append( (neighbour_id,values, operator))# (id,(feature_index,value),"OPERATOR")
                         pheromones.append(self.pheromone_matrix_attribute_completion[edge])
         else:
-            #Add self variable
-             #Add original dummy neighbour
+            #Adding neighbours that are from the same feature
             neighbour_feature_first_index = self.nodes_per_feature[feature][0]
             neighbour_feature_n_nodes = self.nodes_per_feature[feature][1]
-            neighbour_id = self.inverse_nodes[(feature,None)]
-            if neighbour_id not in nodes_to_filter and neighbour_id == node_id:
-                edge = frozenset([neighbour_id,node_id])
-                values = self.nodes[neighbour_id]
-                if edge not in self.pheromone_matrix_selection:
-                    self.pheromone_matrix_selection[edge] = random.random()
-                neighbours.append((neighbour_id,values))
-                pheromones.append(self.pheromone_matrix_selection[edge])
-            
-
+            #Add all individual
             for neighbour_id in range(neighbour_feature_first_index,neighbour_feature_n_nodes+neighbour_feature_first_index):
                 values = self.nodes[neighbour_id]
                 edge = frozenset([neighbour_id, node_id])
@@ -289,19 +277,8 @@ class AntFeatureGraphMI:
                 neighbours.append( (neighbour_id,values))# (id,(feature_index,value),"OPERATOR")
                 pheromones.append(self.pheromone_matrix_selection[edge])
 
-
-            for neighbour_feature in self.neighbour_features_[feature]:
-                #Add original dummy neighbour
-                neighbour_id = self.inverse_nodes[(neighbour_feature,None)]
-                if neighbour_id in nodes_to_filter:
-                    continue
-                edge = frozenset([neighbour_id,node_id])
-                values = self.nodes[neighbour_id]
-                if edge not in self.pheromone_matrix_selection:
-                    self.pheromone_matrix_selection[edge] = random.random()
-                neighbours.append((neighbour_id,values))
-                pheromones.append(self.pheromone_matrix_selection[edge])
-                
+            #Add neighbours from other features
+            for neighbour_feature in self.neighbour_features_[feature]:                
                 neighbour_feature_first_index = self.nodes_per_feature[neighbour_feature][0]
                 neighbour_feature_n_nodes = self.nodes_per_feature[neighbour_feature][1]
                 for neighbour_id in range(neighbour_feature_first_index,neighbour_feature_n_nodes+neighbour_feature_first_index):
@@ -313,6 +290,18 @@ class AntFeatureGraphMI:
                         self.pheromone_matrix_selection[edge] = random.random()
                     neighbours.append( (neighbour_id,values))# (id,(feature_index,value),"OPERATOR")
                     pheromones.append(self.pheromone_matrix_selection[edge])
+                
+            #Allow jumps to any other original feature
+            for neighbour_feature in range(len(self.nodes_per_feature)):
+                neighbour_id = self.inverse_nodes[(neighbour_feature,None)]
+                if neighbour_id in nodes_to_filter or neighbour_id ==node_id:
+                    continue
+                edge = frozenset([neighbour_id,node_id])
+                values = self.nodes[neighbour_id]
+                if edge not in self.pheromone_matrix_selection:
+                    self.pheromone_matrix_selection[edge] = random.random()
+                neighbours.append((neighbour_id,values))
+                pheromones.append(self.pheromone_matrix_selection[edge])            
         return neighbours,np.array(pheromones)
 
     def get_initial_nodes(self):

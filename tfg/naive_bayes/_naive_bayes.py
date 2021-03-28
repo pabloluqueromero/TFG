@@ -5,11 +5,10 @@ import pandas as pd
 from numba import njit
 from scipy.special import logsumexp
 from sklearn.base import BaseEstimator, ClassifierMixin
-from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import check_X_y, check_array
 from sklearn.utils.validation import check_is_fitted
 #Local Imports
-from tfg.encoder import CustomOrdinalFeatureEncoder
+from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
   
 #For unseen values we want that log(0) = -inf
 np.seterr(divide='ignore')
@@ -85,8 +84,14 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         (0 for no smoothing). If it is an array it is 
         expected to have the same size as number of attributes
 
-    encode_data : bool, default=Ture
+    encode_data : bool, default=True
         Encode data when data is not encoded by default with an OrdinalEncoder
+    
+    discretize : bool, default=True
+        Discretize numerical data
+    
+    n_intervals : int or None, default=5
+        Discretize numerical data using the specified number of intervals
     
     Attributes
     ----------
@@ -138,9 +143,11 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         Array where `feature_values_count_per_element_[i]` is an array  of shape (where `feature_values_count_per_element_[i][j]`
         contains the count of the jth value for the ith feature. Assuming ordinal encoding, some values might be equal to 0
     """
-    def __init__(self, alpha=1.0, encode_data=True):
+    def __init__(self, alpha=1.0, encode_data=True, n_intervals=5,discretize=True):
         self.alpha = alpha
         self.encode_data = encode_data
+        self.n_intervals = n_intervals
+        self.discretize = discretize
         super().__init__()
 
 
@@ -189,8 +196,8 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         if isinstance(y,pd.DataFrame):
             y = y.to_numpy()
         if self.encode_data:
-            self.feature_encoder_ = CustomOrdinalFeatureEncoder()
-            self.class_encoder_ = LabelEncoder()
+            self.feature_encoder_ = CustomOrdinalFeatureEncoder(n_intervals = self.n_intervals, discretize= self.discretize)
+            self.class_encoder_ = CustomLabelEncoder()
             X = self.feature_encoder_.fit_transform(X)
             y = self.class_encoder_.fit_transform(y)
         if isinstance(X,pd.DataFrame):
@@ -220,11 +227,11 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         y : array-like of shape (n_samples)
             Predicted label for each sample.
         """
-        if isinstance(X,pd.DataFrame):
-            X = X.to_numpy()
         check_is_fitted(self)
         if self.encode_data:
             X = self.feature_encoder_.transform(X)
+        if isinstance(X,pd.DataFrame):
+            X = X.to_numpy()
         if X.dtype!=int:
             X = X.astype(int)
         check_array(X)

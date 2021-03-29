@@ -115,7 +115,7 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
         if isinstance(y,pd.DataFrame):
             y = y.to_numpy()
         if self.encode_data:
-            self.feature_encoder_ = CustomOrdinalFeatureEncoder()
+            self.feature_encoder_ = CustomOrdinalFeatureEncoder(n_intervals=self.n_intervals)
             self.class_encoder_ = CustomLabelEncoder()
             X = self.feature_encoder_.fit_transform(X)
             y = self.class_encoder_.fit_transform(y)

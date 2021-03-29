@@ -58,7 +58,7 @@ def ranker_score_comparison(datasets, seed, test_size, base_path, params, n_iter
 
                 nb.fit(X=X_train, y=y_train)
                 naive_bayes_score = nb.score(X_test, y_test)
-                c = CustomOrdinalFeatureEncoder()
+                c = CustomOrdinalFeatureEncoder(n_intervals = n_intervals)
                 X_train = c.fit_transform(X_train)
                 X_test = c.transform(X_test)
                 l = CustomLabelEncoder()

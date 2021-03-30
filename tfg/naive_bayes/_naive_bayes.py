@@ -221,7 +221,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         self._compute_feature_counts(X, y)        
         self._compute_independent_terms()
 
-        if self.n_classes_ > 2 and metric != "f1_score":
+        if self.n_classes_ > 2 and self.metric != "f1_score":
             def scorer(y_true,y_pred):
                 return self.scorer(y_true=y_true,
                                    y_pred=y_pred,

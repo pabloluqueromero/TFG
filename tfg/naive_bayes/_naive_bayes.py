@@ -156,12 +156,10 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
     def _get_scorer(self):
         self.scorer = get_scorer(self.metric)
         if self.metric == "f1_score": #Unseen values for target class may cause errors
-            def scorer(y_true,y_pred):
-                return self.scorer(y_true=y_true,
-                                   y_pred=y_pred,
-                                   average="micro", 
-                                   zero_division=0) 
-            self.scorer = scorer
+            self.scorer = lambda y_true,y_pred: get_scorer(self.metric)(y_true=y_true,
+                                                                        y_pred=y_pred,
+                                                                        average="micro", 
+                                                                        zero_division=0)
 
     def set_params(self, **params):
         super().set_params(**params)
@@ -316,9 +314,8 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
                 else:
                     update_value  = np.log(class_count_ + (self.feature_unique_values_count_[j])*self.alpha)
                 log_proba[i] -= np.where(update_value==np.NINF,0,update_value)
-        prediction = np.argmax(log_proba ,axis=1)
-        return scorer(y_true= y,
-                      y_pred = prediction)
+        y_pred = np.argmax(log_proba ,axis=1)
+        return self.scorer(y,y_pred)
 
     def add_features(self,X,y,index=None): 
         """Updates classifier with new features
@@ -425,5 +422,4 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
                 Percentage of correctly classified instances
         """
         y_pred = self.predict(X)
-        return self.scorer( y_true = y,
-                            y_pred = y_pred)
+        return self.scorer(y,y_pred)

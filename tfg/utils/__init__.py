@@ -15,6 +15,7 @@ from ._utils import translate_features
 from ._utils import mutual_information_class_conditioned
 from ._utils import get_X_y_from_database
 from ._utils import get_graphs
+from ._utils import get_scorer
 
 
 
@@ -38,4 +39,5 @@ __all__ = [
     "mutual_information_class_conditioned",
     "get_X_y_from_database",
     "get_graphs",
+    "get_scorer",
 ]

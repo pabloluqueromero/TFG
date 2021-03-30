@@ -240,3 +240,12 @@ def get_graphs(df,folder):
                 width=1000,)
     fig.write_image(folder+filename)
     
+from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
+def get_scorer(scoring):
+    scores = {"accuracy": accuracy_score,
+              "f1_score": f1_score,
+              "roc_auc_score":roc_auc_score
+    }
+    if scoring in scores:
+        return scores[scoring]
+    raise ValueError(f"The specified scoring {scoring} is not valid")

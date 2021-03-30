@@ -12,13 +12,13 @@ from tfg.ant_colony import ACFCS
 from tfg.utils import get_X_y_from_database
 
 
-def acfs_score_comparison(datasets, seed, test_size, base_path, params, n_iterations=30,n_intervals=5):
+def acfs_score_comparison(datasets, seed, test_size, base_path, params, n_iterations=30,n_intervals=5,metric="accuracy"):
     result = []
     dataset_tqdm = tqdm(datasets)
 
     # Instantiate ranker
-    acfcs = ACFCS(verbose=0)
-    nb = NaiveBayes(encode_data=True,n_intervals=n_intervals)
+    acfcs = ACFCS(verbose=0,metric=metric)
+    nb = NaiveBayes(encode_data=True,n_intervals=n_intervals,metric=metric)
     for database in dataset_tqdm:
         name, label = database
         if os.path.exists(base_path+name):

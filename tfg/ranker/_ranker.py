@@ -98,7 +98,8 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
                  verbose=0,
                  operators=("AND","OR","XOR"),
                  max_features = float("inf"),
-                 max_iterations=float("inf")):
+                 max_iterations=float("inf"),
+                 metric="accuracy"):
         self.strategy = strategy
         self.block_size = max(block_size,1)
         self.encode_data = encode_data
@@ -107,6 +108,7 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
         self.max_features = max_features
         self.max_iterations = max_iterations
         self.n_intervals = n_intervals
+        self.metric = metric
         allowed_strategies = ("eager","skip")
         if self.strategy not in allowed_strategies:
             raise ValueError("Unknown operator type: %s, expected one of %s." % (self.strategy, allowed_strategies))
@@ -154,7 +156,7 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
     def filter_features(self,X,y):
         '''After the rank is built this perform the greedy wrapper search'''
         check_is_fitted(self)
-        self.classifier = NaiveBayes(encode_data = False,n_intervals=self.n_intervals)
+        self.classifier = NaiveBayes(encode_data = False,n_intervals=self.n_intervals,metric=self.metric)
         current_score  = np.NINF
         first_iteration = True
         current_features = []

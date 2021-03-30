@@ -31,10 +31,11 @@ class Ant:
     final_score : float
         Leave one out croos-validation accuracy score obtained with the selected feature subset    
     """
-    def __init__(self, ant_id, alpha, beta):
+    def __init__(self, ant_id, alpha, beta ,metric):
         self.alpha = alpha
         self.beta = beta
         self.ant_id = ant_id
+        self.metric = metric
 
     def choose_next(self, probabilities, random_generator):
         '''Selects index based on roulette wheel selection'''
@@ -96,7 +97,7 @@ class Ant:
         self.current_features = []
         selected_nodes = set()
         constructed_nodes = set()
-        classifier = NaiveBayes(encode_data=False)
+        classifier = NaiveBayes(encode_data=False,metric=self.metric)
         current_score = np.NINF
         score = 0
 

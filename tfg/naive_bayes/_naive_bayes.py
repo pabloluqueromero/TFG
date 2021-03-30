@@ -9,6 +9,7 @@ from sklearn.utils import check_X_y, check_array
 from sklearn.utils.validation import check_is_fitted
 #Local Imports
 from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
+from tfg.utils import get_scorer
   
 #For unseen values we want that log(0) = -inf
 np.seterr(divide='ignore')
@@ -143,14 +144,22 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         Array where `feature_values_count_per_element_[i]` is an array  of shape (where `feature_values_count_per_element_[i][j]`
         contains the count of the jth value for the ith feature. Assuming ordinal encoding, some values might be equal to 0
     """
-    def __init__(self, alpha=1.0, encode_data=True, n_intervals=5,discretize=True):
+    def __init__(self, alpha=1.0, encode_data=True, n_intervals=5,discretize=True,metric="accuracy"):
         self.alpha = alpha
         self.encode_data = encode_data
         self.n_intervals = n_intervals
         self.discretize = discretize
+        self.metric = metric
+        self._get_scorer()
         super().__init__()
+    
+    def _get_scorer(self):
+        self.scorer = get_scorer(self.metric)
 
-
+    def set_params(self, **params):
+        super().set_params(**params)
+        self._get_scorer()
+        
     def _compute_independent_terms(self):
         """Computes the terms that are indepent of the prediction"""
         self.total_probability_ = compute_total_probability_(self.class_count_,self.feature_unique_values_count_,self.alpha)
@@ -300,7 +309,8 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
                     update_value  = np.log(class_count_ + (self.feature_unique_values_count_[j])*self.alpha)
                 log_proba[i] -= np.where(update_value==np.NINF,0,update_value)
         prediction = np.argmax(log_proba ,axis=1)
-        return np.sum(prediction == y)/y.shape[0]
+        return scorer(y_true= y,
+                      y_pred = prediction)
 
     def add_features(self,X,y,index=None): 
         """Updates classifier with new features
@@ -406,4 +416,6 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         score : float
                 Percentage of correctly classified instances
         """
-        return np.sum(self.predict(X) == y)/y.shape[0]
+        y_pred = self.predict(X)
+        return self.scorer( y_true = y,
+                            y_pred = y_pred)

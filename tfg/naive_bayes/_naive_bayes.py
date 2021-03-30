@@ -158,7 +158,7 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         if self.metric == "f1_score": #Unseen values for target class may cause errors
             self.scorer = lambda y_true,y_pred: get_scorer(self.metric)(y_true=y_true,
                                                                         y_pred=y_pred,
-                                                                        average="micro", 
+                                                                        average="macro", 
                                                                         zero_division=0)
 
     def set_params(self, **params):

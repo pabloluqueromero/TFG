@@ -220,6 +220,14 @@ class NaiveBayes(ClassifierMixin,BaseEstimator):
         self._compute_class_counts(X, y)  
         self._compute_feature_counts(X, y)        
         self._compute_independent_terms()
+
+        if self.n_classes_ > 2 and metric != "f1_score":
+            def scorer(y_true,y_pred):
+                return self.scorer(y_true=y_true,
+                                   y_pred=y_pred,
+                                   average="micro", 
+                                   zero_division=0) 
+            self.scorer = scorer
         return self
 
     def predict(self, X: np.ndarray):

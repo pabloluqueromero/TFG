@@ -107,7 +107,7 @@ class Ant:
 
         current_su = 0
         node_id, selected_node = initial[index]
-        su = heuristics[index]
+        su = heuristics[index] #SU variable contains the MIFS-SU for the selected variable
 
         is_fitted = False
         feature_constructor = None
@@ -118,7 +118,7 @@ class Ant:
                 feature_constructor = DummyFeatureConstructor(selected_node[0])
                 selected_nodes.add(node_id)
             else:
-                # Need to construct next feature and compute heuristic value for the feature
+                # Need to construct next feature and compute heuristic value for the feature to remplace temporal su from half-var
                 neighbours,pheromones = graph.get_neighbours(selected_node, constructed_nodes, step="CONSTRUCTION")
                 # Compute heuristic
                 

@@ -49,7 +49,7 @@ class Ant:
 
     def compute_probability(self,pheromones,heuristics):
         '''Computes the probability based on the formula
-           p(edge_ij) = normalized(pheromone_ij^alpha * heuristic_ij^beta)
+           p(edge_ij) = normalized(pheromone_ij**alpha * heuristic_ij**beta)
            
            Note:
            Some constructed features may produce features with no positive values if 
@@ -66,7 +66,10 @@ class Ant:
         if pheromones.sum() == 0:
             pheromones+=1
         probabilities= pheromones*heuristics
-        return probabilities/probabilities.sum()
+        s = probabilities.sum()
+        if s==0:
+            return np.ones(probabilities.shape)/probabilities.shape[0]
+        return probabilities/s
 
     def compute_neighbour_sufs(self,neighbour,selected_node,current_su,X,y):
         '''Dynamical computation of the SU for the feature subset based on the adapted MIFS for the symmetrical uncertainty'''

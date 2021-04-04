@@ -1,7 +1,7 @@
 import numpy as np
 import  pandas as pd
 
-from itertools import combinations,product
+from itertools import combinations,product,chain
 
 from tfg.feature_construction import FeatureOperand, FeatureOperator
 
@@ -24,11 +24,18 @@ def construct_features(X,operators=('AND','OR','XOR')):
     #Generate list:
         # ((attribute1_index,attribute2_index),possiblecombinations)
     values_combinations = ((index,get_unique_combinations_from_unique_values((X_unique[index[0]],X_unique[index[1]]))) for index in feature_combinations) 
-    #Add OR operator within the same feature:
-    # values =
     constructed_features = product(operators,values_combinations)
+    #Add OR operator within the same feature:
+    if 'OR' in operators:
+        or_within_same = ((('OR'),((j,j),combinations(X_unique[j],2))) for j in range(len(X_unique)))
+        constructed_features_with_or = chain(constructed_features,or_within_same)
+    elif 'XOR' in operators:
+        or_within_same = ((('XOR'),((j,j),combinations(X_unique[j],2))) for j in range(len(X_unique)))
+        constructed_features_with_or = chain(constructed_features,or_within_same)
+    else:
+        constructed_features_with_or = constructed_features
 
-    return create_feature_list(constructed_features)
+    return create_feature_list(constructed_features_with_or)
     
 def create_feature_list(constructed_features):
     '''Auxiliary method that returns the constructors that are objects that inherit from Feature

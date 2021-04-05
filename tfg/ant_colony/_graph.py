@@ -123,8 +123,8 @@ class AntFeatureGraph:
         pheromones = []
         if step == "CONSTRUCTION":
             # Cannot construct with the same feature or with an original variable.
-            for neighbour_id, values in filter(lambda x: x[1][0] != feature and x[1][1] != None, self.nodes.items()):
-                for operator in self.operators:
+            for neighbour_id, values in filter(lambda x: x[1][1] is not None, self.nodes.items()):
+                for operator in (self.operators if values[0]!=feature else ['OR']):
                     edge = frozenset([neighbour_id, node_id, operator])
                     if edge in nodes_to_filter:
                         continue
@@ -136,7 +136,8 @@ class AntFeatureGraph:
         else:
             #Cannot select the same node or nodes that have already been selected (normally these can only be original features as constructable nodes 
             #can appear more than once)
-            for neighbour_id, values in filter(lambda x: x[0] not in nodes_to_filter and x[0] != node_id, self.nodes.items()):
+            #Dont add loops if it is an original vairable
+            for neighbour_id, values in filter(lambda x: x[0] not in nodes_to_filter and not(neighbour_id == node_id and value is None), self.nodes.items()):
                 edge = frozenset([neighbour_id, node_id])
                 if edge not in self.pheromone_matrix_selection:
                     self.pheromone_matrix_selection[edge] = random.random()
@@ -262,11 +263,24 @@ class AntFeatureGraphMI:
                             self.pheromone_matrix_attribute_completion[edge] = random.random()
                         neighbours.append( (neighbour_id,values, operator))# (id,(feature_index,value),"OPERATOR")
                         pheromones.append(self.pheromone_matrix_attribute_completion[edge])
+
+            current_node_feature_first_index = self.nodes_per_feature[feature][0]
+            current_node_n_nodes = self.nodes_per_feature[feature][1]
+            for neighbour_feature in range(current_node_feature_first_index,current_node_feature_first_index+current_node_n_nodes):
+                values = self.nodes[neighbour_id]
+                operator="OR"
+                edge = frozenset([neighbour_id, node_id, operator])
+                if edge in nodes_to_filter:
+                    continue
+                if edge not in self.pheromone_matrix_attribute_completion:
+                    self.pheromone_matrix_attribute_completion[edge] = random.random()
+                neighbours.append( (neighbour_id,values, operator))# (id,(feature_index,value),"OPERATOR")
+                pheromones.append(self.pheromone_matrix_attribute_completion[edge])
         else:
             #Adding neighbours that are from the same feature
             neighbour_feature_first_index = self.nodes_per_feature[feature][0]
             neighbour_feature_n_nodes = self.nodes_per_feature[feature][1]
-            #Add all individual
+            #Add all operand nodes
             for neighbour_id in range(neighbour_feature_first_index,neighbour_feature_n_nodes+neighbour_feature_first_index):
                 values = self.nodes[neighbour_id]
                 edge = frozenset([neighbour_id, node_id])

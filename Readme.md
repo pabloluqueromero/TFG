@@ -139,7 +139,7 @@ Project Link: [https://github.com/pabloluqueromero/TFG](https://github.com/pablo
 
 <!-- ACKNOWLEDGEMENTS -->
 ## Acknowledgements
-This work as been developed under the tutorship of Jose Antonio Gámez and Juan Ángelo Aledo at Universidad de Castilla La-Mancha
+This work as been developed under the tutorship of Jose Antonio Gámez and Juan Ángel Aledo at Universidad de Castilla La-Mancha
 
 
 
@@ -148,7 +148,7 @@ This work as been developed under the tutorship of Jose Antonio Gámez and Juan 
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/github_username/repo.svg?style=for-the-badge
+<!-- [contributors-shield]: https://img.shields.io/github/contributors/github_username/repo.svg?style=for-the-badge
 [contributors-url]: https://github.com/github_username/repo/graphs/contributors
 [forks-shield]: https://img.shields.io/github/forks/github_username/repo.svg?style=for-the-badge
 [forks-url]: https://github.com/github_username/repo/network/members
@@ -159,4 +159,4 @@ This work as been developed under the tutorship of Jose Antonio Gámez and Juan 
 [license-shield]: https://img.shields.io/github/license/github_username/repo.svg?style=for-the-badge
 [license-url]: https://github.com/github_username/repo/blob/master/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
-[linkedin-url]: https://linkedin.com/in/github_username
+[linkedin-url]: https://linkedin.com/in/github_username -->

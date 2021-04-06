@@ -137,7 +137,7 @@ class AntFeatureGraph:
             #Cannot select the same node or nodes that have already been selected (normally these can only be original features as constructable nodes 
             #can appear more than once)
             #Dont add loops if it is an original vairable
-            for neighbour_id, values in filter(lambda x: x[0] not in nodes_to_filter and not(neighbour_id == node_id and value is None), self.nodes.items()):
+            for neighbour_id, values in filter(lambda x: x[0] not in nodes_to_filter and not(x[0] == node_id and value is None), self.nodes.items()):
                 edge = frozenset([neighbour_id, node_id])
                 if edge not in self.pheromone_matrix_selection:
                     self.pheromone_matrix_selection[edge] = random.random()

@@ -123,7 +123,7 @@ class AntFeatureGraph:
         pheromones = []
         if step == "CONSTRUCTION":
             # Cannot construct with the same feature or with an original variable.
-            for neighbour_id, values in filter(lambda x: x[1][1] is not None, self.nodes.items()):
+            for neighbour_id, values in filter(lambda x: x[1][1] is not None  and x[0]!=node_id, self.nodes.items()):
                 for operator in (self.operators if values[0]!=feature else ['OR']):
                     edge = frozenset([neighbour_id, node_id, operator])
                     if edge in nodes_to_filter:
@@ -266,11 +266,11 @@ class AntFeatureGraphMI:
 
             current_node_feature_first_index = self.nodes_per_feature[feature][0]
             current_node_n_nodes = self.nodes_per_feature[feature][1]
-            for neighbour_feature in range(current_node_feature_first_index,current_node_feature_first_index+current_node_n_nodes):
+            for neighbour_id in range(current_node_feature_first_index,current_node_feature_first_index+current_node_n_nodes):
                 values = self.nodes[neighbour_id]
                 operator="OR"
                 edge = frozenset([neighbour_id, node_id, operator])
-                if edge in nodes_to_filter:
+                if edge in nodes_to_filter or node_id==neighbour_id:
                     continue
                 if edge not in self.pheromone_matrix_attribute_completion:
                     self.pheromone_matrix_attribute_completion[edge] = random.random()

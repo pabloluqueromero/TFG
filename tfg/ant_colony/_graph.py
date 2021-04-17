@@ -280,11 +280,11 @@ class AntFeatureGraphMI:
             #Adding neighbours that are from the same feature
             neighbour_feature_first_index = self.nodes_per_feature[feature][0]
             neighbour_feature_n_nodes = self.nodes_per_feature[feature][1]
-            #Add all operand nodes
+            #Add all operand nodes (same feature)
             for neighbour_id in range(neighbour_feature_first_index,neighbour_feature_n_nodes+neighbour_feature_first_index):
                 values = self.nodes[neighbour_id]
                 edge = frozenset([neighbour_id, node_id])
-                if neighbour_id in nodes_to_filter:
+                if neighbour_id in nodes_to_filter: #If it is an original feature then it is going to be in nodes to filter. ow node_id==neighbour_id and value is None
                     continue
                 if edge not in self.pheromone_matrix_selection:
                     self.pheromone_matrix_selection[edge] = random.random()
@@ -311,7 +311,7 @@ class AntFeatureGraphMI:
                 if neighbour_id in nodes_to_filter or neighbour_id ==node_id:
                     continue
                 edge = frozenset([neighbour_id,node_id])
-                values = self.nodes[neighbour_id]
+                values = self.nodes[neighbour_id] #This is always going to be none
                 if edge not in self.pheromone_matrix_selection:
                     self.pheromone_matrix_selection[edge] = random.random()
                 neighbours.append((neighbour_id,values))

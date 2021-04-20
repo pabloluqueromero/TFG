@@ -158,9 +158,10 @@ class AntFeatureGraph:
         self.pheromone_matrix_attribute_completion = {k:v*update_factor for k,v in self.pheromone_matrix_attribute_completion.items()}
         self.initial_pheromone =  self.initial_pheromone*update_factor
 
-    def intensify(self,features,intensification_factor):
+    def intensify(self,features,intensification_factor,ant_score=1):
         '''Intensify the path of followed by the given ant'''
         previous = None
+        intensification_factor*=ant_score
         for feature in features:
             if isinstance(feature,DummyFeatureConstructor):
                 next_node = self.inverse_nodes[(feature.feature_index,None)]
@@ -327,8 +328,11 @@ class AntFeatureGraphMI:
         self.pheromone_matrix_attribute_completion = {k:v*update_factor for k,v in self.pheromone_matrix_attribute_completion.items()}
         self.initial_heuristic *= update_factor
 
-    def intensify(self,features,intensification_factor):
+
+    def intensify(self,features,intensification_factor,ant_score=1):
+        '''Intensify the path of followed by the given ant'''
         previous = None
+        intensification_factor*=ant_score
         for feature in features:
             if isinstance(feature,DummyFeatureConstructor):
                 next_node = self.inverse_nodes[(feature.feature_index,None)]

@@ -25,6 +25,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
                 beta_evaporation_rate=0.05,
                 iterations=100, 
                 early_stopping=20,
+                update_strategy="best",
                 seed = None,
                 parallel=False,
                 save_features=True,
@@ -51,10 +52,15 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.graph_strategy = graph_strategy
         self.connections = connections
         self.metric = metric
+        self.update_strategy = update_strategy
 
         allowed_graph_strategy = ("full","mutual_info")
         if self.graph_strategy not in allowed_graph_strategy:
             raise ValueError("Unknown graph strategy type: %s, expected one of %s." % (self.graph_strategy, allowed_graph_strategy))
+        
+        allowed_update_strategy = ("all","best")
+        if self.update_strategy not in allowed_update_strategy:
+            raise ValueError("Unknown graph strategy type: %s, expected one of %s." % (self.update_strategy, allowed_update_strategy))
 
     def fit(self,X,y):
         self.feature_encoder_ = CustomOrdinalFeatureEncoder()
@@ -92,15 +98,23 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
             for ant in ants:
                     results.append(ant.run(X=X,y=y,graph=self.afg,random_generator=random,parallel=self.parallel))
             results = np.array(results)
-            best_ant = np.argmax(results)
-            distance_from_best = np.mean(np.abs(results-best_score))
             self.afg.update_pheromone_matrix_evaporation(self.evaporation_rate)
-            if results[best_ant] > best_score:
+            distance_from_best = np.mean(np.abs(results-best_score))
+            best_ant = np.argmax(results)
+            if self.update_strategy == "best":
                 ant = ants[best_ant]
+                self.afg.intensify(ant.current_features,self.intensification_factor)
+            else:
+                for ant_score,ant in zip(results,ants):
+                    self.afg.intensify(self.best_features,self.intensification_factor,ant_score)
+                    self.best_features = ant.current_features
+
+
+            if results[best_ant] > best_score:
                 iterations_without_improvement = 0
+                ant = ants[best_ant]
                 best_score = results[best_ant]
                 self.best_features = ant.current_features
-                self.afg.intensify(self.best_features,self.intensification_factor)
             else:
                 iterations_without_improvement+=1
                 if iterations_without_improvement > self.early_stopping:

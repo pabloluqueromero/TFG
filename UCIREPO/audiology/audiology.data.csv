@@ -93,7 +93,6 @@ f,normal,f,normal,normal,?,f,?,f,t,f,f,f,t,f,f,f,t,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f
 f,mild,f,normal,normal,?,f,?,f,t,t,f,f,f,f,f,f,f,t,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,t,f,f,t,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,normal,normal,f,f,f,normal,f,a,f,f,f,possible_menieres
 f,normal,f,normal,normal,?,f,?,f,t,f,f,f,f,f,f,f,f,t,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,t,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,normal,normal,f,f,f,normal,f,a,f,f,f,cochlear_unknown
 f,normal,f,normal,normal,?,f,?,f,f,f,f,f,f,t,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,t,f,f,f,t,normal,normal,f,f,f,normal,t,a,f,f,f,cochlear_poss_noise
-t,severe,f,normal,normal,?,f,?,f,t,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,normal,normal,f,f,f,very_poor,t,a,f,f,f,cochlear_age_plus_poss_menieres
 f,mild,f,normal,normal,?,f,?,f,t,t,f,f,f,f,t,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,t,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,normal,normal,f,f,f,normal,f,a,f,f,f,possible_menieres
 t,moderate,f,normal,normal,moderate,f,?,f,t,t,f,f,t,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,normal,normal,f,f,f,very_poor,t,a,f,f,f,possible_menieres
 t,moderate,f,elevated,normal,unmeasured,f,?,f,f,f,f,f,t,t,f,f,t,t,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,normal,normal,f,f,f,very_poor,t,a,f,f,f,possible_menieres

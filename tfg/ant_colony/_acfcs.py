@@ -10,7 +10,7 @@ from tqdm.autonotebook import tqdm
 
 from tfg.ant_colony import AntFeatureGraph
 from tfg.ant_colony import AntFeatureGraphMI
-from tfg.ant_colony import Ant
+from tfg.ant_colony import Ant, FinalAnt
 from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
 from tfg.naive_bayes import NaiveBayes
 from tfg.utils import translate_features
@@ -128,9 +128,55 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
 
 
         self.classifier_ = NaiveBayes(encode_data=False,metric = self.metric)
+        # self.best_features = self.get_best_features(self.afg,X,y)
+        final_ant = FinalAnt(ant_id=0,alpha=self.alpha,beta=beta, metric = self.metric)
+        final_ant.run(X=X,y=y,graph=self.afg,random_generator=random,parallel=self.parallel)
+        self.best_features = final_ant.current_features
+        # self.best_features = self.get_best_features(self.afg,X,y)
         self.classifier_.fit(np.concatenate([ f.transform(X) for f in self.best_features],axis=1),y)
         self.backwards_fss(X,y)
         return self
+
+    def get_best_features(self,afg,X,y):
+        def get_best_neighbours(self,pheromone,heuristic):
+            return np.argmax(np.pow(pheromone,self.alpha)* np.pow(heuristic,self.beta))
+        nodes,pheromones,_ = afg.get_initial_nodes()
+        node_id,selected_node  = nodes[np.argmax(pheromones)]#get_best_neighbours(pheromones,heuristic)
+        from tfg.feature_construction import create_feature,DummyFeatureConstructor
+        selected_nodes = set()
+        constructed_nodes = set()
+        classifier = NaiveBayes(encode_data=False,metric=self.metric)
+        is_fitted = False
+        current_features = []
+        current_score = 0
+        score=0
+        while True:
+            current_score = score
+            if selected_node[1] is None:
+                feature_constructor = DummyFeatureConstructor(selected_node[0])
+                selected_nodes.add(node_id)
+            else:
+                # Need to construct next feature and compute heuristic value for the feature to remplace temporal su from half-var
+                neighbours,pheromones = self.afg.get_neighbours(selected_node, constructed_nodes, step="CONSTRUCTION")
+                # Compute heuristic
+                if len(neighbours)==0:
+                    break                
+                index = np.argmax(pheromones)
+                feature_constructor = create_feature(neighbours[index][2],[selected_node,neighbours[index][1]])
+                constructed_nodes.add(frozenset((node_id,neighbours[index][0],neighbours[index][2])))
+                node_id,selected_node = neighbours[index][:2]
+            #Assess new feature
+            if is_fitted:
+                classifier.add_features(feature_constructor.transform(X), y)
+            else:
+                classifier.fit(feature_constructor.transform(X), y)
+                is_fitted = True
+            features = np.concatenate([f.transform(X) for f in current_features]+[feature_constructor.transform(X)],axis=1)   
+            score = classifier.leave_one_out_cross_val(features, y,fit=False)
+            if score <= current_score:
+                break
+            current_features.append(feature_constructor)
+        return current_features
 
     def backwards_fss(self,X,y):
         check_is_fitted(self)

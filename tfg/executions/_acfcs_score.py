@@ -60,12 +60,12 @@ def acfs_score_comparison(datasets, seed, test_size, base_path, params, n_iterat
                 naive_bayes_score = nb.score(X_test, y_test)
                 conf_index  = 0
                 for conf in params:
-                    seed_tqdm.set_postfix({"seed": i, "config": conf_index,"nb_score":naive_bayes_score})
                     acfcs.set_params(**conf)
                     acfcs.fit(X_train, y_train)
 
                     # score
                     acfcs_score_conf = acfcs.score(X_test, y_test)
+                    seed_tqdm.set_postfix({"seed": i, "config": conf_index,"nb_score":naive_bayes_score,"ant_score":acfcs_score_conf})
 
                     # Get data
                     n_original_features = len(list(filter(lambda x: isinstance(

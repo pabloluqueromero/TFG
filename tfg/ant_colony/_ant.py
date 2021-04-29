@@ -72,11 +72,13 @@ class Ant:
         return probabilities/s
 
     def compute_neighbour_sufs(self,neighbour,selected_node,current_su,X,y):
+        from tfg.utils import symmetrical_uncertainty
         '''Dynamical computation of the SU for the feature subset based on the adapted MIFS for the symmetrical uncertainty'''
         operator = neighbour[2] # Get operator
         operands = [selected_node,neighbour[1]] #Get operands (index,value)
         feature = create_feature(operator,operands)
         return compute_sufs(current_su,[f.transform(X).flatten() for f in self.current_features],feature.transform(X).flatten(),y,minimum=0)
+        # return current_su + symmetrical_uncertainty(feature.transform(X),y)
 
 
     def explore(self, X, y, graph, random_generator,parallel):
@@ -181,8 +183,9 @@ class Ant:
                     su.append(compute_sufs(current_su,[f.transform(X).flatten() for f in self.current_features],X[:, neighbour[1][0]],y,minimum=0))
                 else:
                     #This is a temporal variable that will not be finally selected but only used to calculate the heuristic
-                    su.append(compute_sufs(current_su,[f.transform(X).flatten() for f in self.current_features],X[:, neighbour[1][0]] == neighbour[1][1],y,minimum=0))
-            
+                    # su.append(compute_sufs(current_su,[f.transform(X).flatten() for f in self.current_features],X[:, neighbour[1][0]] == neighbour[1][1],y,minimum=0))
+                    su.append(1)
+                    # su.append(compute_sufs(current_su,[f.transform(X).flatten() for f in self.current_features],X[:, neighbour[1][0]] == neighbour[1][1],y,minimum=0))
             probabilities = self.compute_probability(pheromones,np.array(su))
             index = self.choose_next(probabilities, random_generator)
             
@@ -194,3 +197,10 @@ class Ant:
     def run(self, X, y, graph, random_generator,parallel=False):
         # print(f"Ant [{self.ant_id}] running in thread [{threading.get_ident()}]")
         return self.explore(X, y, graph,random_generator,parallel)
+
+
+
+class FinalAnt(Ant):
+    def choose_next(self, probabilities, random_generator):
+        '''Selects index based on roulette wheel selection'''
+        return np.argmax(probabilities)

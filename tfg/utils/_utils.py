@@ -128,6 +128,9 @@ def symmetrical_uncertainty(f1,f2,X=None):
         raise Exception("X must be provided for feature indexation")
     a = X[:,f1] if isinstance(f1,int) else f1
     b = X[:,f2] if isinstance(f2,int) else f2
+    # return normalized_mutual_info_score(a.flatten(),b.flatten())
+    a = a.flatten()
+    b = b.flatten()
     gain = info_gain(a.reshape(-1,1),b)
     H_a = shannon_entropy(a)
     H_b = shannon_entropy(b)
@@ -145,8 +148,8 @@ def compute_sufs(current_su,current_features,new_feature,y,beta=0.5,minimum=None
     '''
     class_su = symmetrical_uncertainty(f1=new_feature,f2=y)
     penalisation = beta*sum(
-                    # symmetrical_uncertainty(current_features[j],new_feature) ->The result should be the same but sklearn's is more tested
-                    normalized_mutual_info_score(current_features[j],new_feature)
+                    symmetrical_uncertainty(current_features[j],new_feature) #->The result should be the same but sklearn's is more tested
+                    # normalized_mutual_info_score(current_features[j],new_feature)
                     for j in range(len(current_features)))
 
     su = current_su+class_su-penalisation 

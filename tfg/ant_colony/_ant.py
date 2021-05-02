@@ -31,11 +31,12 @@ class Ant:
     final_score : float
         Leave one out croos-validation accuracy score obtained with the selected feature subset    
     """
-    def __init__(self, ant_id, alpha, beta ,metric):
+    def __init__(self, ant_id, alpha, beta ,metric, use_initials=False):
         self.alpha = alpha
         self.beta = beta
         self.ant_id = ant_id
         self.metric = metric
+        self.use_initials = use_initials
 
     def choose_next(self, probabilities, random_generator):
         '''Selects index based on roulette wheel selection'''
@@ -72,7 +73,6 @@ class Ant:
         return probabilities/s
 
     def compute_neighbour_sufs(self,neighbour,selected_node,current_su,X,y):
-        from tfg.utils import symmetrical_uncertainty
         '''Dynamical computation of the SU for the feature subset based on the adapted MIFS for the symmetrical uncertainty'''
         operator = neighbour[2] # Get operator
         operands = [selected_node,neighbour[1]] #Get operands (index,value)
@@ -105,16 +105,22 @@ class Ant:
         classifier = NaiveBayes(encode_data=False,metric=self.metric)
         current_score = np.NINF
         score = 0
+        if self.use_initials:
+            self.current_features = [DummyFeatureConstructor(j) for j in range(X.shape[1])]
+            score = classifier.leave_one_out_cross_val(X,y)
+            current_score = score
+            selected_nodes.update(graph.get_original_ids())
 
-        initial,pheromones,heuristics = graph.get_initial_nodes()
+        initial,pheromones,heuristics = graph.get_initial_nodes(selected_nodes)
         probabilities =  self.compute_probability(pheromones,heuristics)
         index = self.choose_next(probabilities, random_generator)
 
         current_su = 0
+        current_transformed_features = [f.transform(X) for f in self.current_features]
         node_id, selected_node = initial[index]
         su = heuristics[index] #SU variable contains the MIFS-SU for the selected variable
 
-        is_fitted = False
+        is_fitted = self.use_initials
         feature_constructor = None
         while True:
             current_score = score
@@ -123,7 +129,7 @@ class Ant:
                 feature_constructor = DummyFeatureConstructor(selected_node[0])
                 selected_nodes.add(node_id)
             else:
-                # Need to construct next feature and compute heuristic value for the feature to remplace temporal su from half-var
+                # Need to construct next feature and compute heuristic value for the feature to replace temporal su from half-var
                 neighbours,pheromones = graph.get_neighbours(selected_node, constructed_nodes, step="CONSTRUCTION")
                 # Compute heuristic
                 
@@ -160,12 +166,13 @@ class Ant:
             else:
                 classifier.fit(feature_constructor.transform(X), y)
                 is_fitted = True
-            features = np.concatenate([f.transform(X) for f in self.current_features]+[feature_constructor.transform(X)],axis=1)   
+            features = np.concatenate(current_transformed_features+[feature_constructor.transform(X)],axis=1)   
             score = classifier.leave_one_out_cross_val(features, y,fit=False)
             if score <= current_score:
                 break
             current_su = su
             self.current_features.append(feature_constructor)
+            current_transformed_features.append(feature_constructor.transform(X))
             current_score = score
 
 
@@ -184,7 +191,11 @@ class Ant:
                 else:
                     #This is a temporal variable that will not be finally selected but only used to calculate the heuristic
                     # su.append(compute_sufs(current_su,[f.transform(X).flatten() for f in self.current_features],X[:, neighbour[1][0]] == neighbour[1][1],y,minimum=0))
-                    su.append(1)
+                    # su.append(1)
+                    neighbours_next,_ = graph.get_neighbours(neighbour[1], constructed_nodes, step="CONSTRUCTION")
+                    su.append(max(self.compute_neighbour_sufs(
+                            neigbour_next,selected_node,current_su,X,y) 
+                            for neigbour_next in neighbours_next))
                     # su.append(compute_sufs(current_su,[f.transform(X).flatten() for f in self.current_features],X[:, neighbour[1][0]] == neighbour[1][1],y,minimum=0))
             probabilities = self.compute_probability(pheromones,np.array(su))
             index = self.choose_next(probabilities, random_generator)
@@ -197,6 +208,7 @@ class Ant:
     def run(self, X, y, graph, random_generator,parallel=False):
         # print(f"Ant [{self.ant_id}] running in thread [{threading.get_ident()}]")
         return self.explore(X, y, graph,random_generator,parallel)
+
 
 
 

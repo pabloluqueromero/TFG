@@ -106,7 +106,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
                 self.afg.intensify(ant.current_features,self.intensification_factor)
             else:
                 for ant_score,ant in zip(results,ants):
-                    self.afg.intensify(self.best_features,self.intensification_factor,ant_score)
+                    self.afg.intensify(ant.current_features,self.intensification_factor,ant_score)
 
 
             if results[best_ant] > best_score:

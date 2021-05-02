@@ -71,9 +71,9 @@ class DummyFeatureConstructor(Feature):
     def get_dict_translation(self,encoder=None,categories=None):
         return {"feature":categories[int(self.feature_index)] if categories is not None else int(self.feature_index)}
 
-@njit
+# @njit
 def _transform_leaf_node(X,feature_index,value):
-    return (X[:,feature_index]==value).reshape(-1,1)
+    return np.array(X[:,feature_index]==value,dtype=int).reshape(-1,1)
 
 class FeatureOperand(Feature):
     '''Represent a leaf node of a complex logical feature, a single value of a single feature'''

@@ -165,12 +165,13 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
         first_iteration = True
         current_features = []
         current_data = None
-        rank_iter = iter(self.rank)
         if self.use_initials:
            current_features = [DummyFeatureConstructor(j) for j in range(X.shape[1])]
-           rank_iter = filter(lambda x: not isinstance(x,DummyFeatureConstructor), rank_iter)
+           rank_iter = filter(lambda x: not isinstance(self.all_feature_constructors[x],DummyFeatureConstructor), iter(self.rank))
            current_data = X.copy()
            current_score = self.classifier.leave_one_out_cross_val(X,y,fit=True)
+        else:
+            rank_iter = iter(self.rank)
         if self.verbose:
             print()
             progress_bar = tqdm(total=len(self.rank), bar_format='{l_bar}{bar:20}{r_bar}{bar:-10b}')

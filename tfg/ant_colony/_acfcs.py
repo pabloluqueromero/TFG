@@ -34,7 +34,9 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
                 verbose=0,
                 graph_strategy = "mutual_info",
                 connections = 2,
-                metric="accuracy"):
+                metric="accuracy",
+                use_initials=False,
+                final_selection="ALL"):
         self.ants = ants
         self.evaporation_rate = evaporation_rate
         self.intensification_factor = intensification_factor
@@ -53,6 +55,8 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.connections = connections
         self.metric = metric
         self.update_strategy = update_strategy
+        self.use_initials = use_initials
+        self.final_selection = final_selection
 
         allowed_graph_strategy = ("full","mutual_info")
         if self.graph_strategy not in allowed_graph_strategy:
@@ -92,7 +96,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
                                     "p_matrix_c": len(self.afg.pheromone_matrix_attribute_completion),
                                     "p_matrix_s": len(self.afg.pheromone_matrix_selection),
                                     "distance_from_best": distance_from_best})
-            ants = [Ant(ant_id=i,alpha=self.alpha,beta=beta, metric = self.metric) for i in range(self.ants)]
+            ants = [Ant(ant_id=i,alpha=self.alpha,beta=beta, metric = self.metric, use_initials = self.use_initials) for i in range(self.ants)]
             beta*=self.beta_evaporation_rate
             results = []
             for ant in ants:
@@ -103,10 +107,10 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
             best_ant = np.argmax(results)
             if self.update_strategy == "best":
                 ant = ants[best_ant]
-                self.afg.intensify(ant.current_features,self.intensification_factor)
+                self.afg.intensify(ant.current_features,self.intensification_factor,self.use_initials)
             else:
                 for ant_score,ant in zip(results,ants):
-                    self.afg.intensify(ant.current_features,self.intensification_factor,ant_score)
+                    self.afg.intensify(ant.current_features,self.intensification_factor,ant_score,self.use_initials)
 
 
             if results[best_ant] > best_score:
@@ -129,10 +133,12 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
 
         self.classifier_ = NaiveBayes(encode_data=False,metric = self.metric)
         # self.best_features = self.get_best_features(self.afg,X,y)
-        final_ant = FinalAnt(ant_id=0,alpha=self.alpha,beta=beta, metric = self.metric)
-        final_ant.run(X=X,y=y,graph=self.afg,random_generator=random,parallel=self.parallel)
-        self.best_features = final_ant.current_features
-        # self.best_features = self.get_best_features(self.afg,X,y)
+        if self.final_selection=="BEST":
+            self.best_features = self.get_best_features(self.afg,X,y)
+        else:
+            final_ant = FinalAnt(ant_id=0,alpha=self.alpha,beta=beta, metric = self.metric,use_initials = self.use_initials)
+            final_ant.run(X=X,y=y,graph=self.afg,random_generator=random,parallel=self.parallel)
+            self.best_features = final_ant.current_features
         self.classifier_.fit(np.concatenate([ f.transform(X) for f in self.best_features],axis=1),y)
         self.backwards_fss(X,y)
         return self

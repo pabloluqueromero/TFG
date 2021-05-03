@@ -100,7 +100,8 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
                  max_features = float("inf"),
                  max_iterations=float("inf"),
                  metric="accuracy",
-                 use_initials=False):
+                 use_initials=False,
+                 max_err=0):
         self.strategy = strategy
         self.block_size = max(block_size,1)
         self.encode_data = encode_data
@@ -110,6 +111,7 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
         self.max_iterations = max_iterations
         self.n_intervals = n_intervals
         self.metric = metric
+        self.max_err=max_err
         allowed_strategies = ("eager","skip")
         self.use_initials = use_initials
         if self.strategy not in allowed_strategies:
@@ -173,6 +175,7 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
             print()
             progress_bar = tqdm(total=len(self.rank), bar_format='{l_bar}{bar:20}{r_bar}{bar:-10b}')
         iteration=0
+        iterations_without_improvements=0
         for feature_constructor_index in rank_iter:
             iteration+=1
             if self.verbose:
@@ -209,10 +212,12 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
                 current_score = score
                 current_data = data
                 current_features.extend(selected_features)
+                iterations_without_improvements=0
             else:
+                iterations_without_improvements+=1
                 for feature_index_to_remove in range(data.shape[1], data.shape[1]-new_X.shape[1],-1):
                     self.classifier.remove_feature(feature_index_to_remove-1)
-                if self.strategy=="eager":
+                if self.strategy=="eager" and self.max_err < iterations_without_improvements:
                     break # Stops as soon as no impovement
             
             if self.max_iterations <= iteration or (len(current_features) + self.block_size) > self.max_features:

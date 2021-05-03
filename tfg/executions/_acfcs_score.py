@@ -12,7 +12,16 @@ from tfg.ant_colony import ACFCS
 from tfg.utils import get_X_y_from_database
 
 
-def acfs_score_comparison(datasets, seed, test_size, base_path, params, n_iterations=30,n_intervals=5,metric="accuracy"):
+def acfs_score_comparison(datasets, 
+                        seed, 
+                        test_size, 
+                        base_path, 
+                        params, 
+                        n_iterations=30,
+                        n_intervals=5,
+                        metric="accuracy",
+                        send_email=False,
+                        email_data = dict()):
     result = []
     dataset_tqdm = tqdm(datasets)
 
@@ -116,6 +125,10 @@ def acfs_score_comparison(datasets, seed, test_size, base_path, params, n_iterat
                "Selected_attributes", 
                "Original"]
     result = pd.DataFrame(result, columns=columns)
+    
+    if send_email:
+        from tfg.utils import send_results
+        send_results(email_data,result)
     return result
 
 

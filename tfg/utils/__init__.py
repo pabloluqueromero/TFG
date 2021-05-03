@@ -16,7 +16,7 @@ from ._utils import mutual_information_class_conditioned
 from ._utils import get_X_y_from_database
 from ._utils import get_graphs
 from ._utils import get_scorer
-
+from ._mail import EmailSendCSV,send_results
 
 
 
@@ -40,4 +40,6 @@ __all__ = [
     "get_X_y_from_database",
     "get_graphs",
     "get_scorer",
+    "EmailSendCSV",
+    "send_results"
 ]

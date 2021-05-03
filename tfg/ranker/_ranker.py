@@ -99,7 +99,8 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
                  operators=("AND","OR","XOR"),
                  max_features = float("inf"),
                  max_iterations=float("inf"),
-                 metric="accuracy"):
+                 metric="accuracy",
+                 use_initials=False):
         self.strategy = strategy
         self.block_size = max(block_size,1)
         self.encode_data = encode_data
@@ -110,6 +111,7 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
         self.n_intervals = n_intervals
         self.metric = metric
         allowed_strategies = ("eager","skip")
+        self.use_initials = use_initials
         if self.strategy not in allowed_strategies:
             raise ValueError("Unknown operator type: %s, expected one of %s." % (self.strategy, allowed_strategies))
 
@@ -162,6 +164,11 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
         current_features = []
         current_data = None
         rank_iter = iter(self.rank)
+        if self.use_initials:
+           current_features = [DummyFeatureConstructor(j) for j in range(X.shape[1])]
+           rank_iter = filter(lambda x: not isinstance(x,DummyFeatureConstructor), rank_iter)
+           current_data = X.copy()
+           current_score = self.classifier.leave_one_out_cross_val(X,y,fit=True)
         if self.verbose:
             print()
             progress_bar = tqdm(total=len(self.rank), bar_format='{l_bar}{bar:20}{r_bar}{bar:-10b}')
@@ -187,7 +194,7 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
                     break
             
             new_X = np.concatenate(new_X,axis=1)
-            if iteration==1:
+            if iteration==1 and not self.use_initials:
                 current_data = new_X
                 current_score = self.classifier.leave_one_out_cross_val(current_data,y,fit=True)
                 current_features = selected_features

@@ -12,7 +12,7 @@ from tfg.ranker import RankerLogicalFeatureConstructor
 from tfg.utils import get_X_y_from_database
 
 
-def ranker_score_comparison(datasets, seed, test_size, base_path, params, n_iterations=30,n_intervals=5,metric="accuracy",):
+def ranker_score_comparison(datasets, seed, test_size, base_path, params, n_iterations=30,n_intervals=5,metric="accuracy",send_email=False,email_data = dict()):
     result = []
     dataset_tqdm = tqdm(datasets)
 
@@ -111,66 +111,7 @@ def ranker_score_comparison(datasets, seed, test_size, base_path, params, n_iter
     columns = ["Database", "Number of attributes", "NBScore", "Ranker Score",
                "Configuration", "Combinations", "Selected_attributes", "Original"]
     result = pd.DataFrame(result, columns=columns)
+    if send_email:
+        from tfg.utils import send_results
+        send_results(email_data,result)
     return result
-
-
-# databases = [
-#     # ["abalone", "Rings"],
-#     ["adult", "income"],
-#     ["anneal", "label"],
-#     ["audiology", "label"],
-#     ["balance-scale", "label"],
-#     ["krkopt", "Optimal depth-of-win for White"],
-#     ["iris", "Species"],
-#     ["horse-colic", "surgery"],
-#     ["glass", "Type"],
-#     ["krkp", "label"],
-#     ["mushroom", "class"],
-#     ["voting", "Class Name"],
-#     ["credit", "A16"],
-#     ["pima", "Outcome"],
-#     ["wine", "class"],
-#     ["wisconsin", "diagnosis"]
-# ]
-
-
-# # databases = [ [database[0]+"/"+database[0],database[1]]for database in databases]
-# # base_path = "../input/dataset/"
-# base_path = "../Dataset/UCIREPO/"
-
-# params = [
-#     {"strategy": "eager", "block_size": 1, "max_iterations": float(
-#         "inf"), "max_features": float("inf"), "verbose": 0},
-#     {"strategy": "eager", "block_size": 2, "max_iterations": float(
-#         "inf"), "max_features": float("inf"), "verbose": 0},
-#     {"strategy": "eager", "block_size": 5, "max_iterations": float(
-#         "inf"), "max_features": float("inf"), "verbose": 0},
-#     {"strategy": "eager", "block_size": 10, "max_iterations": float(
-#         "inf"), "max_features": float("inf"), "verbose": 0},
-#     {"strategy": "skip", "block_size": 1, "max_iterations": 10,
-#         "max_features": float("inf"), "verbose": 0},
-#     {"strategy": "skip", "block_size": 2, "max_iterations": 10,
-#         "max_features": float("inf"), "verbose": 0},
-#     {"strategy": "skip", "block_size": 5, "max_iterations": 10,
-#         "max_features": float("inf"), "verbose": 0},
-#     {"strategy": "skip", "block_size": 10, "max_iterations": 10,
-#         "max_features": float("inf"), "verbose": 0},
-#     {"strategy": "skip", "block_size": 1, "max_iterations": 20,
-#         "max_features": 20, "verbose": 0},
-#     {"strategy": "skip", "block_size": 2, "max_iterations": 20,
-#         "max_features": 20, "verbose": 0},
-#     {"strategy": "skip", "block_size": 5, "max_iterations": 20,
-#         "max_features": 20, "verbose": 0},
-#     {"strategy": "skip", "block_size": 10,
-#         "max_iterations": 100, "max_features": 50, "verbose": 0},
-# ]
-# seed = 4
-# test_size = 0.3
-# df = ranker_score_comparison(databases=databases,
-#                       base_path=base_path,
-#                       test_size=test_size,
-#                       params=params,
-#                       seed=seed,
-#                       )
-# df.to_csv("result.csv", index=False)
-

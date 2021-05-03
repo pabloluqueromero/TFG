@@ -113,5 +113,5 @@ def ranker_score_comparison(datasets, seed, test_size, base_path, params, n_iter
     result = pd.DataFrame(result, columns=columns)
     if send_email:
         from tfg.utils import send_results
-        send_results(email_data,result)
+        send_results("RANKER",email_data,result)
     return result

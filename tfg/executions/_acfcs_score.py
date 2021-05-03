@@ -128,7 +128,7 @@ def acfs_score_comparison(datasets,
     
     if send_email:
         from tfg.utils import send_results
-        send_results(email_data,result)
+        send_results("ACFCS",email_data,result)
     return result
 
 

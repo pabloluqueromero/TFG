@@ -34,8 +34,8 @@ class EmailSendCSV:
 
 
 
-def send_results(email_data,result):
+def send_results(algorithm,email_data,result):
     now = datetime.now()
     dt_string = now.strftime("%d/%m/%Y %H:%M")
     email = EmailSendCSV(email_data["FROM"],email_data["TO"],email_data["PASSWORD"])
-    email.send(f"[RANK-SCORE] -{dt_string}- {email_data['TITLE']}",result,email_data["FILENAME"])
+    email.send(f"[{algorithm}] -{dt_string}- {email_data['TITLE']}",result,email_data["FILENAME"])

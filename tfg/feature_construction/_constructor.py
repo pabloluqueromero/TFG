@@ -15,7 +15,7 @@ def get_unique_combinations_from_unique_values(X):
     # return np.unique(X,axis=0) #-> Slower but might produce less combinations (only combinations that appear in the database)
     return list(product(*[ X[j] for j in range(len(X))])) # All possible combinations even though some might not appear
 
-def construct_features(X,operators=('AND','OR','XOR')):
+def construct_features(X,operators=('AND','OR','XOR'),same_feature=True):
     '''For each combination returned by get_unique_combinations it generates 3 features with the specified operators)'''
     X_unique = []
     for j in range(X.shape[1]):
@@ -26,14 +26,18 @@ def construct_features(X,operators=('AND','OR','XOR')):
     values_combinations = ((index,get_unique_combinations_from_unique_values((X_unique[index[0]],X_unique[index[1]]))) for index in feature_combinations) 
     constructed_features = product(operators,values_combinations)
     #Add OR operator within the same feature:
-    if 'OR' in operators:
-        or_within_same = ((('OR'),((j,j),combinations(X_unique[j],2))) for j in range(len(X_unique)))
-        constructed_features_with_or = chain(constructed_features,or_within_same)
-    elif 'XOR' in operators:
-        or_within_same = ((('XOR'),((j,j),combinations(X_unique[j],2))) for j in range(len(X_unique)))
-        constructed_features_with_or = chain(constructed_features,or_within_same)
+    if same_feature:
+        if 'OR' in operators:
+            or_within_same = ((('OR'),((j,j),combinations(X_unique[j],2))) for j in range(len(X_unique)))
+            constructed_features_with_or = chain(constructed_features,or_within_same)
+        elif 'XOR' in operators:
+            or_within_same = ((('XOR'),((j,j),combinations(X_unique[j],2))) for j in range(len(X_unique)))
+            constructed_features_with_or = chain(constructed_features,or_within_same)
+        else:
+            constructed_features_with_or = constructed_features
     else:
         constructed_features_with_or = constructed_features
+
 
     return create_feature_list(constructed_features_with_or)
     

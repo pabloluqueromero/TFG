@@ -12,7 +12,7 @@ from tfg.ranker import RankerLogicalFeatureConstructor
 from tfg.utils import get_X_y_from_database
 
 
-def ranker_score_comparison(datasets, seed, test_size, base_path, params, n_iterations=30,n_intervals=5,metric="accuracy",send_email=False,email_data = dict()):
+def ranker_score_comparison(datasets, seed, test_size, base_path, params, n_iterations=30,n_intervals=5,metric="accuracy",send_email=False,email_data = dict(),share_rank=True):
     result = []
     dataset_tqdm = tqdm(datasets)
 
@@ -70,7 +70,7 @@ def ranker_score_comparison(datasets, seed, test_size, base_path, params, n_iter
                     seed_tqdm.set_postfix({"seed": i, "config": conf_index})
                     r.set_params(**conf)
                     # Fit
-                    if conf_index == 0:
+                    if conf_index == 0 or share_rank:
                         r.fit(X_train, y_train)
                     else:
                         r.filter_features(r.feature_encoder_.transform(
@@ -99,7 +99,9 @@ def ranker_score_comparison(datasets, seed, test_size, base_path, params, n_iter
                 row = [name,
                        X.shape[1],
                        np.mean(nb_score[conf_index]),
+                       np.std(nb_score[conf_index]),
                        np.mean(r_score[conf_index]),
+                       np.std(r_score[conf_index]),
                        conf,
                        np.mean(r_combinations[conf_index]),
                        np.mean(r_selected[conf_index]),
@@ -108,7 +110,7 @@ def ranker_score_comparison(datasets, seed, test_size, base_path, params, n_iter
 
         else:
             print(f"{name} doesnt' exist")
-    columns = ["Database", "Number of attributes", "NBScore", "Ranker Score",
+    columns = ["Database", "Number of attributes", "NBScore","NBScore STD", "Ranker Score","Ranker Score STD",
                "Configuration", "Combinations", "Selected_attributes", "Original"]
     result = pd.DataFrame(result, columns=columns)
     if send_email:

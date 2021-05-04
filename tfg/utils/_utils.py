@@ -257,6 +257,7 @@ def get_graphs(df,folder):
     fig.write_image(folder+filename)
     
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
+from sklearn.utils.validation import check_is_fitted
 def get_scorer(scoring):
     scores = {"accuracy": accuracy_score,
               "f1_score": f1_score,

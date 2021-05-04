@@ -101,7 +101,8 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
                  max_iterations=float("inf"),
                  metric="accuracy",
                  use_initials=False,
-                 max_err=0):
+                 max_err=0,
+                 prune=None):
         self.strategy = strategy
         self.block_size = max(block_size,1)
         self.encode_data = encode_data
@@ -114,6 +115,7 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
         self.max_err=max_err
         allowed_strategies = ("eager","skip")
         self.use_initials = use_initials
+        self.prune = prune
         if self.strategy not in allowed_strategies:
             raise ValueError("Unknown operator type: %s, expected one of %s." % (self.strategy, allowed_strategies))
 
@@ -130,7 +132,23 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
             X = X.to_numpy()
 
         check_X_y(X,y)
-        self.all_feature_constructors = construct_features(X,operators=self.operators)
+        if self.prune is not None:
+            from tfg.utils import mutual_information_class_conditioned
+            from itertools import combinations
+            combinaciones = list(combinations(list(range(X.shape[1])),2)) + [(i,i) for i in range(X.shape[1])]
+            rank_pairs = [mutual_information_class_conditioned(X[:,i],X[:,j],y) for i,j in combinaciones]
+            rank_pairs_index = np.argsort(rank_pairs)[::-1]
+            self.all_feature_constructors =[]
+            for index in rank_pairs_index[:self.prune]:
+                i,j = combinaciones[index]
+                if i == j:
+                    from tfg.feature_construction import create_feature
+                    self.all_feature_constructors.extend([create_feature("OR",[(i,n),(i,m)]) for n,m in combinations(np.unique(X[:,i]),2)])
+                else:
+                    self.all_feature_constructors.extend(construct_features(X[:,[i,j]],operators=self.operators,same_feature=False))
+        else:
+            self.all_feature_constructors = construct_features(X,operators=self.operators)
+        compara = construct_features(X,operators=self.operators)
         if self.verbose:
             print(f"Total number of constructed features: {len(self.all_feature_constructors)}")
         self.all_feature_constructors.extend([DummyFeatureConstructor(j) for j in range(X.shape[1])])
@@ -168,8 +186,10 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
         if self.use_initials:
            current_features = [DummyFeatureConstructor(j) for j in range(X.shape[1])]
            rank_iter = filter(lambda x: not isinstance(self.all_feature_constructors[x],DummyFeatureConstructor), iter(self.rank))
-           current_data = X.copy()
-           current_score = self.classifier.leave_one_out_cross_val(X,y,fit=True)
+           self.classifier.fit(X,y)
+           current_features = self.backward_search(X,y,current_features,self.classifier)
+           current_data = np.concatenate([f.transform(X) for f in current_features],axis=1)
+           current_score = self.classifier.leave_one_out_cross_val(current_data,y,fit=False)
         else:
             rank_iter = iter(self.rank)
         if self.verbose:
@@ -244,3 +264,31 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
         for feature_constructor in self.final_feature_constructors:
             new_X.append(feature_constructor.transform(X))
         return np.concatenate(new_X,axis=1),y
+
+    def backward_search(self,X,y,current_features,classifier):
+        check_is_fitted(classifier)
+        transformed_features = np.concatenate([f.transform(X) for f in current_features],axis=1)
+        improvement = True
+        best_score = classifier.leave_one_out_cross_val(transformed_features,y,fit=False)
+        while improvement and transformed_features.shape[1] >1:
+            improvement = False
+            feature = None
+            for i in range(transformed_features.shape[1]):
+                feature = transformed_features[:,i].reshape(-1,1)
+                iteration_features = np.delete(transformed_features,i,axis=1)
+                classifier.remove_feature(i)
+                current_score = classifier.leave_one_out_cross_val(iteration_features,y,fit=False)
+                classifier.add_features(feature,y,[i])
+                if current_score > best_score:
+                    feature_index = i
+                    improvement = True
+                    best_score = current_score
+
+                
+            if improvement:
+                transformed_features = np.delete(transformed_features,feature_index,axis=1)
+                classifier.remove_feature(feature_index)
+                del current_features[feature_index]
+        return current_features
+
+        

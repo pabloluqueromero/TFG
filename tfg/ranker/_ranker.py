@@ -159,6 +159,12 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
             su = symmetrical_uncertainty(f1=feature.flatten(),f2=y)
             self.symmetrical_uncertainty_rank.append(su)
         self.rank = np.argsort(self.symmetrical_uncertainty_rank)[::-1] #Descending order
+        
+        if self.use_initials:
+            classifier = NaiveBayes(encode_data = False,n_intervals=self.n_intervals,metric=self.metric)
+            current_features = [DummyFeatureConstructor(j) for j in range(X.shape[1])]
+            classifier.fit(X,y)
+            self.initial_backward_features = self.backward_search(X,y,current_features,classifier)
         self.filter_features(X,y)
         return self
 
@@ -186,9 +192,10 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
         if self.use_initials:
            current_features = [DummyFeatureConstructor(j) for j in range(X.shape[1])]
            rank_iter = filter(lambda x: not isinstance(self.all_feature_constructors[x],DummyFeatureConstructor), iter(self.rank))
-           self.classifier.fit(X,y)
-           current_features = self.backward_search(X,y,current_features,self.classifier)
+           from copy import deepcopy
+           current_features =  deepcopy(self.initial_backward_features)
            current_data = np.concatenate([f.transform(X) for f in current_features],axis=1)
+           self.classifier.fit(current_data,y)
            current_score = self.classifier.leave_one_out_cross_val(current_data,y,fit=False)
         else:
             rank_iter = iter(self.rank)

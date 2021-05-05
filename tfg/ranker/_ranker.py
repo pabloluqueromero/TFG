@@ -10,7 +10,7 @@ from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
 from tfg.feature_construction import construct_features
 from tfg.feature_construction import DummyFeatureConstructor
 from tfg.naive_bayes import NaiveBayes 
-from tfg.utils import symmetrical_uncertainty
+from tfg.utils import backward_search, symmetrical_uncertainty
 from tqdm.autonotebook  import tqdm
 
 
@@ -162,9 +162,9 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
         
         if self.use_initials:
             classifier = NaiveBayes(encode_data = False,n_intervals=self.n_intervals,metric=self.metric)
-            current_features = [DummyFeatureConstructor(j) for j in range(X.shape[1])]
             classifier.fit(X,y)
-            self.initial_backward_features = self.backward_search(X,y,current_features,classifier)
+            current_features = [DummyFeatureConstructor(j) for j in range(X.shape[1])]
+            self.initial_backward_features = backward_search(X,y,current_features,classifier)
         self.filter_features(X,y)
         return self
 
@@ -272,30 +272,5 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
             new_X.append(feature_constructor.transform(X))
         return np.concatenate(new_X,axis=1),y
 
-    def backward_search(self,X,y,current_features,classifier):
-        check_is_fitted(classifier)
-        transformed_features = np.concatenate([f.transform(X) for f in current_features],axis=1)
-        improvement = True
-        best_score = classifier.leave_one_out_cross_val(transformed_features,y,fit=False)
-        while improvement and transformed_features.shape[1] >1:
-            improvement = False
-            feature = None
-            for i in range(transformed_features.shape[1]):
-                feature = transformed_features[:,i].reshape(-1,1)
-                iteration_features = np.delete(transformed_features,i,axis=1)
-                classifier.remove_feature(i)
-                current_score = classifier.leave_one_out_cross_val(iteration_features,y,fit=False)
-                classifier.add_features(feature,y,[i])
-                if current_score > best_score:
-                    feature_index = i
-                    improvement = True
-                    best_score = current_score
-
-                
-            if improvement:
-                transformed_features = np.delete(transformed_features,feature_index,axis=1)
-                classifier.remove_feature(feature_index)
-                del current_features[feature_index]
-        return current_features
 
         

@@ -52,6 +52,12 @@ class FeatureOperator(Feature):
             od[f"operand_{i}"] = operand.get_dict_translation(encoder,categories)
         return od
 
+    def copy(self):
+        copied_operands = []
+        for operand in self.operands:
+            copied_operands.append(operand.copy())
+        return FeatureOperator(operator,copied_operands)
+
 
 
 class DummyFeatureConstructor(Feature):
@@ -100,3 +106,6 @@ class FeatureOperand(Feature):
         od["feature"] = categories[int(self.feature_index)] if categories is not None else int(self.feature_index)
         od["value"] = value
         return od
+
+    def copy(self):
+        return FeatureOperand(feature_index,value)

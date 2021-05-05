@@ -266,3 +266,37 @@ def get_scorer(scoring):
     if scoring in scores:
         return scores[scoring]
     raise ValueError(f"The specified scoring {scoring} is not valid")
+
+
+
+def transform_features(features,X):
+    return np.concatenate([f.transform(X) for f in features],axis=1)
+
+
+
+
+def backward_search(X,y,current_features,classifier):
+    check_is_fitted(classifier)
+    transformed_features = np.concatenate([f.transform(X) for f in current_features],axis=1)
+    improvement = True
+    best_score = classifier.leave_one_out_cross_val(transformed_features,y,fit=False)
+    while improvement and transformed_features.shape[1] >1:
+        improvement = False
+        feature = None
+        for i in range(transformed_features.shape[1]):
+            feature = transformed_features[:,i].reshape(-1,1)
+            iteration_features = np.delete(transformed_features,i,axis=1)
+            classifier.remove_feature(i)
+            current_score = classifier.leave_one_out_cross_val(iteration_features,y,fit=False)
+            classifier.add_features(feature,y,[i])
+            if current_score > best_score:
+                feature_index = i
+                improvement = True
+                best_score = current_score
+
+            
+        if improvement:
+            transformed_features = np.delete(transformed_features,feature_index,axis=1)
+            classifier.remove_feature(feature_index)
+            del current_features[feature_index]
+    return current_features

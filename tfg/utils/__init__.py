@@ -16,6 +16,8 @@ from ._utils import mutual_information_class_conditioned
 from ._utils import get_X_y_from_database
 from ._utils import get_graphs
 from ._utils import get_scorer
+from ._utils import transform_features
+from ._utils import backward_search
 from ._mail import EmailSendCSV,send_results
 
 
@@ -38,6 +40,7 @@ __all__ = [
     "translate_features",
     "mutual_information_class_conditioned",
     "get_X_y_from_database",
+    "backward_search",
     "get_graphs",
     "get_scorer",
     "EmailSendCSV",

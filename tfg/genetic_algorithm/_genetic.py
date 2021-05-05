@@ -194,7 +194,7 @@ class GeneticAlgorithm(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.n_intervals = n_intervals
         self.metric = metric
         self.seed = seed
-        self.number_individuals = individuals
+        self.individuals = individuals
         self.generations = generations
         self.use_initials = use_initials
         # self.crossover_probability = crossover_probability

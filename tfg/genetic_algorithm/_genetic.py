@@ -155,7 +155,7 @@ class GeneticAlgorithm(TransformerMixin,ClassifierMixin,BaseEstimator):
     def execute_algorithm(self,X,y):
         population = self.generate_population()
         population_with_fitness = self.fitness(population,X,y)        
-        iterator = tqdm(range(self.generations),, leave=False)) if self.verbose else range(self.generations)
+        iterator = tqdm(range(self.generations), leave=False) if self.verbose else range(self.generations)
         for generation in iterator:
             selected_individuals = self.selection(population_with_fitness)
             crossed_individuals = selected_individuals#self.crossover(selected_individuals)
@@ -174,13 +174,14 @@ class GeneticAlgorithm(TransformerMixin,ClassifierMixin,BaseEstimator):
 
         # print("REPEATED INDIVIDUALS:", self.number_individuals *
         #       2*self.generations-self.not_repeated)
-        # return self.backward_features+[max(population_with_fitness,key=lambda x: x[1])[0]]
+        if self.use_initials:
+            return self.backward_features+max(population_with_fitness,key=lambda x: x[1])[0]
         return list(max(population_with_fitness,key=lambda x: x[1])[0])
 
     def __init__(self, 
-                 size=100, 
+                 size=10, 
                  seed=None, 
-                 individuals=10, 
+                 individuals=1, 
                  generations=40,
                  mutation_probability=0.2, 
                  selection="rank", 

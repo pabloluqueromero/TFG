@@ -68,7 +68,7 @@ def genetic_score_comparison(datasets, seed, test_size, base_path, params, n_ite
                 conf_index = 0
                 for conf in params:
                     seed_tqdm.set_postfix({"seed": i, "config": conf_index})
-                    # r.set_params(**conf)
+                    r.set_params(**conf)
                     r.fit(X_train, y_train)
                     
                     # score

@@ -16,7 +16,7 @@ from tfg.genetic_algorithm import GeneticAlgorithm
 from tfg.utils import get_X_y_from_database
 
 
-def genetic_score(datasets, seed, test_size, base_path, params, n_iterations=30,n_intervals=5,metric="accuracy",send_email=False,email_data = dict(),share_rank=True):
+def genetic_score_comparison(datasets, seed, test_size, base_path, params, n_iterations=30,n_intervals=5,metric="accuracy",send_email=False,email_data = dict(),share_rank=True):
     result = []
     dataset_tqdm = tqdm(datasets)
 

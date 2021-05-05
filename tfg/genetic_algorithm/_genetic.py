@@ -2,6 +2,7 @@ import random
 from tfg.naive_bayes import NaiveBayes
 from tfg.utils import backward_search, transform_features
 from tfg.feature_construction import DummyFeatureConstructor, create_feature
+from tqdm.autonotebook import tqdm
 
 import numpy as np
 import pandas as pd
@@ -26,7 +27,7 @@ class GeneticAlgorithm(TransformerMixin,ClassifierMixin,BaseEstimator):
 
     def generate_population(self):
         population = []
-        for _ in range(self.number_individuals):
+        for _ in range(self.individuals):
             individual = []
             for _ in range(self.size):
                 operand1_feature = random.randint(0, self.n_features-1)
@@ -203,6 +204,13 @@ class GeneticAlgorithm(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.combine = self.elitism if "elit" in combine else self.truncation
         
     
+    def set_params(self, **params):
+        super().set_params(**params)
+        if "selection" in params: 
+            self.selection = self.select_population_rank if "rank" in params["selection"] else self.select_population
+        if "combine" in params: 
+            self.combine = self.elitism if "elit" in params["combine"] else self.truncation
+        
     def transform(self,X,y):
         check_is_fitted(self)
         if isinstance(y,pd.DataFrame):

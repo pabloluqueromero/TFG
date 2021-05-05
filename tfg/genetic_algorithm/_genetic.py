@@ -155,7 +155,7 @@ class GeneticAlgorithm(TransformerMixin,ClassifierMixin,BaseEstimator):
     def execute_algorithm(self,X,y):
         population = self.generate_population()
         population_with_fitness = self.fitness(population,X,y)        
-        iterator = tqdm(range(self.generations)) if self.verbose else range(self.generations)
+        iterator = tqdm(range(self.generations),, leave=False)) if self.verbose else range(self.generations)
         for generation in iterator:
             selected_individuals = self.selection(population_with_fitness)
             crossed_individuals = selected_individuals#self.crossover(selected_individuals)

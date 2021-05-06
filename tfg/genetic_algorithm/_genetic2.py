@@ -40,11 +40,11 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
                 operands  = []
                 operands.append((operand1_feature,operand1_value))
                 operands.append((operand2_feature,operand2_value))
-                individual[0].append(create_feature(operator=op, operands=operands))
+                individual[1].append(create_feature(operator=op, operands=operands))
             n_og_features = random.randint(0,self.n_features-1)
             features = list(range(self.n_features))
             for f in random.sample(features,n_og_features):
-                individual[1].append(DummyFeatureConstructor(feature_index=f))
+                individual[0].append(DummyFeatureConstructor(feature_index=f))
                 individual[2].add(f)
             population.append(individual)
         return population
@@ -53,7 +53,7 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
         new_population = []
         for individual in population:
             if random.random() < self.mutation_probability:
-                number_of_chromosomes = random.sample(list(range(len(individual))),random.randint(1,5))
+                number_of_chromosomes = random.sample(list(range(len(individual[1]))),random.randint(1,self.size//2))
                 for i in number_of_chromosomes:
                     feature = individual[1][i]
                     feature.op = random.choice(('OR','XOR','AND'))
@@ -64,18 +64,22 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
                 a =  random.random() 
                 og_features = individual[0]
                 included_features = individual[2]
-                if a <0.33 and len(og_features) < self.n_features:
-                    selected = random.choice(set(list(range(0,self.n_features))) - included_features)
-                    included_features.append(selected)
-                    og_features.add(DummyFeatureConstructor(selected))
-                elif a<0.66 and len(og_features) < self.n_features:
-                    selected = random.choice(set(list(range(0,self.n_features))) - included_features)
+                if (a <0.33 and len(og_features) < self.n_features) or len(og_features)==0:
+                    selected = random.choice(tuple(set(list(range(0,self.n_features))) - included_features))
+                    included_features.add(selected)
+                    og_features.append(DummyFeatureConstructor(selected))
+                elif a<0.66 and len(og_features) < self.n_features and len(og_features)>0:
+                    selected = random.choice(tuple(set(list(range(0,self.n_features))) - included_features))
                     index = random.randint(0,len(og_features)-1)
+                    feature = og_features[index].feature_index
                     og_features[index] = DummyFeatureConstructor(selected)
+                    included_features.remove(feature)
+                    included_features.add(selected)
                 else:
                     index = random.randint(0,len(og_features)-1)
+                    feature = og_features[index].feature_index
                     del og_features[index]
-                    included_features.remove(index)
+                    included_features.remove(feature)
             new_population.append(individual)
         return new_population
 
@@ -160,10 +164,6 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
         y = self.class_encoder_.fit_transform(y)
         
         classifier = NaiveBayes(encode_data = False,n_intervals=self.n_intervals,metric=self.metric)
-        if self.use_initials:
-            classifier.fit(X,y)
-            current_features = [DummyFeatureConstructor(j) for j in range(X.shape[1])]
-            self.backward_features = backward_search(X,y,current_features,classifier)
         self.n_features = X.shape[1]
         self.unique_values = [values.shape[0] for values in self.feature_encoder_.categories_]
         random.seed(self.seed)
@@ -196,9 +196,8 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
 
         # print("REPEATED INDIVIDUALS:", self.number_individuals *
         #       2*self.generations-self.not_repeated)
-        if self.use_initials:
-            return self.backward_features+max(population_with_fitness,key=lambda x: x[1])[0]
-        return list(max(population_with_fitness,key=lambda x: x[1])[0])
+        best_individual= max(population_with_fitness,key=lambda x: x[1])[0]
+        return best_individual[0]+best_individual[1]
 
     def __init__(self, 
                  size=10, 
@@ -207,7 +206,7 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
                  generations=40,
                  mutation_probability=0.2, 
                  selection="rank", 
-                 combine="truncation",
+                 combine="elitism",
                  n_intervals = 5,
                  metric = "accuracy",
                  use_initials=True,

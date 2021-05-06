@@ -53,7 +53,7 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
         new_population = []
         for individual in population:
             if random.random() < self.mutation_probability:
-                number_of_chromosomes = random.sample(list(range(len(individual[1]))),random.randint(1,self.size//2))
+                number_of_chromosomes = random.sample(list(range(len(individual[1]))),random.randint(1,self.size))
                 for i in number_of_chromosomes:
                     feature = individual[1][i]
                     feature.op = random.choice(('OR','XOR','AND'))

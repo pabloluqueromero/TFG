@@ -31,6 +31,23 @@ class EmailSendCSV:
         # Convert the message to a string and send it
         smtp_obj.sendmail(msg['From'], msg['To'], msg.as_string())
         smtp_obj.quit()
+        
+ 
+    def send_test(self):
+        msg = MIMEMultipart()
+        msg['Subject'] = "TEST-EMAIL"
+        msg['From'] = self.sender_email
+        msg['To'] = self.receiver_email
+
+        # Create SMTP object
+        smtp_obj = smtplib.SMTP("smtp.gmail.com", 587)
+        # Login to the server
+        smtp_obj.ehlo()
+        smtp_obj.starttls()
+        smtp_obj.login(self.sender_email, self.password)
+        # Convert the message to a string and send it
+        smtp_obj.sendmail(msg['From'], msg['To'], msg.as_string())
+        smtp_obj.quit()
 
 
 

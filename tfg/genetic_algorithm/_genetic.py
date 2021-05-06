@@ -151,7 +151,7 @@ class GeneticAlgorithm(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.best_features = best_individual
         self.classifier_ = NaiveBayes(encode_data=False)
         self.classifier_.fit(self.transform(X,y)[0],y)
-        self.best_features = self.backward_features(X,y,self.best_features,self.classifier_)
+        self.best_features = backward_search(X,y,self.best_features,self.classifier_)
 
     def execute_algorithm(self,X,y):
         population = self.generate_population()

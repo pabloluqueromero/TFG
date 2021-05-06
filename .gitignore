@@ -32,4 +32,6 @@ features_translated/*
 Fichero_resultado.csv
 to_table.py
 score.tex
-*.csv
+out/csv/*
+acfcs_score_comparison_*.csv
+ranker_score_comparison_*.csv

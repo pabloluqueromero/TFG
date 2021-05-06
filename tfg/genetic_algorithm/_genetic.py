@@ -128,7 +128,7 @@ class GeneticAlgorithm(TransformerMixin,ClassifierMixin,BaseEstimator):
             for i, individual in enumerate(population, start=1):
                 cumulative_prob += (num_selected-i+1)/totalRank
                 if r <= cumulative_prob:
-                    selected_individuals.append(individual[0].copy())
+                    selected_individuals.append(self.copy_individual(individual[0]))
                     break
         return selected_individuals
 

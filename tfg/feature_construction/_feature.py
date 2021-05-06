@@ -56,7 +56,7 @@ class FeatureOperator(Feature):
         copied_operands = []
         for operand in self.operands:
             copied_operands.append(operand.copy())
-        return FeatureOperator(operator,copied_operands)
+        return FeatureOperator(self.operator,copied_operands)
 
 
 
@@ -76,6 +76,9 @@ class DummyFeatureConstructor(Feature):
 
     def get_dict_translation(self,encoder=None,categories=None):
         return {"feature":categories[int(self.feature_index)] if categories is not None else int(self.feature_index)}
+    
+    def copy(self):
+        return DummyFeatureConstructor(self.feature_index)
 
 # @njit
 def _transform_leaf_node(X,feature_index,value):
@@ -108,4 +111,4 @@ class FeatureOperand(Feature):
         return od
 
     def copy(self):
-        return FeatureOperand(feature_index,value)
+        return FeatureOperand(self.feature_index,self.value)

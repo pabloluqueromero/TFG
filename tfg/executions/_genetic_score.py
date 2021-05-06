@@ -12,16 +12,16 @@ from tqdm.autonotebook import tqdm
 from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
 from tfg.feature_construction import DummyFeatureConstructor
 from tfg.naive_bayes import NaiveBayes
-from tfg.genetic_algorithm import GeneticAlgorithm
+from tfg.genetic_algorithm import GeneticAlgorithm,GeneticAlgorithmV2
 from tfg.utils import get_X_y_from_database
 
 
-def genetic_score_comparison(datasets, seed, test_size, base_path, params, n_iterations=30,n_intervals=5,metric="accuracy",send_email=False,email_data = dict(),share_rank=True):
+def genetic_score_comparison(datasets, seed, test_size, base_path, params, n_iterations=30,n_intervals=5,metric="accuracy",send_email=False,email_data = dict(),share_rank=True,version=1):
     result = []
     dataset_tqdm = tqdm(datasets)
 
     # Instantiate ranker
-    r = GeneticAlgorithm(seed=200)
+    r = GeneticAlgorithm(seed=200) if version==1 else GeneticAlgorithmV2(seed=200)
     nb = NaiveBayes(encode_data=True,n_intervals = n_intervals, metric=metric)
     for database in dataset_tqdm:
         name, label = database
@@ -109,3 +109,91 @@ def genetic_score_comparison(datasets, seed, test_size, base_path, params, n_ite
         from tfg.utils import send_results
         send_results("GENETIC",email_data,result)
     return result
+
+
+
+
+base_path = "./UCIREPO/"
+data = [
+    #["abalone","Rings"],
+      # ["adult","income"],
+    #["anneal","label"],
+    #["audiology","label"],
+    #["balance-scale","label"],
+    # ["krkopt","Optimal depth-of-win for White"],
+    #["iris","Species"],
+    #["student","Walc"],
+    #["electricgrid","stabf"],
+    #["horse-colic","surgery"],
+    # #["glass","Type"],
+    # ["krkp","label"],
+    # ["mushroom","class"],
+    # ["voting","Class Name"],
+    # ["credit","A16"],
+    # ["pima","Outcome"],
+    # ["wine","class"],
+    # ["wisconsin","diagnosis"],
+    # ["car-evaluation","safety"],
+    # # ["connect-4","class"],
+    ["lenses","ContactLens"],
+    # ["cmc","Contraceptive"],
+    # ["cylinder-bands","band type"],
+    # ["derm","class"],
+    # ["tictactoe","class"],
+    # ["spam","class"]
+]
+
+graphs_folder = "out/graphs/"
+csv_folder = "out/csv/"
+
+#create directories
+import os 
+for directory in [graphs_folder,csv_folder]:
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+n_iterations=15
+seed=200
+test_size=0.3
+n_intervals=5
+params = [
+   {"size":10, 
+    "seed":seed, 
+    "individuals":50, 
+    "generations":20,
+    "mutation_probability":0.4, 
+    "selection":"rank", 
+    "combine":"truncation",
+    "n_intervals": 5,
+    "metric": "accuracy",
+    "use_initials":True,
+    "verbose":True}
+]
+
+email_data = {
+    "FROM":"pablocsvtfg@gmail.com",
+    "TO":"pablocsvtfg@gmail.com",
+    "PASSWORD":"TFGPablo2",
+
+}
+
+n_iterations=30
+seed=200
+test_size=0.3
+for data_i in data:
+  result = genetic_score_comparison(base_path=base_path,
+                                  datasets=[data_i],
+                                  test_size=test_size,
+                                  seed=seed,
+                                  n_iterations=n_iterations,
+                                  params = params,
+                                  n_intervals=n_intervals,
+                                   metric="accuracy",
+                                  send_email=True,
+                                  version=2,
+                                  email_data = {**email_data,
+                                                **{
+                                                "TITLE":f"{data_i[0]}",
+                                                "FILENAME": f"{data_i[0]}.CSV"}
+                                                })
+  result.to_csv(csv_folder+f"genetic_score_comparison_5_{data_i[0]}.csv",index=False)

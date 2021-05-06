@@ -110,9 +110,12 @@ class GeneticAlgorithm(TransformerMixin,ClassifierMixin,BaseEstimator):
             for individual in population:
                 cumulative_prob += individual[1]/totalFitness
                 if r <= cumulative_prob:
-                    selected_individuals.append(individual[0].copy())
+                    selected_individuals.append(self.copy_individual(individual[0]))
                     break
         return selected_individuals
+
+    def copy_individual(self,individual):
+        return [chrms.copy() for chrms in individual]
 
     def select_population_rank(self, population):
         selected_individuals = []

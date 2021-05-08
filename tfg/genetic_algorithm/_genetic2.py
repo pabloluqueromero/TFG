@@ -184,7 +184,6 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.best_features = backward_search(X,y,self.best_features,self.classifier_)
 
     def execute_algorithm(self,X,y):
-        self.evaluate = memoize(self.simple_evaluate)
         population = self.generate_population()
         population_with_fitness = self.fitness(population,X,y)        
         iterator = tqdm(range(self.generations), leave=False) if self.verbose else range(self.generations)
@@ -208,6 +207,9 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
         #       2*self.generations-self.not_repeated)
         best_individual= max(population_with_fitness,key=lambda x: x[1])[0]
         return best_individual[0]+best_individual[1]
+    
+    def reset_evaluation(self):
+        self.evaluate = memoize(self.simple_evaluate)
 
     def __init__(self, 
                  size=10, 
@@ -234,7 +236,7 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.mutation_probability = mutation_probability
         self.selection = self.select_population_rank if "rank" in selection else self.select_population
         self.combine = self.elitism if "elit" in combine else self.truncation
-        
+        self.reset_evaluation()
     
     def set_params(self, **params):
         super().set_params(**params)

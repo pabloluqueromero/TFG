@@ -165,8 +165,10 @@ class GeneticAlgorithm(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.classifier_.fit(self.transform(X,y)[0],y)
         self.best_features = backward_search(X,y,self.best_features,self.classifier_)
 
-    def execute_algorithm(self,X,y):
+    def reset_evaluation(self):
         self.evaluate = memoize(self.simple_evaluate)
+
+    def execute_algorithm(self,X,y):
         population = self.generate_population()
         population_with_fitness = self.fitness(population,X,y)        
         iterator = tqdm(range(self.generations), leave=False) if self.verbose else range(self.generations)
@@ -217,7 +219,7 @@ class GeneticAlgorithm(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.mutation_probability = mutation_probability
         self.selection = self.select_population_rank if "rank" in selection else self.select_population
         self.combine = self.elitism if "elit" in combine else self.truncation
-        
+        self.reset_evaluation()
     
     def set_params(self, **params):
         super().set_params(**params)

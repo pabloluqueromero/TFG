@@ -52,6 +52,7 @@ def genetic_score_comparison(datasets,
             seed_tqdm = tqdm(rskf.split(X,y), leave=False)
             i=-1
             for train_index, test_index  in seed_tqdm:
+                r.reset_evaluation()
                 i+=1
                 X_train, X_test = X.iloc[train_index], X.iloc[test_index]
                 y_train, y_test = y.iloc[train_index], y.iloc[test_index]

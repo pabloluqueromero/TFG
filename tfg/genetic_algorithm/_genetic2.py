@@ -296,6 +296,8 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
             self.combine = self.elitism if "elit" in params["combine"] else self.truncation
         
     def transform(self,X,y):
+        if self.encode:
+            return X,y
         check_is_fitted(self)
         if isinstance(y,pd.DataFrame):
             y = y.to_numpy()

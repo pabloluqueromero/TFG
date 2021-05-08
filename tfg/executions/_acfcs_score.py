@@ -38,7 +38,6 @@ def acfs_score_comparison(datasets,
 
             dataset_tqdm.set_postfix({"DATABASE": name})
 
-            seed_tqdm = tqdm(range(n_iterations), leave=False)
 
             # Set up data structures to store results
 
@@ -51,7 +50,7 @@ def acfs_score_comparison(datasets,
             acfcs_selected = np.zeros(shape=(len(params), n_splits*n_repeats))
             rskf = RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=n_repeats,random_state=seed)
             seed_tqdm = tqdm(rskf.split(X,y), leave=False)
-            i=0
+            i=-1
             for train_index, test_index  in seed_tqdm:
                 i+=1
                 X_train, X_test = X.iloc[train_index], X.iloc[test_index]

@@ -70,7 +70,7 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
                 chromosomes_index = []
                 if self.flexible_logic:
                     if len(individual[1])>0:
-                        chromosomes_index = random.sample(list(range(len(individual[1]))),random.randint(1,len(individual[1])-1))
+                        chromosomes_index = random.sample(list(range(len(individual[1]))),random.randint(1,len(individual[1])))
                     else:
                         op = random.choice(('OR','XOR','AND'))
                         operands = []
@@ -82,7 +82,7 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
                         continue
 
                 else:
-                    chromosomes_index = random.sample(list(range(len(individual[1]))),random.randint(1,len(individual[1])-1))
+                    chromosomes_index = random.sample(list(range(len(individual[1]))),random.randint(1,len(individual[1])))
 
 
                 for i in range(len(chromosomes_index)):

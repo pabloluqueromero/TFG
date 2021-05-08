@@ -6,7 +6,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import RepeatedStratifiedKFold, train_test_split
 from tqdm.autonotebook import tqdm
 
 from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
@@ -16,7 +16,19 @@ from tfg.genetic_algorithm import GeneticAlgorithm,GeneticAlgorithmV2
 from tfg.utils import get_X_y_from_database
 
 
-def genetic_score_comparison(datasets, seed, test_size, base_path, params, n_iterations=30,n_intervals=5,metric="accuracy",send_email=False,email_data = dict(),share_rank=True,version=1):
+def genetic_score_comparison(datasets,
+                            seed,
+                            base_path,
+                            params,
+                            n_iterations=30,
+                            n_splits=3,
+                            n_repeats=5,
+                            n_intervals=5,
+                            metric="accuracy",
+                            send_email=False,
+                            email_data = dict(),
+                            share_rank=True,
+                            version=1):
     result = []
     dataset_tqdm = tqdm(datasets)
 
@@ -32,30 +44,18 @@ def genetic_score_comparison(datasets, seed, test_size, base_path, params, n_ite
 
             dataset_tqdm.set_postfix({"DATABASE": name})
 
-            seed_tqdm = tqdm(range(n_iterations), leave=False)
-
             # Set up data structures to store results
-            nb_score = np.zeros(shape=(len(params), n_iterations))
-            r_score = np.zeros(shape=(len(params), n_iterations))
-            r_selected = np.zeros(shape=(len(params), n_iterations))
-            r_dummy = np.zeros(shape=(len(params), n_iterations))
-
-            for i in seed_tqdm:
-                try:
-                    X_train, X_test, y_train, y_test = train_test_split(
-                        X, y,
-                        test_size=test_size,
-                        random_state=seed+i,
-                        stratify=y,
-                        shuffle=True)
-                except:
-                    #Not enough values to stratify y
-                    X_train, X_test, y_train, y_test = train_test_split(
-                        X, y,
-                        test_size=test_size,
-                        random_state=seed+i,
-                        shuffle=True)
-
+            nb_score = np.zeros(shape=(len(params), n_splits*n_repeats))
+            r_score = np.zeros(shape=(len(params), n_splits*n_repeats))
+            r_selected = np.zeros(shape=(len(params), n_splits*n_repeats))
+            r_dummy = np.zeros(shape=(len(params), n_splits*n_repeats))
+            rskf = RepeatedStratifiedKFold(n_splits=n_splits,n_repeats=n_repeats,random_state=seed)
+            seed_tqdm = tqdm(rskf.split(X,y), leave=False)
+            i=-1
+            for train_index, test_index  in seed_tqdm:
+                i+=1
+                X_train, X_test = X.iloc[train_index], X.iloc[test_index]
+                y_train, y_test = y.iloc[train_index], y.iloc[test_index]
                 nb.fit(X=X_train, y=y_train)
                 naive_bayes_score = nb.score(X_test, y_test)
                 c = CustomOrdinalFeatureEncoder(n_intervals = n_intervals)
@@ -67,7 +67,7 @@ def genetic_score_comparison(datasets, seed, test_size, base_path, params, n_ite
 
                 conf_index = 0
                 for conf in params:
-                    seed_tqdm.set_postfix({"seed": i, "config": conf_index})
+                    seed_tqdm.set_postfix({ "config": conf_index})
                     r.set_params(**conf)
                     r.fit(X_train, y_train)
                     

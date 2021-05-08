@@ -220,7 +220,10 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
         
         classifier = NaiveBayes(encode_data = False,n_intervals=self.n_intervals,metric=self.metric)
         self.n_features = X.shape[1]
-        self.unique_values = [values.shape[0] for values in self.feature_encoder_.categories_]
+        if self.encode:
+            self.unique_values = [values.shape[0] for values in self.feature_encoder_.categories_]
+        else:
+            self.unique_values = [np.unique(X[:,j]).shape[0] for j in range(X.shape[1])]
         random.seed(self.seed)
 
         best_individual = self.execute_algorithm(X,y)

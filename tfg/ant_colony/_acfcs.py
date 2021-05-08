@@ -36,7 +36,8 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
                 connections = 2,
                 metric="accuracy",
                 use_initials=False,
-                final_selection="ALL"):
+                final_selection="ALL",
+                encode=True):
         self.ants = ants
         self.evaporation_rate = evaporation_rate
         self.intensification_factor = intensification_factor
@@ -57,6 +58,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.update_strategy = update_strategy
         self.use_initials = use_initials
         self.final_selection = final_selection
+        self.encode = encode
 
         allowed_graph_strategy = ("full","mutual_info")
         if self.graph_strategy not in allowed_graph_strategy:
@@ -73,8 +75,9 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.categories_ = None
         if isinstance(X,pd.DataFrame):
             self.categories_ = X.columns
-        X = self.feature_encoder_.fit_transform(X)
-        y = self.class_encoder_.fit_transform(y)
+        if self.encode:
+            X = self.feature_encoder_.fit_transform(X)
+            y = self.class_encoder_.fit_transform(y)
 
         if self.graph_strategy=="full":
                 self.afg = AntFeatureGraph(seed=self.seed).compute_graph(X, y, ("XOR","OR", "AND"))
@@ -214,8 +217,9 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
         check_is_fitted(self)
         if isinstance(y,pd.DataFrame):
             y = y.to_numpy()
-        X = self.feature_encoder_.transform(X)
-        y = self.class_encoder_.transform(y)
+        if self.encode:
+            X = self.feature_encoder_.transform(X)
+            y = self.class_encoder_.transform(y)
         X = np.concatenate([ f.transform(X) for f in self.best_features],axis=1)
         return X,y
 

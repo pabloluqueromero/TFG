@@ -11,8 +11,17 @@ from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
 from sklearn.utils.validation import check_is_fitted
 from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
 
+def memoize(f):
+    cache = dict()
+    def g(individual, X, y):
+        hashable_individual = tuple(individual)
+        hash_individual = hash(hashable_individual)
+        if hash_individual not in cache:
+            cache[hash_individual] = f(individual, X, y)
+        return cache[hash_individual]
+    return g
 class GeneticAlgorithm(TransformerMixin,ClassifierMixin,BaseEstimator):
-    def evaluate(self, individual, X, y):
+    def simple_evaluate(self, individual, X, y):
         classifier = NaiveBayes(encode_data=False)
         return classifier.leave_one_out_cross_val(transform_features(individual, X), y, fit=True)
 
@@ -157,6 +166,7 @@ class GeneticAlgorithm(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.best_features = backward_search(X,y,self.best_features,self.classifier_)
 
     def execute_algorithm(self,X,y):
+        self.evaluate = memoize(self.simple_evaluate)
         population = self.generate_population()
         population_with_fitness = self.fitness(population,X,y)        
         iterator = tqdm(range(self.generations), leave=False) if self.verbose else range(self.generations)

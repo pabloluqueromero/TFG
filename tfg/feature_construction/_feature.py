@@ -19,6 +19,8 @@ class FeatureOperator(Feature):
         if self.operator not in allowed_operators:
             raise ValueError("Unknown operator type: %s, expected one of %s." % (self.operator, allowed_operators))
         self._get_operator(self.operator)
+    def __hash__(self):
+        return hash((self.operator,frozenset([hash(o) for o in self.operands])))
 
 
     def fit(self,X):
@@ -80,6 +82,10 @@ class DummyFeatureConstructor(Feature):
     def copy(self):
         return DummyFeatureConstructor(self.feature_index)
 
+    def __hash__(self):
+        return hash(self.feature_index)
+
+
 # @njit
 def _transform_leaf_node(X,feature_index,value):
     return np.array(X[:,feature_index]==value,dtype=int).reshape(-1,1)
@@ -112,3 +118,6 @@ class FeatureOperand(Feature):
 
     def copy(self):
         return FeatureOperand(self.feature_index,self.value)
+
+    def __hash__(self):
+        return hash((self.feature_index,self.value))

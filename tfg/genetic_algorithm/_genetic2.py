@@ -35,7 +35,12 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
         population = []
         for _ in range(self.individuals):
             individual = ([],[],set())
-            for _ in range(self.size):
+            if self.flexible_logic:
+                n_chromosomes = range(random.randint(1,self.size))
+            else:
+                n_chromosomes = range(self.size)
+
+            for _ in n_chromosomes:
                 operand1_feature = random.randint(0, self.n_features-1)
                 operand2_feature = random.randint(0, self.n_features-1)
                 if operand1_feature == operand2_feature:
@@ -62,13 +67,53 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
         new_population = []
         for individual in population:
             if random.random() < self.mutation_probability:
-                number_of_chromosomes = random.sample(list(range(len(individual[1]))),random.randint(1,self.size))
-                for i in number_of_chromosomes:
-                    feature = individual[1][i]
-                    feature.op = random.choice(('OR','XOR','AND'))
-                    for operand in feature.operands:
-                        operand.feature_index = random.randint(0,self.n_features-1)
-                        operand.value = random.randint(0,self.unique_values[operand.feature_index]-1)
+                chromosomes_index = []
+                if self.flexible_logic:
+                    if len(individual[1])>0:
+                        chromosomes_index = random.sample(list(range(len(individual[1]))),random.randint(1,len(individual[1])-1))
+                    else:
+                        op = random.choice(('OR','XOR','AND'))
+                        operands = []
+                        for _ in range(2):
+                            feature_index = random.randint(0,self.n_features-1)
+                            value = random.randint(0,self.unique_values[feature_index]-1)
+                            operands.append((feature_index,value))
+                        individual[1].append(create_feature(operator=op, operands=operands))
+                        continue
+
+                else:
+                    chromosomes_index = random.sample(list(range(len(individual[1]))),random.randint(1,len(individual[1])-1))
+
+
+                for i in range(len(chromosomes_index)):
+                    index = chromosomes_index[i]
+                    if not self.flexible_logic:
+                        feature = individual[1][index]
+                        feature.op = random.choice(('OR','XOR','AND'))
+                        for operand in feature.operands:
+                            operand.feature_index = random.randint(0,self.n_features-1)
+                            operand.value = random.randint(0,self.unique_values[operand.feature_index]-1)
+                    else:
+                        a =  random.random() 
+                        if a <0.33:
+                            feature = individual[1][index]
+                            feature.op = random.choice(('OR','XOR','AND'))
+                            for operand in feature.operands:
+                                operand.feature_index = random.randint(0,self.n_features-1)
+                                operand.value = random.randint(0,self.unique_values[operand.feature_index]-1)
+                        elif a<0.66:
+                            op = random.choice(('OR','XOR','AND'))
+                            operands = []
+                            for _ in range(2):
+                                feature_index = random.randint(0,self.n_features-1)
+                                value = random.randint(0,self.unique_values[feature_index]-1)
+                                operands.append((feature_index,value))
+                            individual[1].append(create_feature(operator=op, operands=operands))
+
+                        else:
+                            del individual[1][index]
+                            chromosomes_index = [ j-1 if j > index else j for j in chromosomes_index]
+
             if random.random() < self.mutation_probability:
                 a =  random.random() 
                 og_features = individual[0]
@@ -169,8 +214,9 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
 
         if isinstance(X,pd.DataFrame):
             self.categories_ = X.columns
-        X = self.feature_encoder_.fit_transform(X)
-        y = self.class_encoder_.fit_transform(y)
+        if self.encode:
+            X = self.feature_encoder_.fit_transform(X)
+            y = self.class_encoder_.fit_transform(y)
         
         classifier = NaiveBayes(encode_data = False,n_intervals=self.n_intervals,metric=self.metric)
         self.n_features = X.shape[1]
@@ -222,9 +268,13 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
                  n_intervals = 5,
                  metric = "accuracy",
                  use_initials=True,
-                 verbose=False
+                 flexible_logic = True,
+                 verbose=False,
+                 encode=True
                  ):
         self.size = size
+        self.encode=encode
+        self.flexible_logic = flexible_logic
         self.verbose = verbose
         self.n_intervals = n_intervals
         self.metric = metric

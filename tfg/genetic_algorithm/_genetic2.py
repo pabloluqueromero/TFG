@@ -134,6 +134,13 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
                     feature = og_features[index].feature_index
                     del og_features[index]
                     included_features.remove(feature)
+            
+            if len(individual[0])==0 and len(individual[1])==0:
+                og_features = individual[0]
+                included_features = individual[2]
+                selected = random.choice(tuple(set(list(range(0,self.n_features))) - included_features))
+                included_features.add(selected)
+                og_features.append(DummyFeatureConstructor(selected))
             new_population.append(individual)
         return new_population
 

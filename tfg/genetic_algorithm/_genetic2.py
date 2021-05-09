@@ -18,7 +18,13 @@ def memoize(f):
         hash_individual = hash(hashable_individual)
         if hash_individual not in cache:
             cache[hash_individual] = f(individual, X, y)
+            g.miss_count+=1
+        else:
+            g.hit_count+=1
         return cache[hash_individual]
+    g.cache = cache
+    g.hit_count=0
+    g.miss_count=0
     return g
 class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
     def simple_evaluate(self, individual, X, y):

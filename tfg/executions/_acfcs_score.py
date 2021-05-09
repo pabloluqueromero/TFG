@@ -49,7 +49,10 @@ def acfs_score_comparison(datasets,
             acfcs_dummy = np.zeros(shape=(len(params), n_splits*n_repeats))
             acfcs_selected = np.zeros(shape=(len(params), n_splits*n_repeats))
             rskf = RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=n_repeats,random_state=seed)
-            seed_tqdm = tqdm(rskf.split(X,y), leave=False)
+            seed_tqdm = tqdm(rskf.split(X,y),
+                             leave=False,
+                             total=n_splits*n_repeats, 
+                             bar_format='{l_bar}{bar:20}{r_bar}{bar:-10b}')
             i=-1
             for train_index, test_index  in seed_tqdm:
                 i+=1

@@ -18,6 +18,7 @@ from ._utils import get_graphs
 from ._utils import get_scorer
 from ._utils import transform_features
 from ._utils import backward_search
+from ._utils import compute_sufs_non_incremental
 from ._mail import EmailSendCSV,send_results
 
 
@@ -44,5 +45,6 @@ __all__ = [
     "get_graphs",
     "get_scorer",
     "EmailSendCSV",
-    "send_results"
+    "send_results",
+    "compute_sufs_non_incremental",
 ]

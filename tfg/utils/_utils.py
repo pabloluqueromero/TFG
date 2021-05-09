@@ -5,6 +5,9 @@ import plotly.express as px
 
 from collections import OrderedDict, deque
 from scipy.stats import entropy
+from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
+from sklearn.utils.validation import check_is_fitted
+from itertools import combinations
 from sklearn.metrics import normalized_mutual_info_score
 from json import dumps
 
@@ -156,6 +159,22 @@ def compute_sufs(current_su,current_features,new_feature,y,beta=0.5,minimum=None
     return su if minimum is None else max(su,minimum)
 
 
+def compute_sufs_non_incremental(features,y,beta=0.5,minimum=None):
+    '''
+    MIFS adapted to work with SU.
+    Example:
+        SU({X1,X2,X3}|Y) = sum(SU(Xi|Y)) - beta * (SU(X1,X2),SU(X2,X3))
+    '''
+    class_su = sum([symmetrical_uncertainty(f1=f,f2=y) for f in features])
+    penalisation = beta*sum(
+                    symmetrical_uncertainty(f1,f2) #->The result should be the same but sklearn's is more tested
+                    # normalized_mutual_info_score(current_features[j],new_feature)
+                    for f1,f2 in combinations(features,2))
+
+    su = class_su-penalisation 
+    return su if minimum is None else max(su,minimum)
+
+
 
 
 def translate_features(features,feature_encoder,categories=None,path=".",filename="selected_features"):
@@ -256,8 +275,6 @@ def get_graphs(df,folder):
                 width=1000,)
     fig.write_image(folder+filename)
     
-from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
-from sklearn.utils.validation import check_is_fitted
 def get_scorer(scoring):
     scores = {"accuracy": accuracy_score,
               "f1_score": f1_score,
@@ -268,10 +285,13 @@ def get_scorer(scoring):
     raise ValueError(f"The specified scoring {scoring} is not valid")
 
 
-
 def transform_features(features,X):
-    return np.concatenate([f.transform(X) for f in features],axis=1)
-
+    # return np.concatenate([f.transform(X) for f in features],axis=1)
+    array = np.zeros(shape=(X.shape[0],len(features)))
+    for i,f in enumerate(features):
+        transformed = f.transform(X).reshape(-1,1)
+        array[:,i] = transformed[:,0]
+    return array
 
 
 

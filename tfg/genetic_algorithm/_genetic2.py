@@ -1,8 +1,9 @@
 import random
 from tfg.naive_bayes import NaiveBayes
-from tfg.utils import backward_search, transform_features
+from tfg.utils import backward_search, compute_sufs, compute_sufs_non_incremental, transform_features
 from tfg.feature_construction import DummyFeatureConstructor, create_feature
 from tqdm.autonotebook import tqdm
+from time import time
 
 import numpy as np
 import pandas as pd
@@ -10,6 +11,7 @@ import pandas as pd
 from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
 from sklearn.utils.validation import check_is_fitted
 from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
+from itertools import chain
 
 def memoize(f):
     cache = dict()
@@ -30,6 +32,9 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
     def simple_evaluate(self, individual, X, y):
         classifier = NaiveBayes(encode_data=False)
         return classifier.leave_one_out_cross_val(transform_features(individual[0]+individual[1], X), y, fit=True)
+
+    def simple_evaluate_heuristic(self, individual, X, y):
+        return compute_sufs_non_incremental(features = [f.transform(X) for f in chain(*individual[:2])],y=y)
 
     def fitness(self, population,X,y):
         evaluation = []
@@ -246,13 +251,19 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.best_features = backward_search(X,y,self.best_features,self.classifier_)
 
     def execute_algorithm(self,X,y):
+        if self.mixed:
+                self.evaluate = self.evaluate_heuristic
+        else:
+            self.evaluate = self.evaluate_wrapper
         population = self.generate_population()
-        population_with_fitness = self.fitness(population,X,y)        
+        population_with_fitness = self.fitness(population,X,y)
         iterator = tqdm(range(self.generations), leave=False) if self.verbose else range(self.generations)
-        for generation in iterator:
+        for generation in iterator: 
             selected_individuals = self.selection(population_with_fitness)
             crossed_individuals = selected_individuals#self.crossover(selected_individuals)
             mutated_individuals = self.mutate(crossed_individuals)
+            if self.mixed and generation > self.generations//2:
+                self.evaluate = self.evaluate_wrapper
             new_population = self.fitness(mutated_individuals,X,y)
             population_with_fitness = self.combine(
                 population_with_fitness, new_population)
@@ -261,6 +272,7 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
             if self.verbose:
                 best, mean = get_max_mean(population_with_fitness)
                 iterator.set_postfix({"Generation":generation,
+                                    "hit_count":self.evaluate.hit_count,
                                     "populationLength":len(population_with_fitness),
                                     "best fitness": best,
                                     "mean fitness": mean})
@@ -271,7 +283,8 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
         return best_individual[0]+best_individual[1]
     
     def reset_evaluation(self):
-        self.evaluate = memoize(self.simple_evaluate)
+        self.evaluate_wrapper = memoize(self.simple_evaluate)
+        self.evaluate_heuristic = memoize(self.simple_evaluate_heuristic)
 
     def __init__(self, 
                  size=10, 
@@ -286,9 +299,11 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
                  use_initials=True,
                  flexible_logic = True,
                  verbose=False,
-                 encode=True
+                 encode=True,
+                 mixed=True
                  ):
         self.size = size
+        self.mixed = mixed
         self.encode=encode
         self.flexible_logic = flexible_logic
         self.verbose = verbose

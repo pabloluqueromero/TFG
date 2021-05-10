@@ -259,11 +259,11 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
         population_with_fitness = self.fitness(population,X,y)
         iterator = tqdm(range(self.generations), leave=False) if self.verbose else range(self.generations)
         for generation in iterator: 
+            if self.mixed and generation > self.generations//2:
+                self.evaluate = self.evaluate_wrapper
             selected_individuals = self.selection(population_with_fitness)
             crossed_individuals = selected_individuals#self.crossover(selected_individuals)
             mutated_individuals = self.mutate(crossed_individuals)
-            if self.mixed and generation > self.generations//2:
-                self.evaluate = self.evaluate_wrapper
             new_population = self.fitness(mutated_individuals,X,y)
             population_with_fitness = self.combine(
                 population_with_fitness, new_population)

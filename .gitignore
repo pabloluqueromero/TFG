@@ -35,3 +35,6 @@ score.tex
 out/csv/*
 acfcs_score_comparison_*.csv
 ranker_score_comparison_*.csv
+
+build/*
+dist/*

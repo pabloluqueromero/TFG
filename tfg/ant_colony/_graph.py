@@ -145,11 +145,12 @@ class AntFeatureGraph:
                 pheromones.append(self.pheromone_matrix_selection[edge])
         return neighbours,np.array(pheromones)
 
-    def get_initial_nodes(self):
+    def get_initial_nodes(self,selected_nodes):
         '''Initial nodes
            Note: it is necessary to sort the ids so that they match the order of the arrays in the pheromon and heuristic arrays.
                  Dicts do not guarantee to follow insertion order (optionally this could be replaced with an OrderedDict'''
-        return sorted(list(self.nodes.items()),key=lambda x:x[0]),self.initial_pheromone,self.initial_heuristic
+        nodes_pheromone_heuristic = zip(sorted(list(self.nodes.items()),key=lambda x: x[0]), self.initial_pheromone, self.initial_heuristic) 
+        return list(zip(*(filter(lambda x: x[0][0] not in selected_nodes, nodes_pheromone_heuristic))))
 
     def update_pheromone_matrix_evaporation(self, evaporation_rate):
         '''Evaporate the pheromones by the given factor'''
@@ -158,12 +159,14 @@ class AntFeatureGraph:
         self.pheromone_matrix_attribute_completion = {k:v*update_factor for k,v in self.pheromone_matrix_attribute_completion.items()}
         self.initial_pheromone =  self.initial_pheromone*update_factor
 
-    def intensify(self,features,intensification_factor,ant_score=1):
+    def intensify(self,features,intensification_factor,ant_score=1,use_initials=False):
         '''Intensify the path of followed by the given ant'''
         previous = None
         intensification_factor*=ant_score
         for feature in features:
             if isinstance(feature,DummyFeatureConstructor):
+                if use_initials:
+                    continue
                 next_node = self.inverse_nodes[(feature.feature_index,None)]
                 if previous is None:
                     self.initial_pheromone[next_node] += intensification_factor

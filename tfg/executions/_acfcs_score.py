@@ -28,7 +28,7 @@ def acfs_score_comparison(datasets,
 
     # Instantiate ranker
     acfcs = ACFCS(verbose=0,metric=metric)
-    nb = NaiveBayes(encode_data=True,n_intervals=n_intervals,metric=metric)
+    nb = NaiveBayes(encode_data=False,n_intervals=n_intervals,metric=metric)
     for database in dataset_tqdm:
         name, label = database
         if os.path.exists(base_path+name):
@@ -58,6 +58,12 @@ def acfs_score_comparison(datasets,
                 i+=1
                 X_train, X_test = X.iloc[train_index], X.iloc[test_index]
                 y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+                c = CustomOrdinalFeatureEncoder(n_intervals = n_intervals)
+                X_train = c.fit_transform(X_train)
+                X_test = c.transform(X_test)
+                l = CustomLabelEncoder()
+                y_train = l.fit_transform(y_train)
+                y_test = l.transform(y_test)
                 nb.fit(X_train, y_train)
                 naive_bayes_score = nb.score(X_test, y_test)
                 conf_index  = 0

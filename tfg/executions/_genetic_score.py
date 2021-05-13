@@ -26,7 +26,6 @@ def genetic_score_comparison(datasets,
                             metric="accuracy",
                             send_email=False,
                             email_data = dict(),
-                            share_rank=True,
                             version=1):
     result = []
     dataset_tqdm = tqdm(datasets)

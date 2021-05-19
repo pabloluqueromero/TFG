@@ -14,11 +14,11 @@ n_splits = 3
 n_intervals = 5
 base_path = "./UCIREPO/"
 datasets = [
-    # ["arrhythmia","A279"],
+    ["breast-cancer", "Class"],
+    ["lenses", "ContactLens"],
     ["yeast", "nuc"],
     ["abalone", "Rings"],
     ["mammographicmasses", "Label"],
-    ["breast-cancer", "Class"],
     ["anneal", "label"],
     ["audiology", "label"],
     ["balance-scale", "label"],
@@ -35,7 +35,6 @@ datasets = [
     ["wine", "class"],
     ["wisconsin", "diagnosis"],
     ["car-evaluation", "safety"],
-    ["lenses", "ContactLens"],
     ["cmc", "Contraceptive"],
     ["cylinder-bands", "band type"],
     ["derm", "class"],
@@ -125,9 +124,9 @@ def verify_email():
 def finish():
     print("\n------------------------Removing environment--------------------------------\n")
     commands = [
-        'rm -rf *',
-        'history -c',
-        'shutdown now'
+        # 'rm -rf *',
+        # 'history -c',
+        # 'shutdown now'
     ]
 
     execute_commands(commands)
@@ -165,6 +164,7 @@ def execute_genetic_1(data):
             "generations": 20,
             "mutation_probability": 0.3,
             "selection": "simple",
+            "mutation": "simple",
             "combine": "elitism",
             "n_intervals": 5,
             "metric": "accuracy",
@@ -173,6 +173,7 @@ def execute_genetic_1(data):
             "encode": False
         },
         {
+            "mutation": "complex",
             "size": 10,
             "seed": seed,
             "individuals": 20,
@@ -227,79 +228,170 @@ def execute_genetic_1(data):
     ]
 
     for data_i in data[::1]:
-        result = genetic_score_comparison(base_path=base_path,
-                                          datasets=[data_i],
-                                          n_splits=n_splits,
-                                          n_repeats=n_repeats,
-                                          seed=seed,
-                                          params=params,
-                                          n_intervals=n_intervals,
-                                          metric="accuracy",
-                                          send_email=True,
-                                          version=2,
-                                          email_data={**email_data,
-                                                      **{
-                                                          "TITLE": f"{data_i[0]}_UCLM_MIXED_0.6_HEURISTIC",
-                                                          "FILENAME": f"{data_i[0]}_GENETIC2.CSV"}
-                                                      })
+        try:
+            result = genetic_score_comparison(base_path=base_path,
+                                              datasets=[data_i],
+                                              n_splits=n_splits,
+                                              n_repeats=n_repeats,
+                                              seed=seed,
+                                              params=params,
+                                              n_intervals=n_intervals,
+                                              metric="accuracy",
+                                              send_email=send_email_cond,
+                                              version=2,
+                                              email_data={**email_data,
+                                                          **{
+                                                              "TITLE": f"{data_i[0]}",
+                                                              "FILENAME": f"{data_i[0]}_roc.csv"}
+                                                          })
+            result.to_csv(
+                f"final_result/genetic_1/{data_i[0]}_roc.csv", index=False)
+        except Exception as e:
+            print(f"Error in database {data_i[0]}: {str(e)}")
 
 
 def execute_genetic_2(data):
     print("GENETIC 2")
-    params = [
+    params = [{
+        "size": 20,
+        "seed": seed,
+        "individuals": 20,
+        "generations": 20,
+        "mutation_probability": 0.05,
+        "selection": "simple",
+        "combine": "elitism",
+        "n_intervals": 5,
+        "metric": "accuracy",
+        "verbose": True, "flexible_logic": True, "mixed": False,
+        "encode": False
+    },
         {
-            "size": 10,
+            "size": 30,
             "seed": seed,
-            "individuals": 50,
+            "individuals": 20,
             "generations": 20,
-            "mutation_probability": 0.4,
+            "mutation_probability": 0.1,
             "selection": "simple",
-            "combine": "truncation",
-            "n_intervals": 5,
-            "metric": "accuracy",
-            "verbose": True
-        }, {
-            "size": 6,
-            "seed": seed,
-            "individuals": 50,
-            "generations": 20,
-            "mutation_probability": 0.2,
-            "selection": "rank",
             "combine": "elitism",
             "n_intervals": 5,
             "metric": "accuracy",
-            "verbose": True
-        }, {
-            "size": 3,
+            "verbose": True, "flexible_logic": True, "mixed": False,
+            "encode": False
+    }, {
+            "size": 20,
             "seed": seed,
-            "individuals": 50,
+            "individuals": 30,
             "generations": 20,
             "mutation_probability": 0.2,
-            "selection": "rank",
+            "selection": "simple",
             "combine": "elitism",
             "n_intervals": 5,
             "metric": "accuracy",
-            "verbose": True
-        },
-    ]
+            "verbose": True, "flexible_logic": True, "mixed": False,
+            "encode": False
+    }, {
+            "size": 30,
+            "seed": seed,
+            "individuals": 30,
+            "generations": 20,
+            "mutation_probability": 0.3,
+            "selection": "simple",
+            "combine": "elitism",
+            "n_intervals": 5,
+            "metric": "accuracy",
+            "verbose": True, "flexible_logic": True, "mixed": False,
+            "encode": False
+    }, {
+            "size": 20,
+            "seed": seed,
+            "individuals": 30,
+            "generations": 20,
+            "mutation_probability": 0.3,
+            "selection": "complex",
+            "combine": "elitism",
+            "n_intervals": 5,
+            "metric": "accuracy",
+            "verbose": True, "flexible_logic": True, "mixed": False,
+            "encode": False
+    }, {
+            "size": 30,
+            "seed": seed,
+            "individuals": 30,
+            "generations": 20,
+            "mutation_probability": 0.3,
+            "selection": "complex",
+            "combine": "truncate",
+            "n_intervals": 5,
+            "metric": "accuracy",
+            "verbose": True, "flexible_logic": True, "mixed": False,
+            "encode": False
+    }, {
+            "size": 20,
+            "seed": seed,
+            "individuals": 30,
+            "generations": 20,
+            "mutation_probability": 0.3,
+            "selection": "complex",
+            "combine": "elitism",
+            "n_intervals": 5,
+            "metric": "accuracy",
+            "verbose": True, "flexible_logic": True, "mixed": False,
+            "encode": False
+    }, {
+            "size": 30,
+            "seed": seed,
+            "individuals": 30,
+            "generations": 20,
+            "mutation_probability": 0.3,
+            "selection": "complex",
+            "combine": "elitism",
+            "n_intervals": 5,
+            "metric": "accuracy",
+            "verbose": True,
+            "flexible_logic": True,
+            "mixed": True,
+            "encode": False,
+            "mixed_percentage": 0.5
+
+    }, {
+            "size": 30,
+            "seed": seed,
+            "individuals": 30,
+            "generations": 20,
+            "mutation_probability": 0.3,
+            "selection": "complex",
+            "combine": "elitism",
+            "n_intervals": 5,
+            "metric": "accuracy",
+            "verbose": True,
+            "flexible_logic": True,
+            "mixed": True,
+            "encode": False,
+            "mixed_percentage": 0.3
+
+    }]
 
     for data_i in data[::1]:
-        genetic_score_comparison(base_path=base_path,
-                                 datasets=[data_i],
-                                 n_splits=n_splits,
-                                 n_repeats=n_repeats,
-                                 seed=seed,
-
-                                 params=params,
-                                 n_intervals=n_intervals,
-                                 metric="accuracy",
-                                 send_email=send_email_cond,
-                                 version=2,
-                                 email_data={**email_data,
-                                             **{
-                                                 "TITLE": f"{data_i[0]}_UCLM",
-                                                 "FILENAME": f"{data_i[0]}_GENETIC2.CSV"}
-                                             })
+        try:
+            result = genetic_score_comparison(base_path=base_path,
+                                              datasets=[data_i],
+                                              n_splits=n_splits,
+                                              n_repeats=n_repeats,
+                                              seed=seed,
+                                              metric = "f1_score",
+                                              params=params,
+                                              n_intervals=n_intervals,
+                                              send_email=send_email_cond,
+                                              version=2,
+                                              email_data={**email_data,
+                                                          **{
+                                                              "TITLE": f"{data_i[0]}",
+                                                              "FILENAME": f"{data_i[0]}_roc.csv"}
+                                                          })
+            result.to_csv(
+                f"final_result/genetic_2/{data_i[0]}_roc.csv", index=False)
+        except Exception as e:
+            print(f"Error in database {data_i[0]}: {str(e)}")
 
 
 def execute_ranker_1(data):
@@ -318,32 +410,37 @@ def execute_ranker_1(data):
         {"strategy": "skip", "block_size": 10,
             "max_iterations": 10, "verbose": 0, "max_err": 0, },
         {"strategy": "skip", "block_size": 1,
-            "max_features": 20, "verbose": 0, "max_err": 0, },
+            "max_features": 40, "verbose": 0, "max_err": 0, },
         {"strategy": "skip", "block_size": 2,
-            "max_features": 20, "verbose": 0, "max_err": 0, },
+            "max_features": 40, "verbose": 0, "max_err": 0, },
         {"strategy": "skip", "block_size": 5,
-            "max_features": 20, "verbose": 0, "max_err": 0, },
+            "max_features": 40, "verbose": 0, "max_err": 0, },
         {"strategy": "skip", "block_size": 10,
-            "max_features": 20, "verbose": 0, "max_err": 0}
+            "max_features": 40, "verbose": 0, "max_err": 0}
     ]
 
     for data_i in data[::1]:
-        result = ranker_score_comparison(base_path=base_path,
-                                         datasets=[data_i],
-                                         n_splits=n_splits,
-                                         n_repeats=n_repeats,
-                                         seed=seed,
+        try:
+            result = ranker_score_comparison(base_path=base_path,
+                                             datasets=[data_i],
+                                             n_splits=n_splits,
+                                             n_repeats=n_repeats,
+                                             seed=seed,
 
-                                         params=params,
-                                         n_intervals=n_intervals,
-                                         metric="accuracy",
-                                         send_email=send_email_cond,
-                                         share_rank=True,
-                                         email_data={**email_data,
-                                                     **{
-                                                         "TITLE": f"{data_i[0]}",
-                                                         "FILENAME": f"{data_i[0]}.CSV"}
-                                                     })
+                                             params=params,
+                                             n_intervals=n_intervals,
+                                             metric="accuracy",
+                                             send_email=send_email_cond,
+                                             share_rank=True,
+                                             email_data={**email_data,
+                                                         **{
+                                                             "TITLE": f"{data_i[0]}",
+                                                             "FILENAME": f"{data_i[0]}_roc.csv"}
+                                                         })
+            result.to_csv(
+                f"final_result/ranker_1/{data_i[0]}_roc.csv", index=False)
+        except Exception as e:
+            print(f"Error in database {data_i[0]}: {str(e)}")
 
 
 def execute_ranker_2(data):
@@ -365,33 +462,38 @@ def execute_ranker_2(data):
             "verbose": 0, "max_err": 0, "prune": 3},
         {"strategy": "skip", "block_size": 10, "max_iterations": 10,
             "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "skip", "block_size": 1, "max_features": 20,
+        {"strategy": "skip", "block_size": 1, "max_features": 40,
             "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "skip", "block_size": 2, "max_features": 20,
+        {"strategy": "skip", "block_size": 2, "max_features": 40,
             "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "skip", "block_size": 5, "max_features": 20,
+        {"strategy": "skip", "block_size": 5, "max_features": 40,
             "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "skip", "block_size": 10, "max_features": 20,
+        {"strategy": "skip", "block_size": 10, "max_features": 40,
             "verbose": 0, "max_err": 0, "prune": 3}
     ]
 
     for data_i in data[::1]:
-        result = ranker_score_comparison(base_path=base_path,
-                                         datasets=[data_i],
-                                         n_splits=n_splits,
-                                         n_repeats=n_repeats,
-                                         seed=seed,
+        try:
+            result = ranker_score_comparison(base_path=base_path,
+                                             datasets=[data_i],
+                                             n_splits=n_splits,
+                                             n_repeats=n_repeats,
+                                             seed=seed,
 
-                                         params=params,
-                                         n_intervals=n_intervals,
-                                         metric="accuracy",
-                                         send_email=send_email_cond,
-                                         share_rank=True,
-                                         email_data={**email_data,
-                                                     **{
-                                                         "TITLE": f"{data_i[0]}",
-                                                         "FILENAME": f"{data_i[0]}.CSV"}
-                                                     })
+                                             params=params,
+                                             n_intervals=n_intervals,
+                                             metric="accuracy",
+                                             send_email=send_email_cond,
+                                             share_rank=True,
+                                             email_data={**email_data,
+                                                         **{
+                                                             "TITLE": f"{data_i[0]}",
+                                                             "FILENAME": f"{data_i[0]}_roc.csv"}
+                                                         })
+            result.to_csv(
+                f"final_result/ranker_2/{data_i[0]}_roc.csv", index=False)
+        except Exception as e:
+            print(f"Error in database {data_i[0]}: {str(e)}")
 
 
 def execute_ranker_3(data):
@@ -413,13 +515,13 @@ def execute_ranker_3(data):
             "verbose": 0, "max_err": 0, "prune": 3},
         {"strategy": "skip", "block_size": 10, "max_iterations": 10,
             "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "skip", "block_size": 1, "max_features": 20,
+        {"strategy": "skip", "block_size": 1, "max_features": 40,
             "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "skip", "block_size": 2, "max_features": 20,
+        {"strategy": "skip", "block_size": 2, "max_features": 40,
             "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "skip", "block_size": 5, "max_features": 20,
+        {"strategy": "skip", "block_size": 5, "max_features": 40,
             "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "skip", "block_size": 10, "max_features": 20,
+        {"strategy": "skip", "block_size": 10, "max_features": 40,
             "verbose": 0, "max_err": 0, "prune": 3}
     ]
 
@@ -427,22 +529,27 @@ def execute_ranker_3(data):
         param["use_initials"] = True
 
     for data_i in data[::1]:
-        result = ranker_score_comparison(base_path=base_path,
-                                         datasets=[data_i],
-                                         n_splits=n_splits,
-                                         n_repeats=n_repeats,
-                                         seed=seed,
+        try:
+            result = ranker_score_comparison(base_path=base_path,
+                                             datasets=[data_i],
+                                             n_splits=n_splits,
+                                             n_repeats=n_repeats,
+                                             seed=seed,
 
-                                         params=params,
-                                         n_intervals=n_intervals,
-                                         metric="accuracy",
-                                         send_email=send_email_cond,
-                                         share_rank=True,
-                                         email_data={**email_data,
-                                                     **{
-                                                         "TITLE": f"{data_i[0]}",
-                                                         "FILENAME": f"{data_i[0]}.CSV"}
-                                                     })
+                                             params=params,
+                                             n_intervals=n_intervals,
+                                             metric="accuracy",
+                                             send_email=send_email_cond,
+                                             share_rank=True,
+                                             email_data={**email_data,
+                                                         **{
+                                                             "TITLE": f"{data_i[0]}",
+                                                             "FILENAME": f"{data_i[0]}_roc.csv"}
+                                                         })
+            result.to_csv(
+                f"final_result/ranker_3/{data_i[0]}_roc.csv", index=False)
+        except Exception as e:
+            print(f"Error in database {data_i[0]}: {str(e)}")
 
 
 def execute_aco_1(data):
@@ -453,7 +560,7 @@ def execute_aco_1(data):
             "evaporation_rate": 0.1,
             "intensification_factor": 2,
             "alpha": 0.5,
-            "beta": 0.5,
+            "beta": 0.2,
             "beta_evaporation_rate": 0.05,
             "iterations": 100,
             "early_stopping": 3,
@@ -461,9 +568,11 @@ def execute_aco_1(data):
             "parallel": False,
             "save_features": False,
             "verbose": 0,
-            "graph_strategy": "full",
+            "graph_strategy": "mutual_info",
+            "use_initials": True,
             "connections": 3,
-            "update_strategy": "all"
+            "update_strategy": "all",
+            "max_errors": 1
         }, {
             "ants": 10,
             "evaporation_rate": 0.1,
@@ -477,26 +586,30 @@ def execute_aco_1(data):
             "parallel": False,
             "save_features": False,
             "verbose": 0,
-            "graph_strategy": "full",
-            "connections": 3,
-            "update_strategy": "all"
+            "graph_strategy": "mutual_info",
+            "use_initials": False,
+            "connections": 2,
+            "update_strategy": "all",
+            "max_errors": 1
         }]
 
     for data_i in data[::1]:
-        acfs_score_comparison(base_path=base_path,
-                              datasets=[data_i],
-                              n_splits=n_splits,
-                              n_repeats=n_repeats,
-                              seed=seed,
-
-                              params=params,
-                              send_email=send_email_cond,
-                              share_rank=True,
-                              email_data={**email_data,
-                                          **{
-                                              "TITLE": f"{data_i[0]}",
-                                              "FILENAME": f"{data_i[0]}.CSV"
-                                          }})
+        try:
+            result = acfs_score_comparison(base_path=base_path,
+                                           datasets=[data_i],
+                                           n_splits=n_splits,
+                                           n_repeats=n_repeats,
+                                           seed=seed,
+                                           params=params,
+                                           send_email=send_email_cond,
+                                           email_data={**email_data,
+                                                       **{
+                                                           "TITLE": f"{data_i[0]}",
+                                                           "FILENAME": f"{data_i[0]}_roc.csv"
+                                                       }})
+            result.to_csv(f"final_result/aco_1/{data_i[0]}_roc.csv", index=False)
+        except Exception as e:
+            print(f"ERROR IN {data_i[0]} DB: {e} ")
 
 
 setup()

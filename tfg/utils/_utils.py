@@ -282,7 +282,7 @@ def get_scorer(scoring):
     }
     if scoring in scores:
         return scores[scoring]
-    raise ValueError(f"The specified scoring {scoring} is not valid")
+    raise ValueError(f"The specified scoring {scoring} is not valid. Expected one of {tuple(scores.keys())}")
 
 
 def transform_features(features,X):

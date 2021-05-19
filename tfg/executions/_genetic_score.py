@@ -31,7 +31,7 @@ def genetic_score_comparison(datasets,
     dataset_tqdm = tqdm(datasets)
 
     # Instantiate ranker
-    r = GeneticAlgorithm(seed=200) if version==1 else GeneticAlgorithmV2(seed=200)
+    r = GeneticAlgorithm(seed=seed,metric=metric) if version==1 else GeneticAlgorithmV2(seed=seed,metric=metric)
     nb = NaiveBayes(encode_data=False,n_intervals = n_intervals, metric=metric)
     for database in dataset_tqdm:
         name, label = database

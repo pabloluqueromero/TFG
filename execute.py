@@ -261,7 +261,7 @@ def execute_genetic_2(data):
         "selection": "simple",
         "combine": "elitism",
         "n_intervals": 5,
-        "metric": "accuracy",
+        "metric": "f1_score",
         "verbose": True, "flexible_logic": True, "mixed": False,
         "encode": False
     },
@@ -274,7 +274,7 @@ def execute_genetic_2(data):
             "selection": "simple",
             "combine": "elitism",
             "n_intervals": 5,
-            "metric": "accuracy",
+            "metric": "f1_score",
             "verbose": True, "flexible_logic": True, "mixed": False,
             "encode": False
     }, {
@@ -286,7 +286,7 @@ def execute_genetic_2(data):
             "selection": "simple",
             "combine": "elitism",
             "n_intervals": 5,
-            "metric": "accuracy",
+            "metric": "f1_score",
             "verbose": True, "flexible_logic": True, "mixed": False,
             "encode": False
     }, {
@@ -298,7 +298,7 @@ def execute_genetic_2(data):
             "selection": "simple",
             "combine": "elitism",
             "n_intervals": 5,
-            "metric": "accuracy",
+            "metric": "f1_score",
             "verbose": True, "flexible_logic": True, "mixed": False,
             "encode": False
     }, {
@@ -310,7 +310,7 @@ def execute_genetic_2(data):
             "selection": "complex",
             "combine": "elitism",
             "n_intervals": 5,
-            "metric": "accuracy",
+            "metric": "f1_score",
             "verbose": True, "flexible_logic": True, "mixed": False,
             "encode": False
     }, {
@@ -322,7 +322,7 @@ def execute_genetic_2(data):
             "selection": "complex",
             "combine": "truncate",
             "n_intervals": 5,
-            "metric": "accuracy",
+            "metric": "f1_score",
             "verbose": True, "flexible_logic": True, "mixed": False,
             "encode": False
     }, {
@@ -334,7 +334,7 @@ def execute_genetic_2(data):
             "selection": "complex",
             "combine": "elitism",
             "n_intervals": 5,
-            "metric": "accuracy",
+            "metric": "f1_score",
             "verbose": True, "flexible_logic": True, "mixed": False,
             "encode": False
     }, {
@@ -346,7 +346,7 @@ def execute_genetic_2(data):
             "selection": "complex",
             "combine": "elitism",
             "n_intervals": 5,
-            "metric": "accuracy",
+            "metric": "f1_score",
             "verbose": True,
             "flexible_logic": True,
             "mixed": True,
@@ -362,7 +362,7 @@ def execute_genetic_2(data):
             "selection": "complex",
             "combine": "elitism",
             "n_intervals": 5,
-            "metric": "accuracy",
+            "metric": "f1_score",
             "verbose": True,
             "flexible_logic": True,
             "mixed": True,

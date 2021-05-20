@@ -31,7 +31,7 @@ def memoize(f):
 class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
 
     def simple_evaluate(self, individual, X, y):
-        classifier = NaiveBayes(encode_data=False)
+        classifier = NaiveBayes(encode_data=False,metric = self.metric)
         return classifier.leave_one_out_cross_val(transform_features(individual[0]+individual[1], X), y, fit=True)
 
     def simple_evaluate_heuristic(self, individual, X, y):
@@ -349,7 +349,7 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
 
         best_individual = self.execute_algorithm(X,y)
         self.best_features = best_individual
-        self.classifier_ = NaiveBayes(encode_data=False)
+        self.classifier_ = NaiveBayes(encode_data=False,metric = self.metric)
         self.classifier_.fit(self.transform(X,y)[0],y)
         self.best_features = backward_search(X,y,self.best_features,self.classifier_)
 

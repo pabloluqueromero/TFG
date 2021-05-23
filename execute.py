@@ -258,7 +258,7 @@ def execute_genetic_1(data):
                                                               "TITLE": f"{data_i[0]}",
                                                               "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}                                                          })
             result.to_csv(
-                f"final_result/genetic_1/{data_i[0]}_roc.csv", index=False)
+                f"final_result/genetic_1/{data_i[0]}_{filename_suffix}.csv", index=False)
         except Exception as e:
             print(f"Error in database {data_i[0]}: {str(e)}")
 
@@ -401,7 +401,7 @@ def execute_genetic_2(data):
                                                               "TITLE": f"{data_i[0]}",
                                                               "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}                                                          })
             result.to_csv(
-                f"final_result/genetic_2/{data_i[0]}_roc.csv", index=False)
+                f"final_result/genetic_2/{data_i[0]}_{filename_suffix}.csv", index=False)
         except Exception as e:
             print(f"Error in database {data_i[0]}: {str(e)}")
 
@@ -455,7 +455,7 @@ def execute_genetic_3(data):
                                                               "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}       
                                                         })  
             result.to_csv(
-                f"final_result/genetic_3/{data_i[0]}_roc.csv", index=False)
+                f"final_result/genetic_3/{data_i[0]}_{filename_suffix}.csv", index=False)
         except Exception as e:
             print(f"Error in database {data_i[0]}: {str(e)}")
 
@@ -524,7 +524,7 @@ def execute_ranker_1(data):
                                                              "TITLE": f"{data_i[0]}",
                                                              "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}                                                         })
             result.to_csv(
-                f"final_result/ranker_1/{data_i[0]}_roc.csv", index=False)
+                f"final_result/ranker_1/{data_i[0]}_{filename_suffix}.csv", index=False)
         except Exception as e:
             print(f"Error in database {data_i[0]}: {str(e)}")
 
@@ -576,7 +576,7 @@ def execute_ranker_2(data):
                                                              "TITLE": f"{data_i[0]}",
                                                              "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}                                                         })
             result.to_csv(
-                f"final_result/ranker_2/{data_i[0]}_roc.csv", index=False)
+                f"final_result/ranker_2/{data_i[0]}_{filename_suffix}.csv", index=False)
         except Exception as e:
             print(f"Error in database {data_i[0]}: {str(e)}")
 
@@ -631,7 +631,7 @@ def execute_ranker_3(data):
                                                              "TITLE": f"{data_i[0]}",
                                                              "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}                                                         })
             result.to_csv(
-                f"final_result/ranker_3/{data_i[0]}_roc.csv", index=False)
+                f"final_result/ranker_3/{data_i[0]}_{filename_suffix}.csv", index=False)
         except Exception as e:
             print(f"Error in database {data_i[0]}: {str(e)}")
 
@@ -691,7 +691,7 @@ def execute_aco_1(data):
                                                            "TITLE": f"{data_i[0]}",
                                                            "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}       
                                                            })
-            result.to_csv(f"final_result/aco_1/{data_i[0]}_roc.csv", index=False)
+            result.to_csv(f"final_result/aco_1/{data_i[0]}_{filename_suffix}.csv", index=False)
         except Exception as e:
             print(f"ERROR IN {data_i[0]} DB: {e} ")
 

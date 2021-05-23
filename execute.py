@@ -436,7 +436,7 @@ def execute_genetic_3(data):
         for key,val in conf.items():
             params[-1][key] = val
     print("Conf Size: ",len(params))
-    for data_i in data[::-1]:
+    for data_i in data:
         try:
             result = genetic_score_comparison(base_path=base_path,
                                               datasets=[data_i],
@@ -450,8 +450,8 @@ def execute_genetic_3(data):
                                               version=3,
                                               email_data={**email_data,
                                                           **{
-                                                              "TITLE": f"{data_i[0]}",
-                                                              "FILENAME": f"{data_i[0]}_roc.csv"}
+                                                              "TITLE": f"{data_i[0]}_N_NUMBER_VAR",
+                                                              "FILENAME": f"{data_i[0]}.csv"}
                                                           })
             result.to_csv(
                 f"final_result/genetic_3/{data_i[0]}_roc.csv", index=False)

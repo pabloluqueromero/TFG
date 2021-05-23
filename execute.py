@@ -61,6 +61,7 @@ parser.add_argument("--method", default=1, help="for ranker and genetic 1-3")
 parser.add_argument("--n_computers", required=True, help="")
 parser.add_argument("--computer", required=True, help="computer/n_computers")
 parser.add_argument("--metric", required=True, default="accuracy",help="scorer")
+parser.add_argument("--filename", required=True, default="",help="suffix for the")
 parser.add_argument("--no_email", action="store_true", help="dont_send_email")
 
 args = parser.parse_args()
@@ -72,9 +73,10 @@ n_computers = int(args.n_computers)
 computer = int(args.computer)-1
 metric = args.metric
 send_email_cond = not args.no_email
+filename_suffix = args.filename
 
-print(metric)
-if(computer >= n_computers):
+
+if computer >= n_computers:
     print("ERROR: computer >= n_computers")
     exit(1)
 
@@ -84,6 +86,13 @@ email_data = {
     "TO": email,
     "PASSWORD": password,
 }
+
+import itertools
+def product_dict(**kwargs):
+    keys = kwargs.keys()
+    vals = kwargs.values()
+    for instance in itertools.product(*vals):
+        yield dict(zip(keys, instance))
 
 
 ####################################################################
@@ -247,8 +256,7 @@ def execute_genetic_1(data):
                                               email_data={**email_data,
                                                           **{
                                                               "TITLE": f"{data_i[0]}",
-                                                              "FILENAME": f"{data_i[0]}_roc.csv"}
-                                                          })
+                                                              "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}                                                          })
             result.to_csv(
                 f"final_result/genetic_1/{data_i[0]}_roc.csv", index=False)
         except Exception as e:
@@ -391,19 +399,11 @@ def execute_genetic_2(data):
                                               email_data={**email_data,
                                                           **{
                                                               "TITLE": f"{data_i[0]}",
-                                                              "FILENAME": f"{data_i[0]}_roc.csv"}
-                                                          })
+                                                              "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}                                                          })
             result.to_csv(
                 f"final_result/genetic_2/{data_i[0]}_roc.csv", index=False)
         except Exception as e:
             print(f"Error in database {data_i[0]}: {str(e)}")
-
-import itertools
-def product_dict(**kwargs):
-    keys = kwargs.keys()
-    vals = kwargs.values()
-    for instance in itertools.product(*vals):
-        yield dict(zip(keys, instance))
 
 def execute_genetic_3(data):
     print("GENETIC 3")
@@ -436,7 +436,7 @@ def execute_genetic_3(data):
         for key,val in conf.items():
             params[-1][key] = val
     print("Conf Size: ",len(params))
-    for data_i in data[::-1]:
+    for data_i in data[::]:
         try:
             result = genetic_score_comparison(base_path=base_path,
                                               datasets=[data_i],
@@ -451,8 +451,7 @@ def execute_genetic_3(data):
                                               email_data={**email_data,
                                                           **{
                                                               "TITLE": f"{data_i[0]}",
-                                                              "FILENAME": f"{data_i[0]}_roc.csv"}
-                                                          })
+                                                              "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}                                                          })
             result.to_csv(
                 f"final_result/genetic_3/{data_i[0]}_roc.csv", index=False)
         except Exception as e:
@@ -461,28 +460,49 @@ def execute_genetic_3(data):
 
 def execute_ranker_1(data):
     print("RANKER 1")
-    params = [
-        {"strategy": "eager", "block_size": 1, "verbose": 0, "max_err": 0, },
-        {"strategy": "eager", "block_size": 2, "verbose": 0, "max_err": 0, },
-        {"strategy": "eager", "block_size": 5, "verbose": 0, "max_err": 0, },
-        {"strategy": "eager", "block_size": 10, "verbose": 0, "max_err": 0, },
-        {"strategy": "skip", "block_size": 1,
-            "max_iterations": 10, "verbose": 0, "max_err": 0, },
-        {"strategy": "skip", "block_size": 2,
-            "max_iterations": 10, "verbose": 0, "max_err": 0, },
-        {"strategy": "skip", "block_size": 5,
-            "max_iterations": 10, "verbose": 0, "max_err": 0, },
-        {"strategy": "skip", "block_size": 10,
-            "max_iterations": 10, "verbose": 0, "max_err": 0, },
-        {"strategy": "skip", "block_size": 1,
-            "max_features": 40, "verbose": 0, "max_err": 0, },
-        {"strategy": "skip", "block_size": 2,
-            "max_features": 40, "verbose": 0, "max_err": 0, },
-        {"strategy": "skip", "block_size": 5,
-            "max_features": 40, "verbose": 0, "max_err": 0, },
-        {"strategy": "skip", "block_size": 10,
-            "max_features": 40, "verbose": 0, "max_err": 0}
-    ]
+    grid = {
+        "strategy": ["eager","skip"],
+        "block_size": [1,2,5,7,10],
+        "max_features": [40],
+        "max_iterations":[10,15]
+
+    }
+    
+    def_params = {
+        "strategy": "skip", 
+        "block_size": 10,
+        "max_features": 40,
+        "verbose": 0,
+        "max_err": 0
+        }
+    params = []
+    for conf in product_dict(**grid):
+        params.append(def_params.copy())
+        for key,val in conf.items():
+            params[-1][key] = val
+    
+    # params = [
+    #     {"strategy": "eager", "block_size": 1, "verbose": 0, "max_err": 0, },
+    #     {"strategy": "eager", "block_size": 2, "verbose": 0, "max_err": 0, },
+    #     {"strategy": "eager", "block_size": 5, "verbose": 0, "max_err": 0, },
+    #     {"strategy": "eager", "block_size": 10, "verbose": 0, "max_err": 0, },
+    #     {"strategy": "skip", "block_size": 1,
+    #         "max_iterations": 10, "verbose": 0, "max_err": 0, },
+    #     {"strategy": "skip", "block_size": 2,
+    #         "max_iterations": 10, "verbose": 0, "max_err": 0, },
+    #     {"strategy": "skip", "block_size": 5,
+    #         "max_iterations": 10, "verbose": 0, "max_err": 0, },
+    #     {"strategy": "skip", "block_size": 10,
+    #         "max_iterations": 10, "verbose": 0, "max_err": 0, },
+    #     {"strategy": "skip", "block_size": 1,
+    #         "max_features": 40, "verbose": 0, "max_err": 0, },
+    #     {"strategy": "skip", "block_size": 2,
+    #         "max_features": 40, "verbose": 0, "max_err": 0, },
+    #     {"strategy": "skip", "block_size": 5,
+    #         "max_features": 40, "verbose": 0, "max_err": 0, },
+    #     {"strategy": "skip", "block_size": 10,
+    #         "max_features": 40, "verbose": 0, "max_err": 0}
+    # ]
 
     for data_i in data[::1]:
         try:
@@ -500,8 +520,7 @@ def execute_ranker_1(data):
                                              email_data={**email_data,
                                                          **{
                                                              "TITLE": f"{data_i[0]}",
-                                                             "FILENAME": f"{data_i[0]}_roc.csv"}
-                                                         })
+                                                             "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}                                                         })
             result.to_csv(
                 f"final_result/ranker_1/{data_i[0]}_roc.csv", index=False)
         except Exception as e:
@@ -553,8 +572,7 @@ def execute_ranker_2(data):
                                              email_data={**email_data,
                                                          **{
                                                              "TITLE": f"{data_i[0]}",
-                                                             "FILENAME": f"{data_i[0]}_roc.csv"}
-                                                         })
+                                                             "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}                                                         })
             result.to_csv(
                 f"final_result/ranker_2/{data_i[0]}_roc.csv", index=False)
         except Exception as e:
@@ -609,8 +627,7 @@ def execute_ranker_3(data):
                                              email_data={**email_data,
                                                          **{
                                                              "TITLE": f"{data_i[0]}",
-                                                             "FILENAME": f"{data_i[0]}_roc.csv"}
-                                                         })
+                                                             "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}                                                         })
             result.to_csv(
                 f"final_result/ranker_3/{data_i[0]}_roc.csv", index=False)
         except Exception as e:
@@ -670,8 +687,7 @@ def execute_aco_1(data):
                                            email_data={**email_data,
                                                        **{
                                                            "TITLE": f"{data_i[0]}",
-                                                           "FILENAME": f"{data_i[0]}_roc.csv"
-                                                       }})
+                                                           "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}                                                       }})
             result.to_csv(f"final_result/aco_1/{data_i[0]}_roc.csv", index=False)
         except Exception as e:
             print(f"ERROR IN {data_i[0]} DB: {e} ")

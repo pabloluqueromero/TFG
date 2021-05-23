@@ -531,32 +531,28 @@ def execute_ranker_1(data):
 
 def execute_ranker_2(data):
     print("RANKER 2")
-    params = [
-        {"strategy": "eager", "block_size": 1,
-            "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "eager", "block_size": 2,
-            "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "eager", "block_size": 5,
-            "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "eager", "block_size": 10,
-            "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "skip", "block_size": 1, "max_iterations": 10,
-            "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "skip", "block_size": 2, "max_iterations": 10,
-            "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "skip", "block_size": 5, "max_iterations": 10,
-            "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "skip", "block_size": 10, "max_iterations": 10,
-            "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "skip", "block_size": 1, "max_features": 40,
-            "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "skip", "block_size": 2, "max_features": 40,
-            "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "skip", "block_size": 5, "max_features": 40,
-            "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "skip", "block_size": 10, "max_features": 40,
-            "verbose": 0, "max_err": 0, "prune": 3}
-    ]
+    grid = {
+        "strategy": ["eager","skip"],
+        "block_size": [1,2,5,7,10],
+        "max_features": [40],
+        "max_iterations":[10,15],
+        "prune":3
+
+    }
+    
+    def_params = {
+        "strategy": "skip", 
+        "block_size": 10,
+        "max_features": 40,
+        "verbose": 0,
+        "max_err": 0
+        }
+    params = []
+    for conf in product_dict(**grid):
+        params.append(def_params.copy())
+        for key,val in conf.items():
+            params[-1][key] = val
+    
 
     for data_i in data[::1]:
         try:
@@ -565,7 +561,6 @@ def execute_ranker_2(data):
                                              n_splits=n_splits,
                                              n_repeats=n_repeats,
                                              seed=seed,
-
                                              params=params,
                                              n_intervals=n_intervals,
                                              metric=metric,

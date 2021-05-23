@@ -436,8 +436,9 @@ def execute_genetic_3(data):
         for key,val in conf.items():
             params[-1][key] = val
     print("Conf Size: ",len(params))
-    for data_i in data[::]:
-        try:
+
+    for data_i in data:
+       try:
             result = genetic_score_comparison(base_path=base_path,
                                               datasets=[data_i],
                                               n_splits=n_splits,
@@ -450,9 +451,7 @@ def execute_genetic_3(data):
                                               version=3,
                                               email_data={**email_data,
                                                           **{
-                                                              "TITLE": f"{data_i[0]}",
-                                                              "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}                                                          })
-            result.to_csv(
+             result.to_csv(
                 f"final_result/genetic_3/{data_i[0]}_roc.csv", index=False)
         except Exception as e:
             print(f"Error in database {data_i[0]}: {str(e)}")

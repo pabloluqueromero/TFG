@@ -12,7 +12,7 @@ from tqdm.autonotebook import tqdm
 from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
 from tfg.feature_construction import DummyFeatureConstructor
 from tfg.naive_bayes import NaiveBayes
-from tfg.genetic_algorithm import GeneticAlgorithm,GeneticAlgorithmV2
+from tfg.genetic_algorithm import GeneticAlgorithm,GeneticAlgorithmV2,GeneticAlgorithmV3
 from tfg.utils import get_X_y_from_database
 
 
@@ -31,7 +31,12 @@ def genetic_score_comparison(datasets,
     dataset_tqdm = tqdm(datasets)
 
     # Instantiate ranker
-    r = GeneticAlgorithm(seed=seed,metric=metric) if version==1 else GeneticAlgorithmV2(seed=seed,metric=metric)
+    if version==1:
+        r = GeneticAlgorithm(seed=seed,metric=metric) 
+    elif version ==2:
+        r = GeneticAlgorithmV2(seed=seed,metric=metric) 
+    else:
+        r = GeneticAlgorithmV3(seed=seed,metric=metric)
     nb = NaiveBayes(encode_data=False,n_intervals = n_intervals, metric=metric)
     for database in dataset_tqdm:
         name, label = database

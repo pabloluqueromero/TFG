@@ -14,8 +14,8 @@ n_splits = 3
 n_intervals = 5
 base_path = "./UCIREPO/"
 datasets = [
+    # ["lenses", "ContactLens"],
     ["breast-cancer", "Class"],
-    ["lenses", "ContactLens"],
     ["yeast", "nuc"],
     ["abalone", "Rings"],
     ["mammographicmasses", "Label"],
@@ -60,6 +60,7 @@ parser.add_argument("--algorithm", required=True,
 parser.add_argument("--method", default=1, help="for ranker and genetic 1-3")
 parser.add_argument("--n_computers", required=True, help="")
 parser.add_argument("--computer", required=True, help="computer/n_computers")
+parser.add_argument("--metric", required=True, default="accuracy",help="scorer")
 parser.add_argument("--no_email", action="store_true", help="dont_send_email")
 
 args = parser.parse_args()
@@ -69,8 +70,10 @@ algorithm = args.algorithm
 method = int(args.method)
 n_computers = int(args.n_computers)
 computer = int(args.computer)-1
+metric = args.metric
 send_email_cond = not args.no_email
 
+print(metric)
 if(computer >= n_computers):
     print("ERROR: computer >= n_computers")
     exit(1)
@@ -148,8 +151,10 @@ def execute():
     elif algorithm == "genetic":
         if method == 1:
             execute_genetic_1(data)
-        else:
+        elif method == 2:
             execute_genetic_2(data)
+        elif method == 3:
+            execute_genetic_3(data)
     elif algorithm == "aco":
         execute_aco_1(data)
 
@@ -167,7 +172,7 @@ def execute_genetic_1(data):
             "mutation": "simple",
             "combine": "elitism",
             "n_intervals": 5,
-            "metric": "accuracy",
+            "metric": metric,
             "verbose": True,
             "flexible_logic": True,
             "encode": False
@@ -182,7 +187,7 @@ def execute_genetic_1(data):
             "selection": "simple",
             "combine": "truncation",
             "n_intervals": 5,
-            "metric": "accuracy",
+            "metric": metric,
             "encode": False,
             "verbose": True,
             "flexible_logic": True,
@@ -195,7 +200,7 @@ def execute_genetic_1(data):
             "selection": "rank",
             "combine": "elitism",
             "n_intervals": 5,
-            "metric": "accuracy",
+            "metric": metric,
             "verbose": True,
             "flexible_logic": False,
         }, {
@@ -208,7 +213,7 @@ def execute_genetic_1(data):
             "combine": "elitism",
             "n_intervals": 5,
             "encode": False,
-            "metric": "accuracy",
+            "metric": metric,
             "flexible_logic": True,
             "verbose": True
         }, {
@@ -220,7 +225,7 @@ def execute_genetic_1(data):
             "selection": "rank",
             "combine": "elitism",
             "n_intervals": 5,
-            "metric": "accuracy",
+            "metric": metric,
             "flexible_logic": True,
             "verbose": True,
             "encode": False
@@ -236,7 +241,7 @@ def execute_genetic_1(data):
                                               seed=seed,
                                               params=params,
                                               n_intervals=n_intervals,
-                                              metric="accuracy",
+                                              metric=metric,
                                               send_email=send_email_cond,
                                               version=2,
                                               email_data={**email_data,
@@ -261,7 +266,7 @@ def execute_genetic_2(data):
         "selection": "simple",
         "combine": "elitism",
         "n_intervals": 5,
-        "metric": "f1_score",
+        "metric": metric,
         "verbose": True, "flexible_logic": True, "mixed": False,
         "encode": False
     },
@@ -274,7 +279,7 @@ def execute_genetic_2(data):
             "selection": "simple",
             "combine": "elitism",
             "n_intervals": 5,
-            "metric": "f1_score",
+            "metric": metric,
             "verbose": True, "flexible_logic": True, "mixed": False,
             "encode": False
     }, {
@@ -286,7 +291,7 @@ def execute_genetic_2(data):
             "selection": "simple",
             "combine": "elitism",
             "n_intervals": 5,
-            "metric": "f1_score",
+            "metric": metric,
             "verbose": True, "flexible_logic": True, "mixed": False,
             "encode": False
     }, {
@@ -298,7 +303,7 @@ def execute_genetic_2(data):
             "selection": "simple",
             "combine": "elitism",
             "n_intervals": 5,
-            "metric": "f1_score",
+            "metric": metric,
             "verbose": True, "flexible_logic": True, "mixed": False,
             "encode": False
     }, {
@@ -310,7 +315,7 @@ def execute_genetic_2(data):
             "selection": "complex",
             "combine": "elitism",
             "n_intervals": 5,
-            "metric": "f1_score",
+            "metric": metric,
             "verbose": True, "flexible_logic": True, "mixed": False,
             "encode": False
     }, {
@@ -322,7 +327,7 @@ def execute_genetic_2(data):
             "selection": "complex",
             "combine": "truncate",
             "n_intervals": 5,
-            "metric": "f1_score",
+            "metric": metric,
             "verbose": True, "flexible_logic": True, "mixed": False,
             "encode": False
     }, {
@@ -334,7 +339,7 @@ def execute_genetic_2(data):
             "selection": "complex",
             "combine": "elitism",
             "n_intervals": 5,
-            "metric": "f1_score",
+            "metric": metric,
             "verbose": True, "flexible_logic": True, "mixed": False,
             "encode": False
     }, {
@@ -346,7 +351,7 @@ def execute_genetic_2(data):
             "selection": "complex",
             "combine": "elitism",
             "n_intervals": 5,
-            "metric": "f1_score",
+            "metric": metric,
             "verbose": True,
             "flexible_logic": True,
             "mixed": True,
@@ -362,7 +367,7 @@ def execute_genetic_2(data):
             "selection": "complex",
             "combine": "elitism",
             "n_intervals": 5,
-            "metric": "f1_score",
+            "metric": metric,
             "verbose": True,
             "flexible_logic": True,
             "mixed": True,
@@ -378,7 +383,7 @@ def execute_genetic_2(data):
                                               n_splits=n_splits,
                                               n_repeats=n_repeats,
                                               seed=seed,
-                                              metric = "f1_score",
+                                              metric = metric,
                                               params=params,
                                               n_intervals=n_intervals,
                                               send_email=send_email_cond,
@@ -390,6 +395,62 @@ def execute_genetic_2(data):
                                                           })
             result.to_csv(
                 f"final_result/genetic_2/{data_i[0]}_roc.csv", index=False)
+        except Exception as e:
+            print(f"Error in database {data_i[0]}: {str(e)}")
+
+def execute_genetic_3(data):
+    print("GENETIC 3")
+    params = [ {
+            "size": 7,
+            "seed": seed,
+            "individuals": 30,
+            "generations": 20,
+            "mutation_probability": 0.05,
+            "selection": "proportionate",
+            "combine": "elitism",
+            "n_intervals": 5,
+            "metric": metric,
+            "verbose": True,
+            "mixed": True,
+            "encode": False,
+            "mixed_percentage": 0.5
+
+    }, {
+            "size": 7,
+            "seed": seed,
+            "individuals": 30,
+            "generations": 20,
+            "mutation_probability": 0.01,
+            "selection": "rank",
+            "combine": "truncate",
+            "n_intervals": 5,
+            "metric": metric,
+            "verbose": True,
+            "mixed": True,
+            "encode": False,
+            "mixed_percentage": 0.5
+
+    }]
+
+    for data_i in data[::1]:
+        try:
+            result = genetic_score_comparison(base_path=base_path,
+                                              datasets=[data_i],
+                                              n_splits=n_splits,
+                                              n_repeats=n_repeats,
+                                              seed=seed,
+                                              metric = metric,
+                                              params=params,
+                                              n_intervals=n_intervals,
+                                              send_email=send_email_cond,
+                                              version=3,
+                                              email_data={**email_data,
+                                                          **{
+                                                              "TITLE": f"{data_i[0]}",
+                                                              "FILENAME": f"{data_i[0]}_roc.csv"}
+                                                          })
+            result.to_csv(
+                f"final_result/genetic_3/{data_i[0]}_roc.csv", index=False)
         except Exception as e:
             print(f"Error in database {data_i[0]}: {str(e)}")
 
@@ -429,7 +490,7 @@ def execute_ranker_1(data):
 
                                              params=params,
                                              n_intervals=n_intervals,
-                                             metric="accuracy",
+                                             metric=metric,
                                              send_email=send_email_cond,
                                              share_rank=True,
                                              email_data={**email_data,
@@ -482,7 +543,7 @@ def execute_ranker_2(data):
 
                                              params=params,
                                              n_intervals=n_intervals,
-                                             metric="accuracy",
+                                             metric=metric,
                                              send_email=send_email_cond,
                                              share_rank=True,
                                              email_data={**email_data,
@@ -538,7 +599,7 @@ def execute_ranker_3(data):
 
                                              params=params,
                                              n_intervals=n_intervals,
-                                             metric="accuracy",
+                                             metric=metric,
                                              send_email=send_email_cond,
                                              share_rank=True,
                                              email_data={**email_data,

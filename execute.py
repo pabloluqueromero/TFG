@@ -398,10 +398,23 @@ def execute_genetic_2(data):
         except Exception as e:
             print(f"Error in database {data_i[0]}: {str(e)}")
 
+import itertools
+def product_dict(**kwargs):
+    keys = kwargs.keys()
+    vals = kwargs.values()
+    for instance in itertools.product(*vals):
+        yield dict(zip(keys, instance))
+
 def execute_genetic_3(data):
     print("GENETIC 3")
-    params = [ {
-            "size": 7,
+    grid = {
+        "mutation_probability": [0.01,0.05,0.1,0.2],
+        "selection": ["rank","proportionate"],
+        "combine": ["elitism","truncate"],
+        "mixed": [True,False]
+    }
+    def_params = {
+            "size":np.nan,
             "seed": seed,
             "individuals": 30,
             "generations": 20,
@@ -410,59 +423,20 @@ def execute_genetic_3(data):
             "combine": "elitism",
             "n_intervals": 5,
             "metric": metric,
-            "verbose": True,
-            "mixed": True,
+            "verbose": False,
+            "mixed": False,
             "encode": False,
-            "mixed_percentage": 0.5
+            "mixed_percentage": 0.3
 
-    },{
-            "size": 7,
-            "seed": seed,
-            "individuals": 30,
-            "generations": 20,
-            "mutation_probability": 0.05,
-            "selection": "proportionate",
-            "combine": "elitism",
-            "n_intervals": 5,
-            "metric": metric,
-            "verbose": True,
-            "mixed": True,
-            "encode": False,
-            "mixed_percentage": 0.5
+    }
 
-    },{
-            "size": 7,
-            "seed": seed,
-            "individuals": 30,
-            "generations": 20,
-            "mutation_probability": 0.05,
-            "selection": "proportionate",
-            "combine": "elitism",
-            "n_intervals": 5,
-            "metric": metric,
-            "verbose": True,
-            "mixed": True,
-            "encode": False,
-            "mixed_percentage": 0.5
-
-    },{
-            "size": 7,
-            "seed": seed,
-            "individuals": 30,
-            "generations": 20,
-            "mutation_probability": 0.1,
-            "selection": "proportionate",
-            "combine": "elitism",
-            "n_intervals": 5,
-            "metric": metric,
-            "verbose": True,
-            "mixed": True,
-            "encode": False,
-            "mixed_percentage": 0.5
-
-    }]
-
-    for data_i in data[::1]:
+    params = []
+    for conf in product_dict(**grid):
+        params.append(def_params.copy())
+        for key,val in conf.items():
+            params[-1][key] = val
+    print("Conf Size: ",len(params))
+    for data_i in data[::-1]:
         try:
             result = genetic_score_comparison(base_path=base_path,
                                               datasets=[data_i],

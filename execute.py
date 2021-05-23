@@ -255,7 +255,7 @@ def execute_genetic_1(data):
                                               version=2,
                                               email_data={**email_data,
                                                           **{
-                                                              "TITLE": f"{data_i[0]}",
+                                                              "TITLE": f"{data_i[0]}_{filename_suffix}",
                                                               "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}                                                          })
             result.to_csv(
                 f"final_result/genetic_1/{data_i[0]}_{filename_suffix}.csv", index=False)
@@ -398,7 +398,7 @@ def execute_genetic_2(data):
                                               version=2,
                                               email_data={**email_data,
                                                           **{
-                                                              "TITLE": f"{data_i[0]}",
+                                                              "TITLE": f"{data_i[0]}_{filename_suffix}",
                                                               "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}                                                          })
             result.to_csv(
                 f"final_result/genetic_2/{data_i[0]}_{filename_suffix}.csv", index=False)
@@ -451,7 +451,7 @@ def execute_genetic_3(data):
                                               version=3,
                                               email_data={**email_data,
                                                           **{
-                                                              "TITLE": f"{data_i[0]}",
+                                                              "TITLE": f"{data_i[0]}_{filename_suffix}",
                                                               "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}       
                                                         })  
             result.to_csv(
@@ -521,7 +521,7 @@ def execute_ranker_1(data):
                                              share_rank=True,
                                              email_data={**email_data,
                                                          **{
-                                                             "TITLE": f"{data_i[0]}",
+                                                             "TITLE": f"{data_i[0]}_{filename_suffix}",
                                                              "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}                                                         })
             result.to_csv(
                 f"final_result/ranker_1/{data_i[0]}_{filename_suffix}.csv", index=False)
@@ -568,7 +568,7 @@ def execute_ranker_2(data):
                                              share_rank=True,
                                              email_data={**email_data,
                                                          **{
-                                                             "TITLE": f"{data_i[0]}",
+                                                             "TITLE": f"{data_i[0]}_{filename_suffix}",
                                                              "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}                                                         })
             result.to_csv(
                 f"final_result/ranker_2/{data_i[0]}_{filename_suffix}.csv", index=False)
@@ -623,7 +623,7 @@ def execute_ranker_3(data):
                                              share_rank=True,
                                              email_data={**email_data,
                                                          **{
-                                                             "TITLE": f"{data_i[0]}",
+                                                             "TITLE": f"{data_i[0]}_{filename_suffix}",
                                                              "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}                                                         })
             result.to_csv(
                 f"final_result/ranker_3/{data_i[0]}_{filename_suffix}.csv", index=False)
@@ -683,7 +683,7 @@ def execute_aco_1(data):
                                            send_email=send_email_cond,
                                            email_data={**email_data,
                                                        **{
-                                                           "TITLE": f"{data_i[0]}",
+                                                           "TITLE": f"{data_i[0]}_{filename_suffix}",
                                                            "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}       
                                                            })
             result.to_csv(f"final_result/aco_1/{data_i[0]}_{filename_suffix}.csv", index=False)

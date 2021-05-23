@@ -14,7 +14,7 @@ n_splits = 3
 n_intervals = 5
 base_path = "./UCIREPO/"
 datasets = [
-    # ["lenses", "ContactLens"],
+    ["lenses", "ContactLens"],
     ["breast-cancer", "Class"],
     ["yeast", "nuc"],
     ["abalone", "Rings"],
@@ -364,7 +364,7 @@ def execute_genetic_2(data):
             "individuals": 30,
             "generations": 20,
             "mutation_probability": 0.3,
-            "selection": "complex",
+            "selection": "rank",
             "combine": "elitism",
             "n_intervals": 5,
             "metric": metric,
@@ -405,6 +405,21 @@ def execute_genetic_3(data):
             "seed": seed,
             "individuals": 30,
             "generations": 20,
+            "mutation_probability": 0.01,
+            "selection": "proportionate",
+            "combine": "elitism",
+            "n_intervals": 5,
+            "metric": metric,
+            "verbose": True,
+            "mixed": True,
+            "encode": False,
+            "mixed_percentage": 0.5
+
+    },{
+            "size": 7,
+            "seed": seed,
+            "individuals": 30,
+            "generations": 20,
             "mutation_probability": 0.05,
             "selection": "proportionate",
             "combine": "elitism",
@@ -415,14 +430,29 @@ def execute_genetic_3(data):
             "encode": False,
             "mixed_percentage": 0.5
 
-    }, {
+    },{
             "size": 7,
             "seed": seed,
             "individuals": 30,
             "generations": 20,
-            "mutation_probability": 0.01,
-            "selection": "rank",
-            "combine": "truncate",
+            "mutation_probability": 0.05,
+            "selection": "proportionate",
+            "combine": "elitism",
+            "n_intervals": 5,
+            "metric": metric,
+            "verbose": True,
+            "mixed": True,
+            "encode": False,
+            "mixed_percentage": 0.5
+
+    },{
+            "size": 7,
+            "seed": seed,
+            "individuals": 30,
+            "generations": 20,
+            "mutation_probability": 0.1,
+            "selection": "proportionate",
+            "combine": "elitism",
             "n_intervals": 5,
             "metric": metric,
             "verbose": True,

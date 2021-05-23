@@ -86,10 +86,11 @@ class GeneticAlgorithmV3(TransformerMixin,ClassifierMixin,BaseEstimator):
         return symmetrical_uncertainty(data,y)
 
     def smart_random_sample(self,features,size,X,y):
-        probability = np.array([self.single_feature_evaluation(feature,X,y) for feature in features])
-        probability = np.where(probability == 0, 1, 1/probability)
-        normalization_factor = probability.sum()
-        probability = probability/normalization_factor
+        array = np.array([self.single_feature_evaluation(feature,X,y) for feature in features])
+        index_array = np.argsort(array)[::-1] #Descending order
+        total = array.shape[0]*(array.shape[0]+1)/2
+        probability = np.empty_like(array)
+        probability[index_array] = (np.arange(1,array.shape[0]+1)/total)
         return np.random.choice(np.arange(0,len(features)), size=size, replace=False, p=probability)
 
     def mutation(self, population,X,y):

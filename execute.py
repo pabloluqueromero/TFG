@@ -61,7 +61,7 @@ parser.add_argument("--method", default=1, help="for ranker and genetic 1-3")
 parser.add_argument("--n_computers", required=True, help="")
 parser.add_argument("--computer", required=True, help="computer/n_computers")
 parser.add_argument("--metric", required=True, default="accuracy",help="scorer")
-parser.add_argument("--filename", required=True, default="",help="suffix for the")
+parser.add_argument("--filename", default="",help="suffix for the")
 parser.add_argument("--no_email", action="store_true", help="dont_send_email")
 
 args = parser.parse_args()
@@ -438,7 +438,7 @@ def execute_genetic_3(data):
     print("Conf Size: ",len(params))
 
     for data_i in data:
-       try:
+        try:
             result = genetic_score_comparison(base_path=base_path,
                                               datasets=[data_i],
                                               n_splits=n_splits,
@@ -451,7 +451,10 @@ def execute_genetic_3(data):
                                               version=3,
                                               email_data={**email_data,
                                                           **{
-             result.to_csv(
+                                                              "TITLE": f"{data_i[0]}",
+                                                              "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}       
+                                                        })  
+            result.to_csv(
                 f"final_result/genetic_3/{data_i[0]}_roc.csv", index=False)
         except Exception as e:
             print(f"Error in database {data_i[0]}: {str(e)}")
@@ -686,7 +689,8 @@ def execute_aco_1(data):
                                            email_data={**email_data,
                                                        **{
                                                            "TITLE": f"{data_i[0]}",
-                                                           "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}                                                       }})
+                                                           "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}       
+                                                           })
             result.to_csv(f"final_result/aco_1/{data_i[0]}_roc.csv", index=False)
         except Exception as e:
             print(f"ERROR IN {data_i[0]} DB: {e} ")

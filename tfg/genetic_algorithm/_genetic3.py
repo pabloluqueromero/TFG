@@ -1,4 +1,5 @@
 import random
+import math
 from tfg.naive_bayes import NaiveBayes
 from tfg.utils import backward_search, compute_sufs, compute_sufs_non_incremental, symmetrical_uncertainty, transform_features
 from tfg.feature_construction import DummyFeatureConstructor, create_feature
@@ -246,7 +247,7 @@ class GeneticAlgorithmV3(TransformerMixin,ClassifierMixin,BaseEstimator):
             self.unique_values = [np.unique(X[:,j]).shape[0] for j in range(X.shape[1])]
         random.seed(self.seed)
         np.random.seed(self.seed)
-        self.size = X.shape[1]
+        self.size = math.ceil(np.sqrt(X.shape[1]))
         best_individual = self.execute_algorithm(X,y)
         self.best_features = best_individual
         self.classifier_ = NaiveBayes(encode_data=False,metric = self.metric)

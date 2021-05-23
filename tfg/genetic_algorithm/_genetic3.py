@@ -245,7 +245,7 @@ class GeneticAlgorithmV3(TransformerMixin,ClassifierMixin,BaseEstimator):
             self.unique_values = [np.unique(X[:,j]).shape[0] for j in range(X.shape[1])]
         random.seed(self.seed)
         np.random.seed(self.seed)
-
+        self.size = X.shape[1]*2
         best_individual = self.execute_algorithm(X,y)
         self.best_features = best_individual
         self.classifier_ = NaiveBayes(encode_data=False,metric = self.metric)

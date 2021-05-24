@@ -73,7 +73,7 @@ def ranker_score_comparison(datasets,
                     seed_tqdm.set_postfix({ "config": conf_index})
                     r.set_params(**conf)
                     # Fit
-                    if conf_index == 0 or share_rank:
+                    if conf_index == 0 or not share_rank:
                         r.fit(X_train, y_train)
                     else:
                         r.filter_features(r.feature_encoder_.transform(

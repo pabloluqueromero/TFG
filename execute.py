@@ -35,7 +35,7 @@ datasets = [
     # ["mushroom", "class"],
     # ["pima", "Outcome"],
     # ["student", "Walc"],
-    ["voting", "Class Name"],
+    # ["voting", "Class Name"],
     # ["wine", "class"],
     # ["wisconsin", "diagnosis"],
     # ["yeast", "nuc"],

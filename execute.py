@@ -540,7 +540,7 @@ def execute_ranker_2(data):
         "block_size": [1,2,5,7,10],
         "max_features": [40],
         "max_iterations":[10,15],
-        "prune":3,
+        "prune":[3],
 
     }
     
@@ -579,14 +579,14 @@ def execute_ranker_2(data):
         except Exception as e:
             print(f"Error in database {data_i[0]}: {str(e)}")
 
-def execute_ranker_4(data):
-    print("RANKER 4 - prune 5")
+def execute_ranker_3(data):
+    print("RANKER 3 - prune 5")
     grid = {
         "strategy": ["eager","skip"],
         "block_size": [1,2,5,7,10],
         "max_features": [40],
         "max_iterations":[10,15],
-        "prune":5,
+        "prune":[5],
 
     }
     
@@ -621,19 +621,19 @@ def execute_ranker_4(data):
                                                              "TITLE": f"{data_i[0]}_{filename_suffix}_PRUNE_5",
                                                              "FILENAME": f"{data_i[0]}_{filename_suffix}_PRUNE_5.csv"}                                                         })
             result.to_csv(
-                f"final_result/ranker_4/{data_i[0]}_{filename_suffix}_PRUNE_5.csv", index=False)
+                f"final_result/ranker_3/{data_i[0]}_{filename_suffix}_PRUNE_5.csv", index=False)
         except Exception as e:
             print(f"Error in database {data_i[0]}: {str(e)}")
 
-def execute_ranker_3(data):
-    print("RANKER 3 - prune 3 USE INITIALS")
+def execute_ranker_4(data):
+    print("RANKER 4 - prune 3 USE INITIALS")
     grid = {
         "strategy": ["eager","skip"],
         "block_size": [1,2,5,7,10],
         "max_features": [40],
         "max_iterations":[10,15],
-        "prune":3,
-        "use_initials":True
+        "prune":[3],
+        "use_initials":[True]
 
     }
     
@@ -671,7 +671,7 @@ def execute_ranker_3(data):
                                                              "TITLE": f"{data_i[0]}_{filename_suffix}_PRUNE_3_INITIALS",
                                                              "FILENAME": f"{data_i[0]}_{filename_suffix}_PRUNE_3_INITIALS.csv"}                                                         })
             result.to_csv(
-                f"final_result/ranker_3/{data_i[0]}_{filename_suffix}_PRUNE_3_INITIALS.csv", index=False)
+                f"final_result/ranker_4/{data_i[0]}_{filename_suffix}_PRUNE_3_INITIALS.csv", index=False)
         except Exception as e:
             print(f"Error in database {data_i[0]}: {str(e)}")
 

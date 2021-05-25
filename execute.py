@@ -3,7 +3,8 @@ import subprocess
 import argparse
 from time import sleep
 import numpy as np
-# py execute.py --email mail --password pass --algorithm ranker --method 2 --n_computers 3 --computer 1
+# 
+# py execute.py --email pablocsvtfg@gmail.com --password TFGPablo2 --algorithm ranker --method 1 --n_computers 1 --computer 1 --metric accuracy --filename RANKER_1_GRID
 
 '''
 Global Variables
@@ -14,30 +15,30 @@ n_splits = 3
 n_intervals = 5
 base_path = "./UCIREPO/"
 datasets = [
-    ["lenses", "ContactLens"],
-    ["breast-cancer", "Class"],
-    ["yeast", "nuc"],
-    ["abalone", "Rings"],
-    ["mammographicmasses", "Label"],
-    ["anneal", "label"],
-    ["audiology", "label"],
-    ["balance-scale", "label"],
-    ["iris", "Species"],
-    ["student", "Walc"],
-    ["electricgrid", "stabf"],
-    ["horse-colic", "surgery"],
-    ["glass", "Type"],
-    ["krkp", "label"],
-    ["mushroom", "class"],
-    ["voting", "Class Name"],
-    ["credit", "A16"],
-    ["pima", "Outcome"],
-    ["wine", "class"],
-    ["wisconsin", "diagnosis"],
-    ["car-evaluation", "safety"],
+    # ["abalone", "Rings"],
+    # ["anneal", "label"],
+    # ["audiology", "label"],
+    # ["balance-scale", "label"],
+    # ["breast-cancer", "Class"],
+    # ["car-evaluation", "safety"],
     ["cmc", "Contraceptive"],
+    # ["credit", "A16"],
     ["cylinder-bands", "band type"],
     ["derm", "class"],
+    # ["electricgrid", "stabf"],
+    # ["glass", "Type"],
+    # ["horse-colic", "surgery"],
+    # ["iris", "Species"],
+    # ["krkp", "label"],
+    # ["lenses", "ContactLens"],
+    # ["mammographicmasses", "Label"],
+    # ["mushroom", "class"],
+    # ["pima", "Outcome"],
+    # ["student", "Walc"],
+    ["voting", "Class Name"],
+    # ["wine", "class"],
+    # ["wisconsin", "diagnosis"],
+    # ["yeast", "nuc"],
     ["tictactoe", "class"],
     ["spam", "class"]
 ]

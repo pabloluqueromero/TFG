@@ -158,8 +158,10 @@ def execute():
             execute_ranker_2(data)
         elif method == 3:
             execute_ranker_3(data)
-        else:
+        elif method == 4:
             execute_ranker_4(data)
+        else:
+            execute_ranker_5(data)
 
     elif algorithm == "genetic":
         if method == 1:
@@ -622,6 +624,51 @@ def execute_ranker_3(data):
                                                              "FILENAME": f"{data_i[0]}_{filename_suffix}_PRUNE_5.csv"}                                                         })
             result.to_csv(
                 f"final_result/ranker_3/{data_i[0]}_{filename_suffix}_PRUNE_5.csv", index=False)
+        except Exception as e:
+            print(f"Error in database {data_i[0]}: {str(e)}")
+def execute_ranker_5(data):
+    print("RANKER 5 - prune 1")
+    grid = {
+        "strategy": ["eager","skip"],
+        "block_size": [1,2,5,7,10],
+        "max_features": [40],
+        "max_iterations":[10,15],
+        "prune":[1],
+
+    }
+    
+    def_params = {
+        "strategy": "skip", 
+        "block_size": 10,
+        "max_features": 40,
+        "verbose": 0,
+        "max_err": 0
+        }
+    params = []
+    for conf in product_dict(**grid):
+        params.append(def_params.copy())
+        for key,val in conf.items():
+            params[-1][key] = val
+    
+
+    for data_i in data[::1]:
+        try:
+            result = ranker_score_comparison(base_path=base_path,
+                                             datasets=[data_i],
+                                             n_splits=n_splits,
+                                             n_repeats=n_repeats,
+                                             seed=seed,
+                                             params=params,
+                                             n_intervals=n_intervals,
+                                             metric=metric,
+                                             send_email=send_email_cond,
+                                             share_rank=True,
+                                             email_data={**email_data,
+                                                         **{
+                                                             "TITLE": f"{data_i[0]}_{filename_suffix}_PRUNE_5",
+                                                             "FILENAME": f"{data_i[0]}_{filename_suffix}_PRUNE_5.csv"}                                                         })
+            result.to_csv(
+                f"final_result/ranker_5/{data_i[0]}_{filename_suffix}_PRUNE_1.csv", index=False)
         except Exception as e:
             print(f"Error in database {data_i[0]}: {str(e)}")
 

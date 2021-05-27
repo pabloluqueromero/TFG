@@ -143,7 +143,7 @@ def symmetrical_uncertainty(f1,f2,X=None):
 
 
 
-def compute_sufs(current_su,current_features,new_feature,y,beta=0.5,minimum=None):
+def  compute_sufs(current_su,current_features,new_feature,y,beta=0.5,minimum=None):
     '''
     MIFS adapted to work with SU.
     Example:
@@ -320,3 +320,13 @@ def backward_search(X,y,current_features,classifier):
             classifier.remove_feature(feature_index)
             del current_features[feature_index]
     return current_features
+
+
+def hash_features(features):
+    return hash(tuple(features))
+
+def append_column_to_numpy(array,column):
+    a = np.zeros((array.shape[0],array[1]+1))
+    a[:,:-1] = array
+    a[:,-1]=column.flatten()
+    return a

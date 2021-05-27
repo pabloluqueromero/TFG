@@ -67,6 +67,7 @@ def acfs_score_comparison(datasets,
                 nb.fit(X_train, y_train)
                 naive_bayes_score = nb.score(X_test, y_test)
                 conf_index  = 0
+                acfcs.reset_cache()
                 for conf in params:
                     acfcs.set_params(**conf)
                     acfcs.fit(X_train, y_train)

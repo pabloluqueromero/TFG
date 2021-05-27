@@ -12,6 +12,7 @@ from tfg.ant_colony import AntFeatureGraph
 from tfg.ant_colony import AntFeatureGraphMI
 from tfg.ant_colony import Ant, FinalAnt
 from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
+from tfg.feature_construction import create_feature,DummyFeatureConstructor
 from tfg.naive_bayes import NaiveBayes
 from tfg.utils import translate_features
 
@@ -34,6 +35,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
                 verbose=0,
                 graph_strategy = "mutual_info",
                 connections = 2,
+                max_errors=2,
                 metric="accuracy",
                 use_initials=False,
                 final_selection="ALL",
@@ -59,6 +61,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.use_initials = use_initials
         self.final_selection = final_selection
         self.encode = encode
+        self.max_errors = max_errors
 
         allowed_graph_strategy = ("full","mutual_info")
         if self.graph_strategy not in allowed_graph_strategy:
@@ -103,7 +106,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
             beta*=self.beta_evaporation_rate
             results = []
             for ant in ants:
-                    results.append(ant.run(X=X,y=y,graph=self.afg,random_generator=random,parallel=self.parallel))
+                    results.append(ant.run(X=X,y=y,graph=self.afg,random_generator=random,parallel=self.parallel,max_errors = self.max_errors))
             results = np.array(results)
             self.afg.update_pheromone_matrix_evaporation(self.evaporation_rate)
             distance_from_best = np.mean(np.abs(results-best_score))
@@ -147,11 +150,10 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
         return self
 
     def get_best_features(self,afg,X,y):
-        def get_best_neighbours(self,pheromone,heuristic):
-            return np.argmax(np.pow(pheromone,self.alpha)* np.pow(heuristic,self.beta))
+        # def get_best_neighbours(self,pheromone,heuristic):
+        #     return np.argmax(np.pow(pheromone,self.alpha)* np.pow(heuristic,self.beta))
         nodes,pheromones,_ = afg.get_initial_nodes()
         node_id,selected_node  = nodes[np.argmax(pheromones)]#get_best_neighbours(pheromones,heuristic)
-        from tfg.feature_construction import create_feature,DummyFeatureConstructor
         selected_nodes = set()
         constructed_nodes = set()
         classifier = NaiveBayes(encode_data=False,metric=self.metric)

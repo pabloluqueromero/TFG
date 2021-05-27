@@ -81,7 +81,7 @@ class Ant:
         # return current_su + symmetrical_uncertainty(feature.transform(X),y)
 
 
-    def explore(self, X, y, graph, random_generator,parallel):
+    def explore(self, X, y, graph, random_generator,parallel,max_errors=0):
         '''
         Search method that follows the following steps:
             1. The initial node is connected to all the others (roulette wheel selection is performed)
@@ -122,6 +122,7 @@ class Ant:
 
         is_fitted = self.use_initials
         feature_constructor = None
+        n_errors=0
         while True:
             current_score = score
             if selected_node[1] is None:
@@ -169,7 +170,12 @@ class Ant:
             features = np.concatenate(current_transformed_features+[feature_constructor.transform(X)],axis=1)   
             score = classifier.leave_one_out_cross_val(features, y,fit=False)
             if score <= current_score:
-                break
+                if n_errors >= max_errors:
+                    break
+                else:
+                    n_errors+=1
+            else:
+                n_errors=0
             current_su = su
             self.current_features.append(feature_constructor)
             current_transformed_features.append(feature_constructor.transform(X))
@@ -205,9 +211,9 @@ class Ant:
         self.final_score = current_score
         return self.final_score
 
-    def run(self, X, y, graph, random_generator,parallel=False):
+    def run(self, X, y, graph, random_generator,parallel=False,max_errors=0):
         # print(f"Ant [{self.ant_id}] running in thread [{threading.get_ident()}]")
-        return self.explore(X, y, graph,random_generator,parallel)
+        return self.explore(X, y, graph,random_generator,parallel,max_errors)
 
 
 

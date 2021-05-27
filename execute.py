@@ -725,44 +725,41 @@ def execute_ranker_4(data):
 
 def execute_aco_1(data):
     print("ACO")
-    params = [
-        {
-            "ants": 10,
+
+    def_params = {
             "evaporation_rate": 0.1,
             "intensification_factor": 2,
             "alpha": 0.5,
             "beta": 0.2,
             "beta_evaporation_rate": 0.05,
-            "iterations": 100,
             "early_stopping": 3,
-            "seed": 3,
-            "parallel": False,
-            "save_features": False,
-            "verbose": 0,
             "graph_strategy": "mutual_info",
             "use_initials": True,
             "connections": 3,
-            "update_strategy": "all",
-            "max_errors": 1
-        }, {
+            "verbose": 0,
             "ants": 10,
-            "evaporation_rate": 0.1,
-            "intensification_factor": 2,
-            "alpha": 0.5,
-            "beta": 0,
             "beta_evaporation_rate": 0.05,
             "iterations": 100,
-            "early_stopping": 3,
-            "seed": 3,
-            "parallel": False,
-            "save_features": False,
-            "verbose": 0,
+            "early_stopping": 4,
+            "seed": seed,
             "graph_strategy": "mutual_info",
-            "use_initials": False,
-            "connections": 2,
             "update_strategy": "all",
             "max_errors": 1
-        }]
+        }
+    
+    grid = {
+        "evaporation_rate": [0.05,0.1],
+        "intensification_factor": [1,2],
+        "alpha": [0.1,0.2],
+        "beta": [0,0.1],
+        "use_initials": [False,True],
+        "connections": [1,3]
+        }
+    params = []
+    for conf in product_dict(**grid):
+        params.append(def_params.copy())
+        for key,val in conf.items():
+            params[-1][key] = val
 
     for data_i in data[::1]:
         try:

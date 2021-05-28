@@ -171,7 +171,10 @@ def execute():
         elif method == 3:
             execute_genetic_3(data)
     elif algorithm == "aco":
-        execute_aco_1(data)
+        if method == 1:
+            execute_aco_1(data)
+        elif method == 2:
+            execute_aco_2(data)
 
 
 def execute_genetic_1(data):
@@ -779,6 +782,94 @@ def execute_aco_1(data):
                                                            "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}       
                                                            })
             result.to_csv(f"final_result/aco_1/{data_i[0]}_{filename_suffix}.csv", index=False)
+        except Exception as e:
+            print(f"ERROR IN {data_i[0]} DB: {e} ")
+
+
+def execute_aco_2(data):
+    print("ACO")
+
+    def_params = {
+            "evaporation_rate": 0.1,
+            "intensification_factor": 2,
+            "alpha": 0.5,
+            "beta": 0.2,
+            "beta_evaporation_rate": 0.05,
+            "early_stopping": 3,
+            "graph_strategy": "mutual_info",
+            "use_initials": True,
+            "connections": 3,
+            "verbose": 0,
+            "ants": 10,
+            "beta_evaporation_rate": 0.05,
+            "iterations": 10,
+            "early_stopping": 4,
+            "seed": seed,
+            "graph_strategy": "mutual_info",
+            "update_strategy": "all",
+            "max_errors": 0,
+            "save_features": False
+        }
+    
+    grid = {
+        "evaporation_rate": [0.05],
+        "intensification_factor": [1,2],
+        "alpha": [0.2],
+        "beta": [0,0.1,0.2],
+        "use_initials": [False],
+        "connections": [4]
+        }
+    params = []
+
+    for conf in product_dict(**grid):
+        params.append(def_params.copy())
+        for key,val in conf.items():
+            params[-1][key] = val
+
+    print(f"Configurations: {len(params)}")
+
+    data = [
+        ["abalone", "Rings"],
+        ["anneal", "label"],
+        ["audiology", "label"],
+        ["balance-scale", "label"],
+        ["breast-cancer", "Class"],
+        ["car-evaluation", "safety"],
+        ["derm", "class"],
+        ["electricgrid", "stabf"],
+        ["glass", "Type"],
+        ["horse-colic", "surgery"],
+        ["iris", "Species"],
+        ["krkp", "label"],
+        ["lenses", "ContactLens"],
+        ["mammographicmasses", "Label"],
+        ["mushroom", "class"],
+        ["pima", "Outcome"],
+        ["student", "Walc"],
+        ["voting", "Class Name"],
+        ["wine", "class"],
+        ["wisconsin", "diagnosis"],
+        ["yeast", "nuc"],
+        ["tictactoe", "class"],
+        ["spam", "class"]
+    ]
+    data = np.array_split(data, n_computers)[computer-1]
+    print(data)
+    for data_i in data[::1]:
+        try:
+            result = acfs_score_comparison(base_path=base_path,
+                                           datasets=[data_i],
+                                           n_splits=n_splits,
+                                           n_repeats=n_repeats,
+                                           seed=seed,
+                                           params=params,
+                                           send_email=send_email_cond,
+                                           email_data={**email_data,
+                                                       **{
+                                                           "TITLE": f"{data_i[0]}_{filename_suffix}",
+                                                           "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}       
+                                                           })
+            result.to_csv(f"final_result/aco_2/{data_i[0]}_{filename_suffix}.csv", index=False)
         except Exception as e:
             print(f"ERROR IN {data_i[0]} DB: {e} ")
 

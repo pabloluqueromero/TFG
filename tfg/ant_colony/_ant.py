@@ -1,5 +1,6 @@
 import concurrent
 import numpy as np
+import random
 
 from tfg.naive_bayes import NaiveBayes
 from tfg.feature_construction import DummyFeatureConstructor
@@ -33,13 +34,14 @@ class Ant:
         Leave one out croos-validation accuracy score obtained with the selected feature subset    
     """
 
-    def __init__(self, ant_id, alpha, beta, metric, use_initials=False, cache = dict()):
+    def __init__(self, ant_id, alpha, beta, metric, use_initials=False, cache_loo = dict(), cache_heuristic = dict()):
         self.alpha = alpha
         self.beta = beta
         self.ant_id = ant_id
         self.metric = metric
         self.use_initials = use_initials
-        self.cache = cache
+        self.cache_loo = cache_loo
+        self.cache_heuristic = cache_heuristic
 
     def choose_next(self, probabilities, random_generator):
         '''Selects index based on roulette wheel selection'''
@@ -75,23 +77,34 @@ class Ant:
             return np.ones(probabilities.shape)/probabilities.shape[0]
         return probabilities/s
 
-    def compute_neighbour_sufs(self, neighbour, transformed_features, selected_node, current_su, X, y):
+    def compute_neighbour_sufs(self, neighbour, transformed_features,constructors, selected_node, current_su, X, y):
         '''Dynamical computation of the SU for the feature subset based on the adapted MIFS for the symmetrical uncertainty'''
         operator = neighbour[2]  # Get operator
         operands = [selected_node, neighbour[1]]  # Get operands (index,value)
         feature = create_feature(operator, operands)
-        return compute_sufs(current_su, append_column_to_numpy(transformed_features, feature.transform(X).flatten()), y, minimum=0)
+        return self.compute_sufs_cached(current_su, transformed_features, feature.transform(X), constructors, feature, y, minimum=0)
+
+
         # return current_su + symmetrical_uncertainty(feature.transform(X),y)
 
-    def set_cache(self, cache):
-        self.cache = cache
+    def set_cache(self, cache_loo, cache_heuristic):
+        self.cache_loo = cache_loo
+        self.cache_heuristic = cache_heuristic
+
+    def compute_sufs_cached(self,current_su, transformed_features, transformed_feature, constructors, constructor, y, minimum=0):
+        hashed_features = hash_features(constructors + [constructor])
+        if hashed_features not in self.cache_heuristic:
+            self.cache_heuristic[hashed_features] = compute_sufs(current_su, transformed_features, transformed_feature, y, minimum=0)
+        return self.cache_heuristic[hashed_features]
+
+
 
     def evaluate_loo(self, features, classifier, transformed_features, y):
         hashed_features = hash_features(features)
-        if hashed_features not in self.cache:
-            self.cache[hashed_features] = classifier.leave_one_out_cross_val(
+        if hashed_features not in self.cache_loo:
+            self.cache_loo[hashed_features] = classifier.leave_one_out_cross_val(
                 transformed_features, y, fit=False)
-        return self.cache[hashed_features]
+        return self.cache_loo[hashed_features]
 
     def explore(self, X, y, graph, random_generator, parallel, max_errors=0):
         '''
@@ -131,7 +144,10 @@ class Ant:
         index = self.choose_next(probabilities, random_generator)
 
         current_su = 0
-        current_transformed_features_numpy = np.concatenate([f.transform(X) for f in self.current_features],axis=1)
+        if len(self.current_features) == 0 :
+            current_transformed_features_numpy = None
+        else:
+            current_transformed_features_numpy = np.concatenate([f.transform(X) for f in self.current_features],axis=1)
         node_id, selected_node = initial[index]
         # SU variable contains the MIFS-SU for the selected variable
         su = heuristics[index]
@@ -161,6 +177,7 @@ class Ant:
                                 executor.submit(
                                     self.compute_neighbour_sufs, neighbour=neighbour,
                                     transformed_features = current_transformed_features_numpy,
+                                    constructors = self.current_features,
                                     selected_node=selected_node,
                                     current_su=current_su,
                                     X=X, y=y))
@@ -172,6 +189,7 @@ class Ant:
                                     neighbour=neighbour,
                                     transformed_features = current_transformed_features_numpy,
                                     selected_node=selected_node,
+                                    constructors = self.current_features,
                                     current_su=current_su,
                                     X=X, y=y) for neighbour in neighbours]
 
@@ -193,7 +211,10 @@ class Ant:
             else:
                 classifier.fit(transformed_feature, y)
                 is_fitted = True
-            current_transformed_features_numpy = append_column_to_numpy(current_transformed_features_numpy,transformed_feature)
+            if current_transformed_features_numpy is None:
+                current_transformed_features_numpy = transformed_feature
+            else:
+                current_transformed_features_numpy = append_column_to_numpy(current_transformed_features_numpy,transformed_feature)
             score = self.evaluate_loo(
                 self.current_features+[feature_constructor], classifier, current_transformed_features_numpy, y)
             if score <= current_score:
@@ -205,7 +226,6 @@ class Ant:
                 n_errors = 0
             current_su = su
             self.current_features.append(feature_constructor)
-            current_transformed_features_numpy
             current_score = score
 
             # Select next
@@ -216,24 +236,25 @@ class Ant:
             su = []
             # if len(neighbours)==0:
             #     break
-            for neighbour in neighbours:
+            for neighbour,pheromone in zip(neighbours,pheromones):
                 if neighbour[1][1] is None:
                     # Original variable
-                    su.append(compute_sufs(current_su, current_transformed_features_numpy, X[:, neighbour[1][0]], y, minimum=0))
+                    su.append(self.compute_sufs_cached(current_su, current_transformed_features_numpy, X[:, neighbour[1][0]],self.current_features,DummyFeatureConstructor(neighbour[1][0]), y, minimum=0))
                 else:
                     # This is a temporal variable that will not be finally selected but only used to calculate the heuristic
                     # su.append(compute_sufs(current_su,[f.transform(X).flatten() for f in self.current_features],X[:, neighbour[1][0]] == neighbour[1][1],y,minimum=0))
-                    # su.append(1)
+                    su.append(pheromone*random.random())
                     #Look two steps ahead
-                    neighbours_next, _ = graph.get_neighbours(
-                        neighbour[1], constructed_nodes, step="CONSTRUCTION")
-                    su.append(max(self.compute_neighbour_sufs(
-                                    neighbour=neigbour_next,
-                                    transformed_features = current_transformed_features_numpy,
-                                    selected_node=selected_node,
-                                    current_su=current_su,
-                                    X=X, y=y)
-                        for neigbour_next in neighbours_next))
+                    # neighbours_next, _ = graph.get_neighbours(
+                    #     neighbour[1], constructed_nodes, step="CONSTRUCTION")
+                    # su.append(max(self.compute_neighbour_sufs(
+                    #                 neighbour=neigbour_next,
+                    #                 transformed_features = current_transformed_features_numpy,
+                    #                 constructors = self.current_features,
+                    #                 selected_node=selected_node,
+                    #                 current_su=current_su,
+                    #                 X=X, y=y)
+                    #     for neigbour_next in neighbours_next))
                     # su.append(compute_sufs(current_su,[f.transform(X).flatten() for f in self.current_features],X[:, neighbour[1][0]] == neighbour[1][1],y,minimum=0))
             probabilities = self.compute_probability(pheromones, np.array(su))
             index = self.choose_next(probabilities, random_generator)

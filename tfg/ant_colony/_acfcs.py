@@ -73,7 +73,8 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.reset_cache()
 
     def reset_cache(self):
-        self.cache = dict()
+        self.cache_loo = dict()
+        self.cache_heuristic = dict()
 
     def fit(self,X,y):
         self.feature_encoder_ = CustomOrdinalFeatureEncoder()
@@ -106,7 +107,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
                                     "p_matrix_c": len(self.afg.pheromone_matrix_attribute_completion),
                                     "p_matrix_s": len(self.afg.pheromone_matrix_selection),
                                     "distance_from_best": distance_from_best})
-            ants = [Ant(ant_id=i,alpha=self.alpha,beta=beta, metric = self.metric, use_initials = self.use_initials, cache = self.cache) for i in range(self.ants)]
+            ants = [Ant(ant_id=i,alpha=self.alpha,beta=beta, metric = self.metric, use_initials = self.use_initials, cache_loo = self.cache_loo, cache_heuristic = self.cache_heuristic) for i in range(self.ants)]
             beta*=self.beta_evaporation_rate
             results = []
             for ant in ants:

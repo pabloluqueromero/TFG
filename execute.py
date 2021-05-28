@@ -739,28 +739,31 @@ def execute_aco_1(data):
             "verbose": 0,
             "ants": 10,
             "beta_evaporation_rate": 0.05,
-            "iterations": 100,
+            "iterations": 10,
             "early_stopping": 4,
             "seed": seed,
             "graph_strategy": "mutual_info",
             "update_strategy": "all",
-            "max_errors": 1
+            "max_errors": 0,
+            "save_features": False
         }
     
     grid = {
-        "evaporation_rate": [0.05,0.1],
+        "evaporation_rate": [0.05],
         "intensification_factor": [1,2],
-        "alpha": [0.1,0.2],
+        "alpha": [0.2],
         "beta": [0,0.1],
         "use_initials": [False,True],
-        "connections": [1,3]
+        "connections": [1]
         }
     params = []
+
     for conf in product_dict(**grid):
         params.append(def_params.copy())
         for key,val in conf.items():
             params[-1][key] = val
 
+    print(f"Configurations: {len(params)}")
     for data_i in data[::1]:
         try:
             result = acfs_score_comparison(base_path=base_path,

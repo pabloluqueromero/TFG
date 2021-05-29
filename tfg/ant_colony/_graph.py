@@ -293,6 +293,7 @@ class AntFeatureGraphMI:
         self.initial_graph = nx.Graph()
         self.nodes = dict()
         self.pheromone_initial = dict()
+
         self.unique_values_ferature = {j:np.unique(X[:,j]) for j in range(X.shape[1])}
         for j in range(X.shape[1]):
             node_id = len(self.nodes)
@@ -381,6 +382,7 @@ class AntFeatureGraphMI:
                     break
                 feature= features[index]
             features = features[index:]
+
         for feature in features:
             if isinstance(feature,DummyFeatureConstructor):
                 next_node = self.inverse_nodes[(feature.feature_index,None)]
@@ -402,6 +404,14 @@ class AntFeatureGraphMI:
                 self.pheromone_construction[edge] += intensification_factor
             previous = next_node
         return
+    
+    def get_random_node(self):
+        index = random.randint(0,len(self.nodes)-1)
+        return index,self.nodes[index], self.initial_graph.nodes[index]["heuristic"]
+
+    def max_initial(self):
+        best_feature = max(self.pheromone_initial, key = lambda x: self.pheromone_initial[x])
+        return best_feature,self.nodes[best_feature], self.initial_graph.nodes[best_feature]["heuristic"]
 
     def get_original_ids(self):
         return self.original_ids

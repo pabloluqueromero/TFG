@@ -24,6 +24,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
                 alpha=1.0, 
                 beta=0.0, 
                 beta_evaporation_rate=0.05,
+                step = 1,
                 iterations=100, 
                 early_stopping=20,
                 update_strategy="best",
@@ -40,6 +41,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
                 use_initials=False,
                 final_selection="ALL",
                 encode=True):
+        self.step = step
         self.ants = ants
         self.evaporation_rate = evaporation_rate
         self.intensification_factor = intensification_factor
@@ -109,7 +111,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
                                     "p_matrix_c": len(self.afg.pheromone_matrix_attribute_completion),
                                     "p_matrix_s": len(self.afg.pheromone_matrix_selection),
                                     "distance_from_best": distance_from_best})
-            ants = [Ant(ant_id=i,alpha=self.alpha,beta=beta, metric = self.metric, use_initials = self.use_initials, cache_loo = self.cache_loo, cache_heuristic = self.cache_heuristic) for i in range(self.ants)]
+            ants = [Ant(ant_id=i,alpha=self.alpha,beta=beta, metric = self.metric, use_initials = self.use_initials, cache_loo = self.cache_loo, cache_heuristic = self.cache_heuristic,step = self.step) for i in range(self.ants)]
             beta*=self.beta_evaporation_rate
             results = []
             for ant in ants:
@@ -149,7 +151,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
         if self.final_selection=="BEST":
             self.best_features = self.get_best_features(self.afg,X,y)
         else:
-            final_ant = FinalAnt(ant_id=0,alpha=self.alpha,beta=beta, metric = self.metric,use_initials = self.use_initials)
+            final_ant = FinalAnt(ant_id=0,alpha=self.alpha,beta=beta, metric = self.metric,use_initials = self.use_initials, cache_loo = self.cache_loo, cache_heuristic = self.cache_heuristic,step = self.step)
             final_ant.run(X=X,y=y,graph=self.afg,random_generator=random,parallel=self.parallel)
             self.best_features = final_ant.current_features
         self.classifier_.fit(np.concatenate([ f.transform(X) for f in self.best_features],axis=1),y)

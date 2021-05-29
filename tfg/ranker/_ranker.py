@@ -148,7 +148,6 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
                     self.all_feature_constructors.extend(construct_features(X[:,[i,j]],operators=self.operators,same_feature=False))
         else:
             self.all_feature_constructors = construct_features(X,operators=self.operators)
-        # compara = construct_features(X,operators=self.operators)
         if self.verbose:
             print(f"Total number of constructed features: {len(self.all_feature_constructors)}")
         self.all_feature_constructors.extend([DummyFeatureConstructor(j) for j in range(X.shape[1])])

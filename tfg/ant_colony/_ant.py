@@ -244,26 +244,29 @@ class Ant:
             su = []
             # if len(neighbours)==0:
             #     break
-            for neighbour,pheromone in  zip(neighbours, pheromones):
-                if neighbour[1][1] is None:
-                    # Original variable
-                    su.append(self.compute_sufs_cached(current_su, current_transformed_features_numpy, X[:, neighbour[1][0]],self.current_features,DummyFeatureConstructor(neighbour[1][0]), y, minimum=0))
-                else:
-                    # This is a temporal variable that will not be finally selected but only used to calculate the heuristic
-                    su.append(compute_sufs(current_su,current_transformed_features_numpy,X[:, neighbour[1][0]] == neighbour[1][1],y,minimum=0))
-                    # su.append(1)
-                    #Look two steps ahead
-                    # neighbours_next, _ = graph.get_neighbours(
-                    #     neighbour[1], constructed_nodes, step="CONSTRUCTION")
-                    # su.append(max(self.compute_neighbour_sufs(
-                    #                 neighbour=neigbour_next,
-                    #                 transformed_features = current_transformed_features_numpy,
-                    #                 constructors = self.current_features,
-                    #                 selected_node=selected_node,
-                    #                 current_su=current_su,
-                    #                 X=X, y=y)
-                    #     for neigbour_next in neighbours_next))
-                    # su.append(compute_sufs(current_su,[f.transform(X).flatten() for f in self.current_features],X[:, neighbour[1][0]] == neighbour[1][1],y,minimum=0))
+            if self.beta != 0:
+                for neighbour,pheromone in  zip(neighbours, pheromones):
+                    if neighbour[1][1] is None:
+                        # Original variable
+                        su.append(self.compute_sufs_cached(current_su, current_transformed_features_numpy, X[:, neighbour[1][0]],self.current_features,DummyFeatureConstructor(neighbour[1][0]), y, minimum=0))
+                    else:
+                        # This is a temporal variable that will not be finally selected but only used to calculate the heuristic
+                        su.append(self.compute_sufs_cached(current_su,current_transformed_features_numpy,X[:, neighbour[1][0]] == neighbour[1][1],y,minimum=0))
+                        # su.append(1)
+                        #Look two steps ahead
+                        # neighbours_next, _ = graph.get_neighbours(
+                        #     neighbour[1], constructed_nodes, step="CONSTRUCTION")
+                        # su.append(max(self.compute_neighbour_sufs(
+                        #                 neighbour=neigbour_next,
+                        #                 transformed_features = current_transformed_features_numpy,
+                        #                 constructors = self.current_features,
+                        #                 selected_node=selected_node,
+                        #                 current_su=current_su,
+                        #                 X=X, y=y)
+                        #     for neigbour_next in neighbours_next))
+                        # su.append(compute_sufs(current_su,[f.transform(X).flatten() for f in self.current_features],X[:, neighbour[1][0]] == neighbour[1][1],y,minimum=0))
+            else:
+                su = np.ones(len(neighbours))
             probabilities = self.compute_probability(pheromones, np.array(su))
             index = self.choose_next(probabilities, random_generator)
 

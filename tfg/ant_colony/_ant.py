@@ -168,7 +168,7 @@ class Ant:
                     selected_node, constructed_nodes, step="CONSTRUCTION")
                 # Compute heuristic
 
-                neighbours, pheromones = zip(*random.sample(list(zip(neighbours,pheromones)),math.ceil(len(neighbours)*0.5)))
+                neighbours, pheromones = list(zip(*random.sample(list(zip(neighbours,pheromones)),math.ceil(len(neighbours)*0.5))))
 
                 if len(neighbours) == 0:
                     break
@@ -234,19 +234,21 @@ class Ant:
             # Select next
             neighbours, pheromones = graph.get_neighbours(
                 selected_node, selected_nodes, step="SELECTION")
+            
+            neighbours, pheromones = list(zip(*random.sample(list(zip(neighbours,pheromones)),math.ceil(len(neighbours)*0.5))))
 
             # Compute heuristic
             su = []
             # if len(neighbours)==0:
             #     break
-            for neighbour,pheromone in random.sample(list(zip(neighbours,pheromones)),math.ceil(len(neighbours)*0.5)):
+            for neighbour,pheromone in  zip(neighbours, pheromones):
                 if neighbour[1][1] is None:
                     # Original variable
                     su.append(self.compute_sufs_cached(current_su, current_transformed_features_numpy, X[:, neighbour[1][0]],self.current_features,DummyFeatureConstructor(neighbour[1][0]), y, minimum=0))
                 else:
                     # This is a temporal variable that will not be finally selected but only used to calculate the heuristic
-                    # su.append(compute_sufs(current_su,[f.transform(X).flatten() for f in self.current_features],X[:, neighbour[1][0]] == neighbour[1][1],y,minimum=0))
-                    su.append(pheromone*random.random())
+                    su.append(compute_sufs(current_su,current_transformed_features_numpy,X[:, neighbour[1][0]] == neighbour[1][1],y,minimum=0))
+                    # su.append(1)
                     #Look two steps ahead
                     # neighbours_next, _ = graph.get_neighbours(
                     #     neighbour[1], constructed_nodes, step="CONSTRUCTION")

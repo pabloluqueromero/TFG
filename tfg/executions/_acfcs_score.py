@@ -66,10 +66,10 @@ def acfs_score_comparison(datasets,
                 y_test = l.transform(y_test)
                 nb.fit(X_train, y_train)
                 naive_bayes_score = nb.score(X_test, y_test)
-                conf_index  = 0
-                for conf in params:
+                acfcs.reset_cache()
+                for conf_index,conf in enumerate(params):
                     acfcs.set_params(**conf)
-                    acfcs.fit(X_train, y_train)
+                    acfcs.fit(X_train, y_train, init_graph = conf_index==0)
 
                     # score
                     acfcs_score_conf = acfcs.score(X_test, y_test)
@@ -79,8 +79,8 @@ def acfs_score_comparison(datasets,
                     n_original_features = len(list(filter(lambda x: isinstance(
                         x, DummyFeatureConstructor), acfcs.best_features)))
                     n_selected = len(acfcs.best_features)
-                    selection_matrix = len(acfcs.afg.pheromone_matrix_selection)
-                    construction_matrix = len(acfcs.afg.pheromone_matrix_attribute_completion)
+                    selection_matrix = len(acfcs.afg.selection_graph)
+                    construction_matrix = len(acfcs.afg.construction_graph)
                     nodes = len(acfcs.afg.nodes)
                     # Update
                     nb_score[conf_index, i] = naive_bayes_score
@@ -91,7 +91,6 @@ def acfs_score_comparison(datasets,
                     acfcs_dummy[conf_index, i] = n_original_features
                     acfcs_selected[conf_index, i] = n_selected
 
-                    conf_index += 1
 
             # Insert to final result averaged metrics for this database
             for conf_index, conf in enumerate(params):

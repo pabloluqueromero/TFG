@@ -3,7 +3,8 @@ import subprocess
 import argparse
 from time import sleep
 import numpy as np
-# py execute.py --email mail --password pass --algorithm ranker --method 2 --n_computers 3 --computer 1
+# 
+# py execute.py --email email --password password --algorithm ranker --method 1 --n_computers 1 --computer 1 --metric accuracy --filename RANKER_1_GRID
 
 '''
 Global Variables
@@ -14,32 +15,32 @@ n_splits = 3
 n_intervals = 5
 base_path = "./UCIREPO/"
 datasets = [
-    ["lenses", "ContactLens"],
-    ["breast-cancer", "Class"],
-    ["yeast", "nuc"],
     ["abalone", "Rings"],
-    ["mammographicmasses", "Label"],
     ["anneal", "label"],
     ["audiology", "label"],
     ["balance-scale", "label"],
-    ["iris", "Species"],
-    ["student", "Walc"],
-    ["electricgrid", "stabf"],
-    ["horse-colic", "surgery"],
-    ["glass", "Type"],
-    ["krkp", "label"],
-    ["mushroom", "class"],
-    ["voting", "Class Name"],
-    ["credit", "A16"],
-    ["pima", "Outcome"],
-    ["wine", "class"],
-    ["wisconsin", "diagnosis"],
+    ["breast-cancer", "Class"],
     ["car-evaluation", "safety"],
     ["cmc", "Contraceptive"],
+    ["credit", "A16"],
     ["cylinder-bands", "band type"],
     ["derm", "class"],
-    ["tictactoe", "class"],
-    ["spam", "class"]
+    ["electricgrid", "stabf"],
+    ["glass", "Type"],
+    ["horse-colic", "surgery"],
+    ["iris", "Species"],
+    # ["krkp", "label"],
+    # ["lenses", "ContactLens"],
+    # ["mammographicmasses", "Label"],
+    # ["mushroom", "class"],
+    # ["pima", "Outcome"],
+    # ["student", "Walc"],
+    # ["voting", "Class Name"],
+    # ["wine", "class"],
+    # ["wisconsin", "diagnosis"],
+    # ["yeast", "nuc"],
+    # ["tictactoe", "class"],
+    # ["spam", "class"]
 ]
 
 graphs_folder = "out/graphs/"
@@ -155,8 +156,13 @@ def execute():
             execute_ranker_1(data)
         elif method == 2:
             execute_ranker_2(data)
-        else:
+        elif method == 3:
             execute_ranker_3(data)
+        elif method == 4:
+            execute_ranker_4(data)
+        else:
+            execute_ranker_5(data)
+
     elif algorithm == "genetic":
         if method == 1:
             execute_genetic_1(data)
@@ -165,7 +171,10 @@ def execute():
         elif method == 3:
             execute_genetic_3(data)
     elif algorithm == "aco":
-        execute_aco_1(data)
+        if method == 1:
+            execute_aco_1(data)
+        elif method == 2:
+            execute_aco_2(data)
 
 
 def execute_genetic_1(data):
@@ -530,13 +539,13 @@ def execute_ranker_1(data):
 
 
 def execute_ranker_2(data):
-    print("RANKER 2")
+    print("RANKER 2 - prune 3")
     grid = {
         "strategy": ["eager","skip"],
         "block_size": [1,2,5,7,10],
         "max_features": [40],
         "max_iterations":[10,15],
-        "prune":3
+        "prune":[3],
 
     }
     
@@ -568,43 +577,130 @@ def execute_ranker_2(data):
                                              share_rank=True,
                                              email_data={**email_data,
                                                          **{
-                                                             "TITLE": f"{data_i[0]}_{filename_suffix}",
-                                                             "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}                                                         })
+                                                             "TITLE": f"{data_i[0]}_{filename_suffix}_PRUNE_3",
+                                                             "FILENAME": f"{data_i[0]}_{filename_suffix}_PRUNE_3.csv"}                                                         })
             result.to_csv(
-                f"final_result/ranker_2/{data_i[0]}_{filename_suffix}.csv", index=False)
+                f"final_result/ranker_2/{data_i[0]}_{filename_suffix}_PRUNE_3.csv", index=False)
         except Exception as e:
             print(f"Error in database {data_i[0]}: {str(e)}")
 
-
 def execute_ranker_3(data):
-    print("RANKER 3")
-    params = [
-        {"strategy": "eager", "block_size": 1,
-            "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "eager", "block_size": 2,
-            "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "eager", "block_size": 5,
-            "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "eager", "block_size": 10,
-            "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "skip", "block_size": 1, "max_iterations": 10,
-            "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "skip", "block_size": 2, "max_iterations": 10,
-            "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "skip", "block_size": 5, "max_iterations": 10,
-            "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "skip", "block_size": 10, "max_iterations": 10,
-            "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "skip", "block_size": 1, "max_features": 40,
-            "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "skip", "block_size": 2, "max_features": 40,
-            "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "skip", "block_size": 5, "max_features": 40,
-            "verbose": 0, "max_err": 0, "prune": 3},
-        {"strategy": "skip", "block_size": 10, "max_features": 40,
-            "verbose": 0, "max_err": 0, "prune": 3}
-    ]
+    print("RANKER 3 - prune 5")
+    grid = {
+        "strategy": ["eager","skip"],
+        "block_size": [1,2,5,7,10],
+        "max_features": [40],
+        "max_iterations":[10,15],
+        "prune":[5],
 
+    }
+    
+    def_params = {
+        "strategy": "skip", 
+        "block_size": 10,
+        "max_features": 40,
+        "verbose": 0,
+        "max_err": 0
+        }
+    params = []
+    for conf in product_dict(**grid):
+        params.append(def_params.copy())
+        for key,val in conf.items():
+            params[-1][key] = val
+    
+
+    for data_i in data[::1]:
+        try:
+            result = ranker_score_comparison(base_path=base_path,
+                                             datasets=[data_i],
+                                             n_splits=n_splits,
+                                             n_repeats=n_repeats,
+                                             seed=seed,
+                                             params=params,
+                                             n_intervals=n_intervals,
+                                             metric=metric,
+                                             send_email=send_email_cond,
+                                             share_rank=True,
+                                             email_data={**email_data,
+                                                         **{
+                                                             "TITLE": f"{data_i[0]}_{filename_suffix}_PRUNE_5",
+                                                             "FILENAME": f"{data_i[0]}_{filename_suffix}_PRUNE_5.csv"}                                                         })
+            result.to_csv(
+                f"final_result/ranker_3/{data_i[0]}_{filename_suffix}_PRUNE_5.csv", index=False)
+        except Exception as e:
+            print(f"Error in database {data_i[0]}: {str(e)}")
+def execute_ranker_5(data):
+    print("RANKER 5 - prune 1")
+    grid = {
+        "strategy": ["eager","skip"],
+        "block_size": [1,2,5,7,10],
+        "max_features": [40],
+        "max_iterations":[10,15],
+        "prune":[1],
+
+    }
+    
+    def_params = {
+        "strategy": "skip", 
+        "block_size": 10,
+        "max_features": 40,
+        "verbose": 0,
+        "max_err": 0
+        }
+    params = []
+    for conf in product_dict(**grid):
+        params.append(def_params.copy())
+        for key,val in conf.items():
+            params[-1][key] = val
+    
+
+    for data_i in data[::1]:
+        try:
+            result = ranker_score_comparison(base_path=base_path,
+                                             datasets=[data_i],
+                                             n_splits=n_splits,
+                                             n_repeats=n_repeats,
+                                             seed=seed,
+                                             params=params,
+                                             n_intervals=n_intervals,
+                                             metric=metric,
+                                             send_email=send_email_cond,
+                                             share_rank=True,
+                                             email_data={**email_data,
+                                                         **{
+                                                             "TITLE": f"{data_i[0]}_{filename_suffix}_PRUNE_5",
+                                                             "FILENAME": f"{data_i[0]}_{filename_suffix}_PRUNE_5.csv"}                                                         })
+            result.to_csv(
+                f"final_result/ranker_5/{data_i[0]}_{filename_suffix}_PRUNE_1.csv", index=False)
+        except Exception as e:
+            print(f"Error in database {data_i[0]}: {str(e)}")
+
+def execute_ranker_4(data):
+    print("RANKER 4 - prune 3 USE INITIALS")
+    grid = {
+        "strategy": ["eager","skip"],
+        "block_size": [1,2,5,7,10],
+        "max_features": [40],
+        "max_iterations":[10,15],
+        "prune":[3],
+        "use_initials":[True]
+
+    }
+    
+    def_params = {
+        "strategy": "skip", 
+        "block_size": 10,
+        "max_features": 40,
+        "verbose": 0,
+        "max_err": 0
+        }
+    params = []
+    for conf in product_dict(**grid):
+        params.append(def_params.copy())
+        for key,val in conf.items():
+            params[-1][key] = val
+    
+    
     for param in params:
         param["use_initials"] = True
 
@@ -615,7 +711,6 @@ def execute_ranker_3(data):
                                              n_splits=n_splits,
                                              n_repeats=n_repeats,
                                              seed=seed,
-
                                              params=params,
                                              n_intervals=n_intervals,
                                              metric=metric,
@@ -623,55 +718,56 @@ def execute_ranker_3(data):
                                              share_rank=True,
                                              email_data={**email_data,
                                                          **{
-                                                             "TITLE": f"{data_i[0]}_{filename_suffix}",
-                                                             "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}                                                         })
+                                                             "TITLE": f"{data_i[0]}_{filename_suffix}_PRUNE_3_INITIALS",
+                                                             "FILENAME": f"{data_i[0]}_{filename_suffix}_PRUNE_3_INITIALS.csv"}                                                         })
             result.to_csv(
-                f"final_result/ranker_3/{data_i[0]}_{filename_suffix}.csv", index=False)
+                f"final_result/ranker_4/{data_i[0]}_{filename_suffix}_PRUNE_3_INITIALS.csv", index=False)
         except Exception as e:
             print(f"Error in database {data_i[0]}: {str(e)}")
 
 
 def execute_aco_1(data):
     print("ACO")
-    params = [
-        {
-            "ants": 10,
+
+    def_params = {
             "evaporation_rate": 0.1,
             "intensification_factor": 2,
             "alpha": 0.5,
             "beta": 0.2,
             "beta_evaporation_rate": 0.05,
-            "iterations": 100,
             "early_stopping": 3,
-            "seed": 3,
-            "parallel": False,
-            "save_features": False,
-            "verbose": 0,
             "graph_strategy": "mutual_info",
             "use_initials": True,
             "connections": 3,
-            "update_strategy": "all",
-            "max_errors": 1
-        }, {
-            "ants": 10,
-            "evaporation_rate": 0.1,
-            "intensification_factor": 2,
-            "alpha": 0.5,
-            "beta": 0,
-            "beta_evaporation_rate": 0.05,
-            "iterations": 100,
-            "early_stopping": 3,
-            "seed": 3,
-            "parallel": False,
-            "save_features": False,
             "verbose": 0,
+            "ants": 10,
+            "beta_evaporation_rate": 0.05,
+            "iterations": 10,
+            "early_stopping": 4,
+            "seed": seed,
             "graph_strategy": "mutual_info",
-            "use_initials": False,
-            "connections": 2,
-            "update_strategy": "all",
-            "max_errors": 1
-        }]
+            "update_strategy": "best",
+            "final_selection":"BEST",
+            "max_errors": 0,
+            "save_features": False
+        }
+    
+    grid = {
+        "evaporation_rate": [0.05],
+        "intensification_factor": [1,2],
+        "alpha": [0.2],
+        "beta": [0,0.1],
+        "use_initials": [False],
+        "connections": [1]
+        }
+    params = []
 
+    for conf in product_dict(**grid):
+        params.append(def_params.copy())
+        for key,val in conf.items():
+            params[-1][key] = val
+
+    print(f"Configurations: {len(params)}")
     for data_i in data[::1]:
         try:
             result = acfs_score_comparison(base_path=base_path,
@@ -687,6 +783,94 @@ def execute_aco_1(data):
                                                            "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}       
                                                            })
             result.to_csv(f"final_result/aco_1/{data_i[0]}_{filename_suffix}.csv", index=False)
+        except Exception as e:
+            print(f"ERROR IN {data_i[0]} DB: {e} ")
+
+
+def execute_aco_2(data):
+    print("ACO")
+
+    def_params = {
+            "evaporation_rate": 0.1,
+            "intensification_factor": 2,
+            "alpha": 0.5,
+            "beta": 0.2,
+            "beta_evaporation_rate": 0.05,
+            "early_stopping": 3,
+            "graph_strategy": "mutual_info",
+            "use_initials": True,
+            "connections": 3,
+            "verbose": 0,
+            "ants": 10,
+            "beta_evaporation_rate": 0.05,
+            "iterations": 10,
+            "early_stopping": 4,
+            "seed": seed,
+            "graph_strategy": "mutual_info",
+            "update_strategy": "all",
+            "max_errors": 0,
+            "save_features": False
+        }
+    
+    grid = {
+        "evaporation_rate": [0.05],
+        "intensification_factor": [1,2],
+        "alpha": [0.2],
+        "beta": [0,0.1,0.2],
+        "use_initials": [False],
+        "connections": [4]
+        }
+    params = []
+
+    for conf in product_dict(**grid):
+        params.append(def_params.copy())
+        for key,val in conf.items():
+            params[-1][key] = val
+
+    print(f"Configurations: {len(params)}")
+
+    data = [
+        ["abalone", "Rings"],
+        ["anneal", "label"],
+        ["audiology", "label"],
+        ["balance-scale", "label"],
+        ["breast-cancer", "Class"],
+        ["car-evaluation", "safety"],
+        ["derm", "class"],
+        ["electricgrid", "stabf"],
+        ["glass", "Type"],
+        ["horse-colic", "surgery"],
+        ["iris", "Species"],
+        ["krkp", "label"],
+        ["lenses", "ContactLens"],
+        ["mammographicmasses", "Label"],
+        ["mushroom", "class"],
+        ["pima", "Outcome"],
+        ["student", "Walc"],
+        ["voting", "Class Name"],
+        ["wine", "class"],
+        ["wisconsin", "diagnosis"],
+        ["yeast", "nuc"],
+        ["tictactoe", "class"],
+        ["spam", "class"]
+    ]
+    data = np.array_split(data, n_computers)[computer-1]
+    print(data)
+    for data_i in data[::1]:
+        try:
+            result = acfs_score_comparison(base_path=base_path,
+                                           datasets=[data_i],
+                                           n_splits=n_splits,
+                                           n_repeats=n_repeats,
+                                           seed=seed,
+                                           params=params,
+                                           send_email=send_email_cond,
+                                           email_data={**email_data,
+                                                       **{
+                                                           "TITLE": f"{data_i[0]}_{filename_suffix}",
+                                                           "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}       
+                                                           })
+            result.to_csv(f"final_result/aco_2/{data_i[0]}_{filename_suffix}.csv", index=False)
         except Exception as e:
             print(f"ERROR IN {data_i[0]} DB: {e} ")
 

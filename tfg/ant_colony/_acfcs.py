@@ -12,8 +12,9 @@ from tfg.ant_colony import AntFeatureGraph
 from tfg.ant_colony import AntFeatureGraphMI
 from tfg.ant_colony import Ant, FinalAnt
 from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
+from tfg.feature_construction import create_feature,DummyFeatureConstructor
 from tfg.naive_bayes import NaiveBayes
-from tfg.utils import translate_features
+from tfg.utils import translate_features,append_column_to_numpy
 
 class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
     def __init__(self,
@@ -23,6 +24,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
                 alpha=1.0, 
                 beta=0.0, 
                 beta_evaporation_rate=0.05,
+                step = 1,
                 iterations=100, 
                 early_stopping=20,
                 update_strategy="best",
@@ -34,10 +36,12 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
                 verbose=0,
                 graph_strategy = "mutual_info",
                 connections = 2,
+                max_errors=0,
                 metric="accuracy",
                 use_initials=False,
                 final_selection="ALL",
                 encode=True):
+        self.step = step
         self.ants = ants
         self.evaporation_rate = evaporation_rate
         self.intensification_factor = intensification_factor
@@ -59,7 +63,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.use_initials = use_initials
         self.final_selection = final_selection
         self.encode = encode
-
+        self.max_errors = max_errors
         allowed_graph_strategy = ("full","mutual_info")
         if self.graph_strategy not in allowed_graph_strategy:
             raise ValueError("Unknown graph strategy type: %s, expected one of %s." % (self.graph_strategy, allowed_graph_strategy))
@@ -68,7 +72,13 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
         if self.update_strategy not in allowed_update_strategy:
             raise ValueError("Unknown graph strategy type: %s, expected one of %s." % (self.update_strategy, allowed_update_strategy))
 
-    def fit(self,X,y):
+        self.reset_cache()
+
+    def reset_cache(self):
+        self.cache_loo = dict()
+        self.cache_heuristic = dict()
+
+    def fit(self,X,y,init_graph=True):
         self.feature_encoder_ = CustomOrdinalFeatureEncoder()
         self.class_encoder_ = CustomLabelEncoder()
 
@@ -78,11 +88,13 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
         if self.encode:
             X = self.feature_encoder_.fit_transform(X)
             y = self.class_encoder_.fit_transform(y)
-
-        if self.graph_strategy=="full":
-                self.afg = AntFeatureGraph(seed=self.seed).compute_graph(X, y, ("XOR","OR", "AND"))
+        if init_graph:
+            if self.graph_strategy=="full":
+                    self.afg = AntFeatureGraph(seed=self.seed).compute_graph(X, y, ("XOR","OR", "AND"))
+            else:
+                    self.afg = AntFeatureGraphMI(seed=self.seed,connections=self.connections).compute_graph(X, y, ("XOR","OR", "AND"))
         else:
-                self.afg = AntFeatureGraphMI(seed=self.seed,connections=self.connections).compute_graph(X, y, ("XOR","OR", "AND"))
+            self.afg.reset_pheromones()
         if self.verbose:
             print(f"Number of nodes: {len(self.afg.nodes)}")
         random.seed(self.seed)
@@ -99,11 +111,11 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
                                     "p_matrix_c": len(self.afg.pheromone_matrix_attribute_completion),
                                     "p_matrix_s": len(self.afg.pheromone_matrix_selection),
                                     "distance_from_best": distance_from_best})
-            ants = [Ant(ant_id=i,alpha=self.alpha,beta=beta, metric = self.metric, use_initials = self.use_initials) for i in range(self.ants)]
+            ants = [Ant(ant_id=i,alpha=self.alpha,beta=beta, metric = self.metric, use_initials = self.use_initials, cache_loo = self.cache_loo, cache_heuristic = self.cache_heuristic,step = self.step) for i in range(self.ants)]
             beta*=self.beta_evaporation_rate
             results = []
             for ant in ants:
-                    results.append(ant.run(X=X,y=y,graph=self.afg,random_generator=random,parallel=self.parallel))
+                    results.append(ant.run(X=X,y=y,graph=self.afg,random_generator=random,parallel=self.parallel,max_errors = self.max_errors))
             results = np.array(results)
             self.afg.update_pheromone_matrix_evaporation(self.evaporation_rate)
             distance_from_best = np.mean(np.abs(results-best_score))
@@ -137,21 +149,20 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.classifier_ = NaiveBayes(encode_data=False,metric = self.metric)
         # self.best_features = self.get_best_features(self.afg,X,y)
         if self.final_selection=="BEST":
-            self.best_features = self.get_best_features(self.afg,X,y)
+            # self.best_features = self.get_best_features(self.afg,X,y)
+            pass
         else:
-            final_ant = FinalAnt(ant_id=0,alpha=self.alpha,beta=beta, metric = self.metric,use_initials = self.use_initials)
+            final_ant = FinalAnt(ant_id=0,alpha=self.alpha,beta=beta, metric = self.metric,use_initials = self.use_initials, cache_loo = self.cache_loo, cache_heuristic = self.cache_heuristic,step = self.step)
             final_ant.run(X=X,y=y,graph=self.afg,random_generator=random,parallel=self.parallel)
             self.best_features = final_ant.current_features
-        self.classifier_.fit(np.concatenate([ f.transform(X) for f in self.best_features],axis=1),y)
         self.backwards_fss(X,y)
         return self
 
     def get_best_features(self,afg,X,y):
-        def get_best_neighbours(self,pheromone,heuristic):
-            return np.argmax(np.pow(pheromone,self.alpha)* np.pow(heuristic,self.beta))
-        nodes,pheromones,_ = afg.get_initial_nodes()
+        # def get_best_neighbours(self,pheromone,heuristic):
+        #     return np.argmax(np.pow(pheromone,self.alpha)* np.pow(heuristic,self.beta))
+        nodes,pheromones,_ = afg.get_initial_nodes(set())
         node_id,selected_node  = nodes[np.argmax(pheromones)]#get_best_neighbours(pheromones,heuristic)
-        from tfg.feature_construction import create_feature,DummyFeatureConstructor
         selected_nodes = set()
         constructed_nodes = set()
         classifier = NaiveBayes(encode_data=False,metric=self.metric)
@@ -175,12 +186,13 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
                 constructed_nodes.add(frozenset((node_id,neighbours[index][0],neighbours[index][2])))
                 node_id,selected_node = neighbours[index][:2]
             #Assess new feature
+            transformed_feature = feature_constructor.transform(X)
             if is_fitted:
-                classifier.add_features(feature_constructor.transform(X), y)
+                classifier.add_features(transformed_feature, y)
             else:
-                classifier.fit(feature_constructor.transform(X), y)
+                classifier.fit(transformed_feature, y)
                 is_fitted = True
-            features = np.concatenate([f.transform(X) for f in current_features]+[feature_constructor.transform(X)],axis=1)   
+            features = append_column_to_numpy(features,transformed_feature)#np.concatenate([f.transform(X) for f in current_features]+[transformed_feature],axis=1)   
             score = classifier.leave_one_out_cross_val(features, y,fit=False)
             if score <= current_score:
                 break
@@ -191,7 +203,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
         check_is_fitted(self)
         improvement = True
         best_features = np.concatenate([ f.transform(X) for f in self.best_features],axis=1)
-        best_score = self.classifier_.leave_one_out_cross_val(best_features,y,fit=False)
+        best_score = self.classifier_.leave_one_out_cross_val(best_features,y,fit=True)
         while improvement and best_features.shape[1] >1:
             improvement = False
             feature = None

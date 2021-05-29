@@ -150,10 +150,13 @@ def compute_sufs(current_su,current_features,new_feature,y,beta=0.5,minimum=None
         SU({X1,X2,X3}|Y) = sum(SU(Xi|Y)) - beta * (SU(X1,X2),SU(X2,X3))
     '''
     class_su = symmetrical_uncertainty(f1=new_feature,f2=y)
-    penalisation = beta*sum(
-                    symmetrical_uncertainty(current_features[j],new_feature) #->The result should be the same but sklearn's is more tested
-                    # normalized_mutual_info_score(current_features[j],new_feature)
-                    for j in range(len(current_features)))
+    if current_features is None:
+        penalisation = 0
+    else:
+        penalisation = beta*sum(
+                    symmetrical_uncertainty(current_features[:,j],new_feature) #->The result should be the same but sklearn's is more tested
+                    # normalized_mutual_info_score(current_features[:,j].flatten(),new_feature.flatten())
+                    for j in range(current_features.shape[1]))
 
     su = current_su+class_su-penalisation 
     return su if minimum is None else max(su,minimum)
@@ -320,3 +323,13 @@ def backward_search(X,y,current_features,classifier):
             classifier.remove_feature(feature_index)
             del current_features[feature_index]
     return current_features
+
+
+def hash_features(features):
+    return hash(tuple(features))
+
+def append_column_to_numpy(array,column):
+    a = np.zeros((array.shape[0],array.shape[1]+1),dtype=int)
+    a[:,:-1] = array
+    a[:,-1]=column.flatten()
+    return a

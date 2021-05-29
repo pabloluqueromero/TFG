@@ -234,7 +234,7 @@ class AntFeatureGraphMI:
             #Add neighbours from other features
             for neighbour_feature in self.neighbour_features_[feature]:
                 for neighbour_feature_value in self.unique_values_ferature[neighbour_feature]:
-                    neighbour_id = self.inverse_nodes[(feature,neighbour_feature_value)]
+                    neighbour_id = self.inverse_nodes[(neighbour_feature_value,neighbour_feature_value)]
                     edge = frozenset([neighbour_id, node_id])
                     self.selection_graph.add_edge(node_id,neighbour_id)
                     self.pheromone_selection[edge] = random.random()
@@ -254,7 +254,7 @@ class AntFeatureGraphMI:
                 #Add neighbours from other features
                 for neighbour_feature in self.neighbour_features_[feature]:
                     for neighbour_feature_value in self.unique_values_ferature[neighbour_feature]:
-                        neighbour_id = self.inverse_nodes[(feature,neighbour_feature_value)]
+                        neighbour_id = self.inverse_nodes[(neighbour_feature,neighbour_feature_value)]
                         edge = frozenset([neighbour_id, node_id])
                         self.selection_graph.add_edge(node_id,neighbour_id)
                         self.pheromone_selection[edge] = random.random()

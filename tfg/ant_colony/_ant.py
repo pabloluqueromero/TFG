@@ -168,7 +168,7 @@ class Ant:
                     selected_node, constructed_nodes, step="CONSTRUCTION")
                 # Compute heuristic
 
-                neighbours, pheromones = zip(*random.sample(zip(neighbours,pheromones),math.ceil(len(neighbours)*0.5)))
+                neighbours, pheromones = zip(*random.sample(list(zip(neighbours,pheromones)),math.ceil(len(neighbours)*0.5)))
 
                 if len(neighbours) == 0:
                     break
@@ -239,7 +239,7 @@ class Ant:
             su = []
             # if len(neighbours)==0:
             #     break
-            for neighbour,pheromone in random.sample(zip(neighbours,pheromones),math.ceil(len(neighbours)*0.5)):
+            for neighbour,pheromone in random.sample(list(zip(neighbours,pheromones)),math.ceil(len(neighbours)*0.5)):
                 if neighbour[1][1] is None:
                     # Original variable
                     su.append(self.compute_sufs_cached(current_su, current_transformed_features_numpy, X[:, neighbour[1][0]],self.current_features,DummyFeatureConstructor(neighbour[1][0]), y, minimum=0))

@@ -6,7 +6,7 @@ import math
 from tfg.naive_bayes import NaiveBayes
 from tfg.feature_construction import DummyFeatureConstructor
 from tfg.feature_construction._constructor import create_feature
-from tfg.utils import compute_sufs, hash_features,append_column_to_numpy
+from tfg.utils import append_column_to_numpy, backward_search, compute_sufs, hash_features
 
 
 class Ant:
@@ -309,11 +309,11 @@ class FinalAnt(Ant):
                 DummyFeatureConstructor(j) for j in range(X.shape[1])]
             classifier.fit(X, y)
             score = self.evaluate_loo(self.current_features, classifier, X, y)
+            self.current_features = backward_search(X,y,self.current_features,classifier)
             current_score = score
-            selected_nodes.update(graph.get_original_ids())
+            selected_nodes.update([graph.inverse_nodes[(og_feature.feature_index,None)] for og_feature in self.current_features])
 
-        initial, pheromones, heuristics = graph.get_initial_nodes(
-            selected_nodes)
+        initial, pheromones, heuristics = graph.get_initial_nodes(selected_nodes)
         probabilities = self.compute_probability(pheromones, heuristics)
         index = self.choose_next(probabilities, random_generator)
 
@@ -394,8 +394,7 @@ class FinalAnt(Ant):
             if score <= current_score:
                 if n_errors >= max_errors:
                     break
-                else:
-                    n_errors += 1
+                n_errors += 1
             else:
                 n_errors = 0
             current_su = su

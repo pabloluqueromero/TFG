@@ -335,10 +335,8 @@ class AntFeatureGraphMI:
                     pheromones.append(self.pheromone_construction[edge])
 
         elif step == "SELECTION":
-            for neighbour_id in self.selection_graph.neighbors(node_id):
+            for neighbour_id in filter(lambda x: x not in nodes_to_filter,self.selection_graph.neighbors(node_id)):
                 edge = frozenset([neighbour_id, node_id])
-                if edge in nodes_to_filter:
-                    continue
                 neighbours.append((neighbour_id,self.nodes[neighbour_id]))
                 pheromones.append(self.pheromone_selection[edge])
         else:
@@ -348,15 +346,15 @@ class AntFeatureGraphMI:
     def get_initial_nodes(self,selected_nodes):
         data = self.initial_graph.nodes(data=True)
         nodes= []
-        pheromones = np.zeros(len(self.initial_graph.nodes))
-        heuristic = np.zeros(len(self.initial_graph.nodes))
+        pheromones = []
+        heuristic = []
         for i,node_data in enumerate(data):
             node,attributes = node_data
             if node not in selected_nodes:
                 nodes.append((node,attributes["value"]))
-                heuristic[i] = attributes["heuristic"]
-                pheromones[i] = self.pheromone_initial[node]
-        return nodes,pheromones,heuristic
+                heuristic.append(attributes["heuristic"])
+                pheromones.append(self.pheromone_initial[node])
+        return nodes,np.array(pheromones),np.array(heuristic)
 
     def reset_pheromones(self):
         self.pheromone_construction = { k: random.random() for k in self.pheromone_construction}
@@ -371,13 +369,20 @@ class AntFeatureGraphMI:
 
 
     def intensify(self,features,intensification_factor,ant_score=1,use_initials=False):
-        '''Intensify the path of followed by the given ant'''
+        '''Intensify the path followed by the given ant'''
         previous = None
         intensification_factor*=ant_score
+        if use_initials:
+            index=0
+            feature= features[index]
+            while isinstance(feature,DummyFeatureConstructor):
+                index+=1
+                if index >= len(features):
+                    break
+                feature= features[index]
+            features = features[index:]
         for feature in features:
             if isinstance(feature,DummyFeatureConstructor):
-                if use_initials:
-                    continue
                 next_node = self.inverse_nodes[(feature.feature_index,None)]
                 if previous is None:
                     self.pheromone_initial[next_node] += intensification_factor

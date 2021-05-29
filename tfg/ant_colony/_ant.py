@@ -172,29 +172,32 @@ class Ant:
 
                 if len(neighbours) == 0:
                     break
-                if parallel:
-                    with concurrent.futures.ThreadPoolExecutor() as executor:
-                        futures = []
-                        for neighbour in neighbours:
-                            futures.append(
-                                executor.submit(
-                                    self.compute_neighbour_sufs, neighbour=neighbour,
-                                    transformed_features = current_transformed_features_numpy,
-                                    constructors = self.current_features,
-                                    selected_node=selected_node,
-                                    current_su=current_su,
-                                    X=X, y=y))
-                        concurrent.futures.wait(
-                            futures, timeout=None, return_when='ALL_COMPLETED')
-                        su = [future.result() for future in futures]
+                if self.beta != 0:
+                    if parallel:
+                        with concurrent.futures.ThreadPoolExecutor() as executor:
+                            futures = []
+                            for neighbour in neighbours:
+                                futures.append(
+                                    executor.submit(
+                                        self.compute_neighbour_sufs, neighbour=neighbour,
+                                        transformed_features = current_transformed_features_numpy,
+                                        constructors = self.current_features,
+                                        selected_node=selected_node,
+                                        current_su=current_su,
+                                        X=X, y=y))
+                            concurrent.futures.wait(
+                                futures, timeout=None, return_when='ALL_COMPLETED')
+                            su = [future.result() for future in futures]
+                    else:
+                            su = [self.compute_neighbour_sufs( 
+                                            neighbour=neighbour,
+                                            transformed_features = current_transformed_features_numpy,
+                                            selected_node=selected_node,
+                                            constructors = self.current_features,
+                                            current_su=current_su,
+                                            X=X, y=y) for neighbour in neighbours]
                 else:
-                    su = [self.compute_neighbour_sufs( 
-                                    neighbour=neighbour,
-                                    transformed_features = current_transformed_features_numpy,
-                                    selected_node=selected_node,
-                                    constructors = self.current_features,
-                                    current_su=current_su,
-                                    X=X, y=y) for neighbour in neighbours]
+                    su = np.ones(len(neighbours))
 
                 probabilities = self.compute_probability(
                     pheromones, np.array(su))
@@ -343,29 +346,32 @@ class FinalAnt(Ant):
 
                 if len(neighbours) == 0:
                     break
-                if parallel:
-                    with concurrent.futures.ThreadPoolExecutor() as executor:
-                        futures = []
-                        for neighbour in neighbours:
-                            futures.append(
-                                executor.submit(
-                                    self.compute_neighbour_sufs, neighbour=neighbour,
-                                    transformed_features = current_transformed_features_numpy,
-                                    constructors = self.current_features,
-                                    selected_node=selected_node,
-                                    current_su=current_su,
-                                    X=X, y=y))
-                        concurrent.futures.wait(
-                            futures, timeout=None, return_when='ALL_COMPLETED')
-                        su = [future.result() for future in futures]
+                if self.beta != 0:
+                    if parallel:
+                        with concurrent.futures.ThreadPoolExecutor() as executor:
+                            futures = []
+                            for neighbour in neighbours:
+                                futures.append(
+                                    executor.submit(
+                                        self.compute_neighbour_sufs, neighbour=neighbour,
+                                        transformed_features = current_transformed_features_numpy,
+                                        constructors = self.current_features,
+                                        selected_node=selected_node,
+                                        current_su=current_su,
+                                        X=X, y=y))
+                            concurrent.futures.wait(
+                                futures, timeout=None, return_when='ALL_COMPLETED')
+                            su = [future.result() for future in futures]
+                    else:
+                        su = [self.compute_neighbour_sufs( 
+                                        neighbour=neighbour,
+                                        transformed_features = current_transformed_features_numpy,
+                                        selected_node=selected_node,
+                                        constructors = self.current_features,
+                                        current_su=current_su,
+                                        X=X, y=y) for neighbour in neighbours]
                 else:
-                    su = [self.compute_neighbour_sufs( 
-                                    neighbour=neighbour,
-                                    transformed_features = current_transformed_features_numpy,
-                                    selected_node=selected_node,
-                                    constructors = self.current_features,
-                                    current_su=current_su,
-                                    X=X, y=y) for neighbour in neighbours]
+                    su = np.ones(len(neighbours))
 
                 probabilities = self.compute_probability(
                     pheromones, np.array(su))

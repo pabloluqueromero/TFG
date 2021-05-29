@@ -149,7 +149,8 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.classifier_ = NaiveBayes(encode_data=False,metric = self.metric)
         # self.best_features = self.get_best_features(self.afg,X,y)
         if self.final_selection=="BEST":
-            self.best_features = self.get_best_features(self.afg,X,y)
+            # self.best_features = self.get_best_features(self.afg,X,y)
+            pass
         else:
             final_ant = FinalAnt(ant_id=0,alpha=self.alpha,beta=beta, metric = self.metric,use_initials = self.use_initials, cache_loo = self.cache_loo, cache_heuristic = self.cache_heuristic,step = self.step)
             final_ant.run(X=X,y=y,graph=self.afg,random_generator=random,parallel=self.parallel)
@@ -161,7 +162,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
     def get_best_features(self,afg,X,y):
         # def get_best_neighbours(self,pheromone,heuristic):
         #     return np.argmax(np.pow(pheromone,self.alpha)* np.pow(heuristic,self.beta))
-        nodes,pheromones,_ = afg.get_initial_nodes()
+        nodes,pheromones,_ = afg.get_initial_nodes(set())
         node_id,selected_node  = nodes[np.argmax(pheromones)]#get_best_neighbours(pheromones,heuristic)
         selected_nodes = set()
         constructed_nodes = set()

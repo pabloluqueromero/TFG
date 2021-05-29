@@ -76,7 +76,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.cache_loo = dict()
         self.cache_heuristic = dict()
 
-    def fit(self,X,y):
+    def fit(self,X,y,init_graph=True):
         self.feature_encoder_ = CustomOrdinalFeatureEncoder()
         self.class_encoder_ = CustomLabelEncoder()
 
@@ -86,11 +86,13 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
         if self.encode:
             X = self.feature_encoder_.fit_transform(X)
             y = self.class_encoder_.fit_transform(y)
-
-        if self.graph_strategy=="full":
-                self.afg = AntFeatureGraph(seed=self.seed).compute_graph(X, y, ("XOR","OR", "AND"))
+        if init_graph:
+            if self.graph_strategy=="full":
+                    self.afg = AntFeatureGraph(seed=self.seed).compute_graph(X, y, ("XOR","OR", "AND"))
+            else:
+                    self.afg = AntFeatureGraphMI(seed=self.seed,connections=self.connections).compute_graph(X, y, ("XOR","OR", "AND"))
         else:
-                self.afg = AntFeatureGraphMI(seed=self.seed,connections=self.connections).compute_graph(X, y, ("XOR","OR", "AND"))
+            self.afg.reset_pheromones()
         if self.verbose:
             print(f"Number of nodes: {len(self.afg.nodes)}")
         random.seed(self.seed)

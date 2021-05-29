@@ -2,7 +2,7 @@ import pandas as pd
 import os
 import numpy as np
 import random
-
+import networkx as nx
 
 from tfg.ant_colony import Ant
 from tfg.feature_construction import DummyFeatureConstructor
@@ -190,41 +190,26 @@ class AntFeatureGraph:
     def get_original_ids(self):
         return self.original_ids
 
+
+
+
 class AntFeatureGraphMI:
     def __init__(self, seed, connections=2):
         self.seed = seed
-        self.connections = connections
+        self.connections = connections    
+        self.allowed_steps = ("CONSTRUCTION", "SELECTION")
 
-    def _initialize_initial_matrix(self,X,y):
-        self.initial_heuristic = np.empty(len(self.nodes))
-        self.initial_pheromone = np.random.rand(len(self.nodes))
-        for node, value in self.nodes.items():
-            if value[1] is None:
-                su = symmetrical_uncertainty(f1=X[:, value[0]], f2=y)
-            else:
-                su = symmetrical_uncertainty(f1=(X[:, value[0]] == value[1]), f2=y)
-            self.initial_heuristic[node] = su
-            self.initial_pheromone[node] = random.random()
-       
-    def _initialize_pheromone_matrix(self):
-        # normalized_mutual_info_score
-        self.pheromone_matrix_selection = dict()
-        self.pheromone_matrix_attribute_completion = dict()
+    def _initialize_graph(self,X,y,k=2):
+        self.selection_graph = nx.MultiDiGraph()
+        self.selection_graph.add_nodes_from(self.initial_graph.nodes)
+        self.pheromone_selection = dict()
 
-    def _initialize_nodes(self,X):
-        self.nodes = dict()
-        self.nodes_per_feature = dict()
-        for j in range(X.shape[1]):
-            unique_values = np.unique(X[:, j])
-            self.nodes_per_feature[j] = (len(self.nodes),unique_values.shape[0]) #(first_id, total)
-            for node_id,val in enumerate(unique_values,start = len(self.nodes)):
-                self.nodes[node_id] = (j, val)
-        # Add original variables
-        self.nodes.update(dict(enumerate([(j, None) for j in range(X.shape[1])], start=len(self.nodes))))
-        
-    def _initialize_neighbours_info(self,X,y,k=2):
-        '''Add neighbour features based on mutual information'''
+        self.construction_graph = nx.MultiDiGraph()
+        self.construction_graph.add_nodes_from(self.initial_graph.nodes)
+        self.pheromone_construction = dict()
+
         self.neighbour_features_ = dict()
+        '''PRUNNING'''
         for i in range(X.shape[1]):
             mi = []
             for j in range(X.shape[1]):
@@ -232,21 +217,104 @@ class AntFeatureGraphMI:
                     continue
                 mi.append((j,mutual_information_class_conditioned(X[:,j],X[:,i],y)))
             mi = sorted(mi,key = lambda x:x[1],reverse=True) # The greater the mutual information score the more correlation which we want to avoid
-            self.neighbour_features_[i]=list(zip(*mi[:k]))[0]
+            self.neighbour_features_[i] = list(zip(*mi[:k]))[0]
         
+        '''MULTIGRAPH CONSTRUCTION'''
+        for feature in range(X.shape[1]):
+            '''Original'''
+            node_id = self.inverse_nodes[(feature,None)]
+
+            #Allow jumps to any other original feature
+            for neighbour_feature in range(X.shape[1]):
+                neighbour_id = self.inverse_nodes[(neighbour_feature,None)]
+                edge = frozenset([neighbour_id,node_id])
+                self.selection_graph.add_edge(node_id,neighbour_id)
+                self.pheromone_selection[edge] = random.random()
+
+            #Add neighbours from other features
+            for neighbour_feature in self.neighbour_features_[feature]:
+                for neighbour_feature_value in self.unique_values_ferature[neighbour_feature]:
+                    neighbour_id = self.inverse_nodes[(feature,neighbour_feature_value)]
+                    edge = frozenset([neighbour_id, node_id])
+                    self.selection_graph.add_edge(node_id,neighbour_id)
+                    self.pheromone_selection[edge] = random.random()
+
+            '''Logical'''
+            for value in self.unique_values_ferature[feature]:
+                node_id = self.inverse_nodes[(feature,value)]
+                '''SELECTION'''
+                #Add all operand nodes (same feature) - including nodex_id
+                for value_neighbour in self.unique_values_ferature[feature]:
+                    neighbour_id = self.inverse_nodes[(feature,value_neighbour)]
+                    values = self.nodes[neighbour_id]
+                    edge = frozenset([neighbour_id, node_id])
+                    self.selection_graph.add_edge(node_id,neighbour_id)
+                    self.pheromone_selection[edge] = random.random()
+
+                #Add neighbours from other features
+                for neighbour_feature in self.neighbour_features_[feature]:
+                    for neighbour_feature_value in self.unique_values_ferature[neighbour_feature]:
+                        neighbour_id = self.inverse_nodes[(feature,neighbour_feature_value)]
+                        edge = frozenset([neighbour_id, node_id])
+                        self.selection_graph.add_edge(node_id,neighbour_id)
+                        self.pheromone_selection[edge] = random.random()
+                    
+                #Allow jumps to any other original feature
+                for neighbour_feature in range(X.shape[1]):
+                    neighbour_id = self.inverse_nodes[(neighbour_feature,None)]
+                    edge = frozenset([neighbour_id,node_id])
+                    self.selection_graph.add_edge(node_id,neighbour_id)
+                    self.pheromone_selection[edge] = random.random()
 
 
+                '''CONSTRUCTION'''
+
+                #Other features
+                for neighbour_feature in self.neighbour_features_[feature]:
+                    for operator in self.operators:
+                        for value_neighbour in self.unique_values_ferature[neighbour_feature]:
+                            neighbour_id = self.inverse_nodes[(neighbour_feature,value_neighbour)]
+                            edge = frozenset([neighbour_id, node_id, operator])
+                            self.construction_graph.add_edge(node_id,neighbour_id,operator = operator)
+                            self.pheromone_construction[edge] = random.random()
+
+                #Within same feature except (node_id,node_id,OR)
+                for value_neighbour in  self.unique_values_ferature[feature]:
+                    neighbour_id = self.inverse_nodes[(feature,value_neighbour)]
+                    if neighbour_id == node_id:
+                        continue
+                    operator="OR"
+                    edge = frozenset([neighbour_id, node_id, operator])
+                    self.construction_graph.add_edge(node_id,neighbour_id, operator = operator)
+                    self.pheromone_construction[edge] = random.random()
+
+        
+    def _initialize_nodes(self,X,y):
+        self.initial_graph = nx.Graph()
+        self.nodes = dict()
+        self.pheromone_initial = dict()
+        self.unique_values_ferature = {j:np.unique(X[:,j]) for j in range(X.shape[1])}
+        for j in range(X.shape[1]):
+            node_id = len(self.nodes)
+            self.nodes[node_id] = (j, None)
+            self.pheromone_initial[node_id] = random.random()
+            su = symmetrical_uncertainty(f1=X[:,j], f2=y)
+            self.initial_graph.add_node(node_id,value = (j,None), heuristic =su)
+            for node_id,value in enumerate(self.unique_values_ferature[j], start = len(self.nodes)):
+                self.nodes[node_id] = (j, value)
+                su = symmetrical_uncertainty(f1=(X[:, j] == value), f2=y)
+                self.initial_graph.add_node(node_id,value = (j,value),heuristic =su)
+                self.pheromone_initial[node_id] = random.random()
+        self.inverse_nodes = {v: k for k, v in self.nodes.items()}
+        self.original_ids = [self.inverse_nodes[(i,None)] for i in range(X.shape[1])]
+
+            
     def compute_graph(self, X, y, operators):
         random.seed(self.seed)
         np.random.seed(self.seed)
-        self._initialize_nodes(X)
-        self.inverse_nodes = {v: k for k, v in self.nodes.items()}
         self.operators = operators
-        self._initialize_neighbours_info(X,y,k = self.connections)
-        self._initialize_initial_matrix(X,y)
-        self._initialize_pheromone_matrix()
-        self.allowed_steps = ("CONSTRUCTION", "SELECTION")
-        self.original_ids = [self.inverse_nodes[(i,None)] for i in range(X.shape[1])]
+        self._initialize_nodes(X,y)
+        self._initialize_graph(X,y,k = self.connections)
         return self
 
     def get_neighbours(self, node, nodes_to_filter, step):
@@ -258,83 +326,48 @@ class AntFeatureGraphMI:
         neighbours = []
         pheromones = []
         if step == "CONSTRUCTION":
-            for neighbour_feature in self.neighbour_features_[feature]:
-                for operator in self.operators:
-                    neighbour_feature_first_index = self.nodes_per_feature[neighbour_feature][0]
-                    neighbour_feature_n_nodes = self.nodes_per_feature[neighbour_feature][1]
-                    for neighbour_id in range(neighbour_feature_first_index,neighbour_feature_first_index+neighbour_feature_n_nodes):
-                        values = self.nodes[neighbour_id]
-                        edge = frozenset([neighbour_id, node_id, operator])
-                        if edge in nodes_to_filter:
-                            continue
-                        if edge not in self.pheromone_matrix_attribute_completion:
-                            self.pheromone_matrix_attribute_completion[edge] = random.random()
-                        neighbours.append( (neighbour_id,values, operator))# (id,(feature_index,value),"OPERATOR")
-                        pheromones.append(self.pheromone_matrix_attribute_completion[edge])
-
-            current_node_feature_first_index = self.nodes_per_feature[feature][0]
-            current_node_n_nodes = self.nodes_per_feature[feature][1]
-            for neighbour_id in range(current_node_feature_first_index,current_node_feature_first_index+current_node_n_nodes):
-                values = self.nodes[neighbour_id]
-                operator="OR"
-                edge = frozenset([neighbour_id, node_id, operator])
-                if edge in nodes_to_filter or node_id==neighbour_id:
-                    continue
-                if edge not in self.pheromone_matrix_attribute_completion:
-                    self.pheromone_matrix_attribute_completion[edge] = random.random()
-                neighbours.append( (neighbour_id,values, operator))# (id,(feature_index,value),"OPERATOR")
-                pheromones.append(self.pheromone_matrix_attribute_completion[edge])
-        else:
-            #Adding neighbours that are from the same feature
-            neighbour_feature_first_index = self.nodes_per_feature[feature][0]
-            neighbour_feature_n_nodes = self.nodes_per_feature[feature][1]
-            #Add all operand nodes (same feature)
-            for neighbour_id in range(neighbour_feature_first_index,neighbour_feature_n_nodes+neighbour_feature_first_index):
-                values = self.nodes[neighbour_id]
-                edge = frozenset([neighbour_id, node_id])
-                if neighbour_id in nodes_to_filter: #If it is an original feature then it is going to be in nodes to filter. ow node_id==neighbour_id and value is None
-                    continue
-                if edge not in self.pheromone_matrix_selection:
-                    self.pheromone_matrix_selection[edge] = random.random()
-                neighbours.append( (neighbour_id,values))# (id,(feature_index,value),"OPERATOR")
-                pheromones.append(self.pheromone_matrix_selection[edge])
-
-            #Add neighbours from other features
-            for neighbour_feature in self.neighbour_features_[feature]:                
-                neighbour_feature_first_index = self.nodes_per_feature[neighbour_feature][0]
-                neighbour_feature_n_nodes = self.nodes_per_feature[neighbour_feature][1]
-                for neighbour_id in range(neighbour_feature_first_index,neighbour_feature_n_nodes+neighbour_feature_first_index):
-                    values = self.nodes[neighbour_id]
-                    edge = frozenset([neighbour_id, node_id])
-                    if neighbour_id in nodes_to_filter:
+            for neighbour_id in self.construction_graph.neighbors(node_id):
+                for operator in map(lambda x: x["operator"],self.construction_graph.get_edge_data(node_id,neighbour_id).values()):
+                    edge = frozenset([neighbour_id, node_id, operator])
+                    if edge in nodes_to_filter:
                         continue
-                    if edge not in self.pheromone_matrix_selection:
-                        self.pheromone_matrix_selection[edge] = random.random()
-                    neighbours.append( (neighbour_id,values))# (id,(feature_index,value),"OPERATOR")
-                    pheromones.append(self.pheromone_matrix_selection[edge])
-                
-            #Allow jumps to any other original feature
-            for neighbour_feature in range(len(self.nodes_per_feature)):
-                neighbour_id = self.inverse_nodes[(neighbour_feature,None)]
-                if neighbour_id in nodes_to_filter or neighbour_id ==node_id:
+                    neighbours.append((neighbour_id,self.nodes[neighbour_id],operator))
+                    pheromones.append(self.pheromone_construction[edge])
+
+        elif step == "SELECTION":
+            for neighbour_id in self.selection_graph.neighbors(node_id):
+                edge = frozenset([neighbour_id, node_id])
+                if edge in nodes_to_filter:
                     continue
-                edge = frozenset([neighbour_id,node_id])
-                values = self.nodes[neighbour_id] #This is always going to be none
-                if edge not in self.pheromone_matrix_selection:
-                    self.pheromone_matrix_selection[edge] = random.random()
-                neighbours.append((neighbour_id,values))
-                pheromones.append(self.pheromone_matrix_selection[edge])            
-        return neighbours,np.array(pheromones)
+                neighbours.append((neighbour_id,self.nodes[neighbour_id]))
+                pheromones.append(self.pheromone_selection[edge])
+        else:
+            raise ValueError("Unknown step")
+        return neighbours, np.array(pheromones)
 
     def get_initial_nodes(self,selected_nodes):
-        nodes_pheromone_heuristic = zip(sorted(list(self.nodes.items()),key=lambda x: x[0]), self.initial_pheromone, self.initial_heuristic) 
-        return list(zip(*(filter(lambda x: x[0][0] not in selected_nodes, nodes_pheromone_heuristic))))
+        data = self.initial_graph.nodes(data=True)
+        nodes= []
+        pheromones = np.zeros(len(self.initial_graph.nodes))
+        heuristic = np.zeros(len(self.initial_graph.nodes))
+        for i,node_data in enumerate(data):
+            node,attributes = node_data
+            if node not in selected_nodes:
+                nodes.append((node,attributes["value"]))
+                heuristic[i] = attributes["heuristic"]
+                pheromones[i] = self.pheromone_initial[node]
+        return nodes,pheromones,heuristic
+
+    def reset_pheromones(self):
+        self.pheromone_construction = { k: random.random() for k in self.pheromone_construction}
+        self.pheromone_selection = { k: random.random() for k in self.pheromone_selection}
+        self.pheromone_initial = { k: random.random() for k in self.pheromone_initial}
 
     def update_pheromone_matrix_evaporation(self, evaporation_rate):
         update_factor = (1-evaporation_rate)
-        self.pheromone_matrix_selection = {k:v*update_factor for k,v in self.pheromone_matrix_selection.items()}
-        self.pheromone_matrix_attribute_completion = {k:v*update_factor for k,v in self.pheromone_matrix_attribute_completion.items()}
-        self.initial_heuristic *= update_factor
+        self.pheromone_selection = {k:v*update_factor for k,v in self.pheromone_selection.items()}
+        self.pheromone_construction = {k:v*update_factor for k,v in self.pheromone_construction.items()}
+        self.pheromone_initial = {k:v*update_factor for k,v in self.pheromone_initial.items()}
 
 
     def intensify(self,features,intensification_factor,ant_score=1,use_initials=False):
@@ -347,21 +380,21 @@ class AntFeatureGraphMI:
                     continue
                 next_node = self.inverse_nodes[(feature.feature_index,None)]
                 if previous is None:
-                    self.initial_pheromone[next_node] += intensification_factor
+                    self.pheromone_initial[next_node] += intensification_factor
                 else:
-                    self.pheromone_matrix_selection[frozenset([previous,next_node])] += intensification_factor
+                    self.pheromone_selection[frozenset([previous,next_node])] += intensification_factor
             else:
                 operands = feature.operands
                 next_node = self.inverse_nodes[(operands[0].feature_index,operands[0].value)]
                 if previous is None:
-                    self.initial_pheromone[next_node] += intensification_factor
+                    self.pheromone_initial[next_node] += intensification_factor
                 else:
-                    self.pheromone_matrix_selection[frozenset([previous,next_node])] += intensification_factor
+                    self.pheromone_selection[frozenset([previous,next_node])] += intensification_factor
             
                 previous = next_node
                 next_node = self.inverse_nodes[(operands[1].feature_index,operands[1].value)]
                 edge = frozenset([previous,next_node,feature.operator])
-                self.pheromone_matrix_attribute_completion[edge] += intensification_factor
+                self.pheromone_construction[edge] += intensification_factor
             previous = next_node
         return
 

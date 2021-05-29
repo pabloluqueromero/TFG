@@ -29,18 +29,18 @@ datasets = [
     ["glass", "Type"],
     ["horse-colic", "surgery"],
     ["iris", "Species"],
-    ["krkp", "label"],
-    ["lenses", "ContactLens"],
-    ["mammographicmasses", "Label"],
-    ["mushroom", "class"],
-    ["pima", "Outcome"],
-    ["student", "Walc"],
-    ["voting", "Class Name"],
-    ["wine", "class"],
-    ["wisconsin", "diagnosis"],
-    ["yeast", "nuc"],
-    ["tictactoe", "class"],
-    ["spam", "class"]
+    # ["krkp", "label"],
+    # ["lenses", "ContactLens"],
+    # ["mammographicmasses", "Label"],
+    # ["mushroom", "class"],
+    # ["pima", "Outcome"],
+    # ["student", "Walc"],
+    # ["voting", "Class Name"],
+    # ["wine", "class"],
+    # ["wisconsin", "diagnosis"],
+    # ["yeast", "nuc"],
+    # ["tictactoe", "class"],
+    # ["spam", "class"]
 ]
 
 graphs_folder = "out/graphs/"
@@ -746,7 +746,8 @@ def execute_aco_1(data):
             "early_stopping": 4,
             "seed": seed,
             "graph_strategy": "mutual_info",
-            "update_strategy": "all",
+            "update_strategy": "best",
+            "final_selection":"BEST",
             "max_errors": 0,
             "save_features": False
         }
@@ -756,7 +757,7 @@ def execute_aco_1(data):
         "intensification_factor": [1,2],
         "alpha": [0.2],
         "beta": [0,0.1],
-        "use_initials": [False,True],
+        "use_initials": [False],
         "connections": [1]
         }
     params = []

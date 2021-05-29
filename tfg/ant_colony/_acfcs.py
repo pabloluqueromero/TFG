@@ -155,7 +155,6 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
             final_ant = FinalAnt(ant_id=0,alpha=self.alpha,beta=beta, metric = self.metric,use_initials = self.use_initials, cache_loo = self.cache_loo, cache_heuristic = self.cache_heuristic,step = self.step)
             final_ant.run(X=X,y=y,graph=self.afg,random_generator=random,parallel=self.parallel)
             self.best_features = final_ant.current_features
-        self.classifier_.fit(np.concatenate([ f.transform(X) for f in self.best_features],axis=1),y)
         self.backwards_fss(X,y)
         return self
 
@@ -204,7 +203,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
         check_is_fitted(self)
         improvement = True
         best_features = np.concatenate([ f.transform(X) for f in self.best_features],axis=1)
-        best_score = self.classifier_.leave_one_out_cross_val(best_features,y,fit=False)
+        best_score = self.classifier_.leave_one_out_cross_val(best_features,y,fit=True)
         while improvement and best_features.shape[1] >1:
             improvement = False
             feature = None

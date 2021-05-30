@@ -108,15 +108,16 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
             if self.verbose:
                 iterator.set_postfix({"best_score":best_score,
                                     "n_features":len(self.best_features),
-                                    "p_matrix_c": len(self.afg.pheromone_matrix_attribute_completion),
-                                    "p_matrix_s": len(self.afg.pheromone_matrix_selection),
+                                    "p_matrix_c": len(self.afg.pheromone_construction),
+                                    "p_matrix_s": len(self.afg.pheromone_selection),
                                     "distance_from_best": distance_from_best})
             ants = [Ant(ant_id=i,alpha=self.alpha,beta=beta, metric = self.metric, use_initials = self.use_initials, cache_loo = self.cache_loo, cache_heuristic = self.cache_heuristic,step = self.step) for i in range(self.ants)]
             beta*=self.beta_evaporation_rate
             results = []
             for ant in ants:
-                    results.append(ant.run(X=X,y=y,graph=self.afg,random_generator=random,parallel=self.parallel,max_errors = self.max_errors))
+                results.append(ant.run(X=X,y=y,graph=self.afg,random_generator=random,parallel=self.parallel,max_errors = self.max_errors))
             results = np.array(results)
+            
             self.afg.update_pheromone_matrix_evaporation(self.evaporation_rate)
             distance_from_best = np.mean(np.abs(results-best_score))
             best_ant = np.argmax(results)
@@ -137,13 +138,6 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
                 iterations_without_improvement+=1
                 if iterations_without_improvement > self.early_stopping:
                     break
-            
-        if self.save_features:
-            translate_features(features=self.best_features,
-                                feature_encoder = self.feature_encoder_,
-                                categories=self.categories_,
-                                path=self.path,
-                                filename=self.filename)
 
 
         self.classifier_ = NaiveBayes(encode_data=False,metric = self.metric)
@@ -156,6 +150,13 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
             final_ant.run(X=X,y=y,graph=self.afg,random_generator=random,parallel=self.parallel)
             self.best_features = final_ant.current_features
         self.backwards_fss(X,y)
+            
+        if self.save_features:
+            translate_features(features=self.best_features,
+                                feature_encoder = self.feature_encoder_,
+                                categories=self.categories_,
+                                path=self.path,
+                                filename=self.filename)
         return self
 
     def get_best_features(self,afg,X,y):

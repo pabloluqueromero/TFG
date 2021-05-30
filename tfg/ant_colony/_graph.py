@@ -8,6 +8,7 @@ from tfg.ant_colony import Ant
 from tfg.feature_construction import DummyFeatureConstructor
 from tfg.utils import symmetrical_uncertainty
 from tfg.utils import mutual_information_class_conditioned
+from tfg.feature_construction._constructor import create_feature
 
 ###################################################################################
 #
@@ -415,3 +416,20 @@ class AntFeatureGraphMI:
 
     def get_original_ids(self):
         return self.original_ids
+
+    def get_rank(self,):
+        all_feature_constructors = []
+        constructed_features = set()
+        for node_id in self.construction_graph.nodes:
+            node_element = self.nodes[node_id]
+            for neighbour_node_id in self.construction_graph.neighbors(node_id):
+                node_neighbour = self.nodes[neighbour_node_id]
+                for operator in self.operators:
+                    feature = create_feature(operator = operator, operands = [node_element, node_neighbour])
+                    hashed_feature = hash(feature)
+                    if hashed_feature in constructed_features:
+                        continue
+                    all_feature_constructors.append(feature)
+                    constructed_features.add(hashed_feature)
+        return all_feature_constructors
+

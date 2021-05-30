@@ -79,8 +79,8 @@ def acfs_score_comparison(datasets,
                     n_original_features = len(list(filter(lambda x: isinstance(
                         x, DummyFeatureConstructor), acfcs.best_features)))
                     n_selected = len(acfcs.best_features)
-                    selection_matrix = len(acfcs.afg.selection_graph)
-                    construction_matrix = len(acfcs.afg.construction_graph)
+                    selection_matrix = len(acfcs.afg.pheromone_selection)
+                    construction_matrix = len(acfcs.afg.pheromone_construction)
                     nodes = len(acfcs.afg.nodes)
                     # Update
                     nb_score[conf_index, i] = naive_bayes_score

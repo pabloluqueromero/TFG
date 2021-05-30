@@ -141,7 +141,7 @@ class Ant2:
         if len(self.current_features) > 0 :
             current_transformed_features_numpy = np.concatenate([f.transform(X) for f in self.current_features],axis=1)
             current_score = classifier.leave_one_out_cross_val(current_transformed_features_numpy,y,fit=True)
-            initial, pheromones, _ = graph.get_initial_nodes(selected_nodes,percentage = 0.5)
+            initial, pheromones, _ = graph.get_initial_nodes(selected_nodes,percentage = 1)
             current_su = compute_sufs_non_incremental([current_transformed_features_numpy[:,j] for j in range(current_transformed_features_numpy.shape[1])],y)
             heuristics = []
             for _,node in initial:
@@ -152,7 +152,7 @@ class Ant2:
                     su = self.compute_sufs_cached(current_su,current_transformed_features_numpy,X[:, node[0]] == node[1],self.current_features, FeatureOperand(*node), y, minimum=0)
                 heuristics.append(su)
         else:
-            initial, pheromones, heuristics = graph.get_initial_nodes(selected_nodes,percentage = 0.5)
+            initial, pheromones, heuristics = graph.get_initial_nodes(selected_nodes,percentage = 1)
             current_transformed_features_numpy = None
             # current_score = 0
             current_su = 0
@@ -175,7 +175,7 @@ class Ant2:
             else:
                 # Need to construct next feature and compute heuristic value for the feature to replace temporal su from half-var
                 neighbours, pheromones = graph.get_neighbours(
-                    selected_node, constructed_nodes, step="CONSTRUCTION",percentage = 0.5)
+                    selected_node, constructed_nodes, step="CONSTRUCTION",percentage = 1)
                 if len(neighbours) == 0:
                     break
                 if self.beta != 0:
@@ -248,7 +248,7 @@ class Ant2:
 
             # Select next
             neighbours, pheromones = graph.get_neighbours(
-                selected_node, selected_nodes, step="SELECTION",percentage = 0.5)
+                selected_node, selected_nodes, step="SELECTION",percentage = 1)
             su = []
             if len(neighbours)==0:
                 break

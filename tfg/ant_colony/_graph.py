@@ -9,6 +9,7 @@ from tfg.feature_construction import DummyFeatureConstructor
 from tfg.utils import symmetrical_uncertainty
 from tfg.utils import mutual_information_class_conditioned
 from tfg.feature_construction._constructor import create_feature
+import math as m
 
 ###################################################################################
 #
@@ -289,7 +290,6 @@ class AntFeatureGraphMI:
                     self.construction_graph.add_edge(node_id,neighbour_id, operator = operator)
                     self.pheromone_construction[edge] = random.random()
 
-        
     def _initialize_nodes(self,X,y):
         self.initial_graph = nx.Graph()
         self.nodes = dict()
@@ -319,7 +319,7 @@ class AntFeatureGraphMI:
         self._initialize_graph(X,y,k = self.connections)
         return self
 
-    def get_neighbours(self, node, nodes_to_filter, step):
+    def get_neighbours(self, node, nodes_to_filter, step, percentage = 1):
         if step not in self.allowed_steps:
             raise ValueError("Unknown step type: %s, expected one of %s." % (
                 step, self.allowed_steps))
@@ -343,9 +343,12 @@ class AntFeatureGraphMI:
                 pheromones.append(self.pheromone_selection[edge])
         else:
             raise ValueError("Unknown step")
+        if percentage < 1:
+            indexes = np.random.choice(np.arange(len(neighbours)),m.ceil(len(neighbours))*percentage)
+            return [neighbours[index] for index in indexes], np.array(pheromones)[indexes]
         return neighbours, np.array(pheromones)
 
-    def get_initial_nodes(self,selected_nodes):
+    def get_initial_nodes(self,selected_nodes,percentage=1):
         data = self.initial_graph.nodes(data=True)
         nodes= []
         pheromones = []
@@ -356,6 +359,10 @@ class AntFeatureGraphMI:
                 nodes.append((node,attributes["value"]))
                 heuristic.append(attributes["heuristic"])
                 pheromones.append(self.pheromone_initial[node])
+                
+        if percentage < 1:
+            indexes = np.random.choice(np.arange(len(nodes)),m.ceil(len(nodes))*percentage)
+            return [nodes[index] for index in indexes], np.array(pheromones)[indexes], np.array(heuristic)[indexes]
         return nodes,np.array(pheromones),np.array(heuristic)
 
     def reset_pheromones(self):
@@ -386,18 +393,24 @@ class AntFeatureGraphMI:
 
         for feature in features:
             if isinstance(feature,DummyFeatureConstructor):
+                if use_initials:
+                    continue
                 next_node = self.inverse_nodes[(feature.feature_index,None)]
                 if previous is None:
                     self.pheromone_initial[next_node] += intensification_factor
                 else:
-                    self.pheromone_selection[frozenset([previous,next_node])] += intensification_factor
+                    if frozenset([previous,next_node]) in self.pheromone_selection:
+                        #When incremental approach split point
+                        self.pheromone_selection[frozenset([previous,next_node])] += intensification_factor
             else:
                 operands = feature.operands
                 next_node = self.inverse_nodes[(operands[0].feature_index,operands[0].value)]
                 if previous is None:
                     self.pheromone_initial[next_node] += intensification_factor
                 else:
-                    self.pheromone_selection[frozenset([previous,next_node])] += intensification_factor
+                    if frozenset([previous,next_node]) in self.pheromone_selection:
+                        #When incremental approach split point
+                        self.pheromone_selection[frozenset([previous,next_node])] += intensification_factor
             
                 previous = next_node
                 next_node = self.inverse_nodes[(operands[1].feature_index,operands[1].value)]

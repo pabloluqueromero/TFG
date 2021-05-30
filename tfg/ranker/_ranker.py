@@ -12,6 +12,7 @@ from tfg.feature_construction import DummyFeatureConstructor
 from tfg.naive_bayes import NaiveBayes 
 from tfg.utils import backward_search, symmetrical_uncertainty
 from tqdm.autonotebook  import tqdm
+from tfg.ant_colony import AntFeatureGraphMI
 
 
 
@@ -102,7 +103,8 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
                  metric="accuracy",
                  use_initials=False,
                  max_err=0,
-                 prune=None):
+                 prune=None,
+                 use_graph=False):
         self.strategy = strategy
         self.block_size = max(block_size,1)
         self.encode_data = encode_data
@@ -116,6 +118,7 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
         allowed_strategies = ("eager","skip")
         self.use_initials = use_initials
         self.prune = prune
+        self.use_graph = use_graph
         if self.strategy not in allowed_strategies:
             raise ValueError("Unknown operator type: %s, expected one of %s." % (self.strategy, allowed_strategies))
 
@@ -132,7 +135,10 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
             X = X.to_numpy()
 
         check_X_y(X,y)
-        if self.prune is not None:
+        if self.use_graph:
+            graph = AntFeatureGraphMI(seed = 200, connections = 1).compute_graph(X,y,("AND","OR","XOR"))
+            self.all_feature_constructors = graph.get_rank()
+        elif self.prune is not None:
             from tfg.utils import mutual_information_class_conditioned
             from itertools import combinations
             combinaciones = list(combinations(list(range(X.shape[1])),2)) + [(i,i) for i in range(X.shape[1])]

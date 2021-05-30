@@ -15,24 +15,24 @@ n_splits = 3
 n_intervals = 5
 base_path = "./UCIREPO/"
 datasets = [
+    ["lenses", "ContactLens"],
     ["abalone", "Rings"],
-    ["anneal", "label"],
-    ["audiology", "label"],
-    ["balance-scale", "label"],
-    ["breast-cancer", "Class"],
-    ["car-evaluation", "safety"],
-    ["cmc", "Contraceptive"],
-    ["credit", "A16"],
-    ["cylinder-bands", "band type"],
-    ["derm", "class"],
-    ["electricgrid", "stabf"],
-    ["glass", "Type"],
-    ["horse-colic", "surgery"],
-    ["iris", "Species"],
+    # ["anneal", "label"],
+    # ["audiology", "label"],
+    # ["balance-scale", "label"],
+    # ["breast-cancer", "Class"],
+    # ["car-evaluation", "safety"],
+    # ["cmc", "Contraceptive"],
+    # ["credit", "A16"],
+    # ["cylinder-bands", "band type"],
+    # ["derm", "class"],
+    # ["electricgrid", "stabf"],
+    # ["glass", "Type"],
+    # ["horse-colic", "surgery"],
+    # ["iris", "Species"],
     # ["krkp", "label"],
-    # ["lenses", "ContactLens"],
     # ["mammographicmasses", "Label"],
-    # ["mushroom", "class"],
+    ["mushroom", "class"],
     # ["pima", "Outcome"],
     # ["student", "Walc"],
     # ["voting", "Class Name"],
@@ -175,6 +175,8 @@ def execute():
             execute_aco_1(data)
         elif method == 2:
             execute_aco_2(data)
+        elif method == 3:
+            execute_aco_3(data)
 
 
 def execute_genetic_1(data):
@@ -637,6 +639,7 @@ def execute_ranker_5(data):
         "max_features": [40],
         "max_iterations":[10,15],
         "prune":[1],
+        "use_graph":[True]
 
     }
     
@@ -726,8 +729,8 @@ def execute_ranker_4(data):
             print(f"Error in database {data_i[0]}: {str(e)}")
 
 
-def execute_aco_1(data):
-    print("ACO")
+def execute_aco_3(data):
+    print("ACO3")
 
     def_params = {
             "evaporation_rate": 0.1,
@@ -735,12 +738,11 @@ def execute_aco_1(data):
             "alpha": 0.5,
             "beta": 0.2,
             "beta_evaporation_rate": 0.05,
-            "early_stopping": 3,
             "graph_strategy": "mutual_info",
             "use_initials": True,
             "connections": 3,
             "verbose": 0,
-            "ants": 10,
+            "ants": 1,
             "beta_evaporation_rate": 0.05,
             "iterations": 10,
             "early_stopping": 4,
@@ -774,6 +776,7 @@ def execute_aco_1(data):
                                            datasets=[data_i],
                                            n_splits=n_splits,
                                            n_repeats=n_repeats,
+                                           method = 2,
                                            seed=seed,
                                            params=params,
                                            send_email=send_email_cond,
@@ -782,7 +785,67 @@ def execute_aco_1(data):
                                                            "TITLE": f"{data_i[0]}_{filename_suffix}",
                                                            "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}       
                                                            })
-            result.to_csv(f"final_result/aco_1/{data_i[0]}_{filename_suffix}.csv", index=False)
+            result.to_csv(f"final_result/aco_3/{data_i[0]}_{filename_suffix}.csv", index=False)
+        except Exception as e:
+            print(f"ERROR IN {data_i[0]} DB: {e} ")
+
+def execute_aco_3(data):
+    print("ACO3")
+
+    def_params = {
+            "evaporation_rate": 0.1,
+            "intensification_factor": 2,
+            "alpha": 0.5,
+            "beta": 0.2,
+            "beta_evaporation_rate": 0.05,
+            "graph_strategy": "mutual_info",
+            "use_initials": True,
+            "connections": 3,
+            "verbose": 0,
+            "ants": 1,
+            "beta_evaporation_rate": 0.05,
+            "iterations": 10,
+            "early_stopping": 4,
+            "seed": seed,
+            "graph_strategy": "mutual_info",
+            "update_strategy": "best",
+            "final_selection":"BEST",
+            "max_errors": 0,
+            "save_features": False
+        }
+    
+    grid = {
+        "evaporation_rate": [0.05],
+        "intensification_factor": [1,2],
+        "alpha": [0.2],
+        "beta": [0,0.1],
+        "use_initials": [False],
+        "connections": [1]
+        }
+    params = []
+
+    for conf in product_dict(**grid):
+        params.append(def_params.copy())
+        for key,val in conf.items():
+            params[-1][key] = val
+
+    print(f"Configurations: {len(params)}")
+    for data_i in data[::1]:
+        try:
+            result = acfs_score_comparison(base_path=base_path,
+                                           datasets=[data_i],
+                                           n_splits=n_splits,
+                                           n_repeats=n_repeats,
+                                           method = 2,
+                                           seed=seed,
+                                           params=params,
+                                           send_email=send_email_cond,
+                                           email_data={**email_data,
+                                                       **{
+                                                           "TITLE": f"{data_i[0]}_{filename_suffix}",
+                                                           "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}       
+                                                           })
+            result.to_csv(f"final_result/aco_3/{data_i[0]}_{filename_suffix}.csv", index=False)
         except Exception as e:
             print(f"ERROR IN {data_i[0]} DB: {e} ")
 
@@ -830,6 +893,7 @@ def execute_aco_2(data):
     print(f"Configurations: {len(params)}")
 
     data = [
+        ["lenses", "ContactLens"],
         ["abalone", "Rings"],
         ["anneal", "label"],
         ["audiology", "label"],
@@ -842,7 +906,6 @@ def execute_aco_2(data):
         ["horse-colic", "surgery"],
         ["iris", "Species"],
         ["krkp", "label"],
-        ["lenses", "ContactLens"],
         ["mammographicmasses", "Label"],
         ["mushroom", "class"],
         ["pima", "Outcome"],

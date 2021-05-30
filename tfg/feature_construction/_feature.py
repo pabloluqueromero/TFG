@@ -22,6 +22,8 @@ class FeatureOperator(Feature):
     def __hash__(self):
         return hash((self.operator,frozenset([hash(o) for o in self.operands])))
 
+    def to_tuple(self):
+        return (self.operator,self.operands[0].to_tuple(),self.operands[1].to_tuple())
 
     def fit(self,X):
         '''Symbolic as fit is not really needed'''
@@ -121,3 +123,8 @@ class FeatureOperand(Feature):
 
     def __hash__(self):
         return hash((self.feature_index,self.value))
+
+    
+    def to_tuple(self):
+        return (self.feature_index,self.value)
+        

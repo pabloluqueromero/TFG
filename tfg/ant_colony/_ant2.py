@@ -6,10 +6,10 @@ import math
 from tfg.naive_bayes import NaiveBayes
 from tfg.feature_construction import DummyFeatureConstructor, FeatureOperand
 from tfg.feature_construction._constructor import create_feature
-from tfg.utils import append_column_to_numpy, backward_search, compute_sufs, hash_features
+from tfg.utils import append_column_to_numpy, backward_search, compute_sufs, compute_sufs_non_incremental, hash_features
+from tfg.ant_colony import Ant
 
-
-class Ant:
+class Ant2:
     """ Basic building block for the Ant Colony Feature Construction and Selection algorithm.
 
     Logical representation of an ant which performs a heuristic exploration on the graph based on previous knowledge to
@@ -109,7 +109,7 @@ class Ant:
                 transformed_features, y, fit=False)
         return self.cache_loo[hashed_features]
 
-    def explore(self, X, y, graph, random_generator, parallel, max_errors=0):
+    def explore(self, X, y, graph, random_generator, parallel, initial_attributes = [], max_errors=0):
         np.random.seed(200)
         '''
         Search method that follows the following steps:
@@ -129,47 +129,45 @@ class Ant:
               GPU improvement would reduce the time of the exploration.
         '''
         self.step = math.ceil(math.log2(X.shape[1]))
-        self.current_features = []
+        self.current_features = initial_attributes
         selected_nodes = set()
         constructed_nodes = set()
+        for feature in self.current_features:
+            if isinstance(feature,DummyFeatureConstructor):
+                selected_nodes.add(graph.inverse_nodes[(feature.feature_index,None)])
+            else:
+                constructed_nodes.add(frozenset(feature.to_tuple()))
         classifier = NaiveBayes(encode_data=False, metric=self.metric)
-        current_score = np.NINF
-        score = 0
-        if self.use_initials:
-            self.current_features = [
-                DummyFeatureConstructor(j) for j in range(X.shape[1])]
-            classifier.fit(X, y)
+        if len(self.current_features) > 0 :
             current_transformed_features_numpy = np.concatenate([f.transform(X) for f in self.current_features],axis=1)
-            score = self.evaluate_loo(self.current_features, classifier, current_transformed_features_numpy, y)
-            current_score = score
-            selected_nodes.update(graph.get_original_ids())
-        if len(self.current_features) == 0 :
-            current_transformed_features_numpy = None
-        
-        if True:
-            initial, pheromones, heuristics = graph.get_initial_nodes(
-                selected_nodes)
-
-            probabilities = self.compute_probability(pheromones, heuristics)
-            index = self.choose_next(probabilities, random_generator)
-            node_id, selected_node = initial[index]
+            current_score = classifier.leave_one_out_cross_val(current_transformed_features_numpy,y,fit=True)
+            initial, pheromones, _ = graph.get_initial_nodes(selected_nodes,percentage = 0.5)
+            current_su = compute_sufs_non_incremental([current_transformed_features_numpy[:,j] for j in range(current_transformed_features_numpy.shape[1])],y)
+            heuristics = []
+            for _,node in initial:
+                if node[1] is None:
+                    # Original variable
+                    su = self.compute_sufs_cached(current_su,current_transformed_features_numpy,X[:, node[0]],self.current_features, DummyFeatureConstructor(node[0]), y, minimum=0)
+                else:
+                    su = self.compute_sufs_cached(current_su,current_transformed_features_numpy,X[:, node[0]] == node[1],self.current_features, FeatureOperand(*node), y, minimum=0)
+                heuristics.append(su)
         else:
-            node_id, selected_node, heuristic = graph.max_initial() if isinstance(self,FinalAnt) else graph.get_random_node()
-            heuristics =[heuristic]
-            index = 0
-
-
-
-        # SU variable contains the MIFS-SU for the selected variable
-        current_su = 0
+            initial, pheromones, heuristics = graph.get_initial_nodes(selected_nodes,percentage = 0.5)
+            current_transformed_features_numpy = None
+            # current_score = 0
+            current_su = 0
+        # score = current_score
+        probabilities = self.compute_probability(pheromones, heuristics)
+        index = self.choose_next(probabilities, random_generator)
+        node_id, selected_node = initial[index]
         su = heuristics[index]
 
-        is_fitted = self.use_initials
+        is_fitted = len(self.current_features) != 0
         feature_constructor = None
         n_errors = 0
         number_steps = 1
         while True:
-            current_score = score
+            # current_score = score
             if selected_node[1] is None:
                 # Original Feature
                 feature_constructor = DummyFeatureConstructor(selected_node[0])
@@ -177,17 +175,9 @@ class Ant:
             else:
                 # Need to construct next feature and compute heuristic value for the feature to replace temporal su from half-var
                 neighbours, pheromones = graph.get_neighbours(
-                    selected_node, constructed_nodes, step="CONSTRUCTION")
-                # Compute heuristic
-                # if not isinstance(self,FinalAnt):
-                #     indexes = np.random.choice(np.arange(0,len(neighbours)),min(5,len(neighbours)),replace=False,p=pheromones/pheromones.sum())
-                #     neighbours  = [ neighbours[index] for index in indexes]
-                #     pheromones  = pheromones[indexes]
-            
-
+                    selected_node, constructed_nodes, step="CONSTRUCTION",percentage = 0.5)
                 if len(neighbours) == 0:
                     break
-                # neighbours, pheromones = list(zip(*random.sample(list(zip(neighbours,pheromones)),math.ceil(len(neighbours)*0.25))))
                 if self.beta != 0:
                     if parallel:
                         with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -238,31 +228,30 @@ class Ant:
             else:
                 current_transformed_features_numpy = append_column_to_numpy(current_transformed_features_numpy,transformed_feature)
             if number_steps >= self.step:
-                score = self.evaluate_loo(
-                    self.current_features+[feature_constructor], classifier, current_transformed_features_numpy, y)
-                if score <= current_score:
-                    if n_errors >= max_errors:
-                        break
-                    else:
-                        n_errors += 1
-                        number_steps = 0
-                else:
-                    number_steps = 0
-                    n_errors = 0
+                # score = self.evaluate_loo(
+                #     self.current_features+[feature_constructor], classifier, current_transformed_features_numpy, y)
+                # if score <= current_score:
+                #     if n_errors >= max_errors:
+                #         break
+                #     else:
+                #         n_errors += 1
+                #         number_steps = 0
+                # else:
+                #     number_steps = 0
+                #     n_errors = 0
+                break
             else:
                 number_steps +=1
             current_su = su
             self.current_features.append(feature_constructor)
-            current_score = score
+            # current_score = score
 
             # Select next
             neighbours, pheromones = graph.get_neighbours(
-                selected_node, selected_nodes, step="SELECTION")
-            
-            # Compute heuristic
+                selected_node, selected_nodes, step="SELECTION",percentage = 0.5)
             su = []
-            # if len(neighbours)==0:
-            #     break
+            if len(neighbours)==0:
+                break
             if self.beta != 0:
                 for neighbour,pheromone in  zip(neighbours, pheromones):
                     if neighbour[1][1] is None:
@@ -291,12 +280,12 @@ class Ant:
 
             su = su[index]
             node_id, selected_node = neighbours[index][:2]
-        self.final_score = current_score
+        self.final_score = classifier.leave_one_out_cross_val(current_transformed_features_numpy,y,fit=False)
         return self.final_score
 
-    def run(self, X, y, graph, random_generator, parallel=False, max_errors=0):
+    def run(self, X, y, graph, random_generator, parallel=False, max_errors=0, initial_attributes = []):
         # print(f"Ant [{self.ant_id}] running in thread [{threading.get_ident()}]")
-        return self.explore(X, y, graph, random_generator, parallel, max_errors)
+        return self.explore(X, y, graph, random_generator, parallel, max_errors  = max_errors, initial_attributes = initial_attributes)
 
 
 class FinalAnt(Ant):

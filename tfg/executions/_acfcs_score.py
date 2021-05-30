@@ -11,6 +11,7 @@ from tfg.feature_construction import DummyFeatureConstructor
 from tfg.naive_bayes import NaiveBayes
 from tfg.ant_colony import ACFCS
 from tfg.utils import get_X_y_from_database
+from tfg.ant_colony._acfcs2 import ACFCS2
 
 
 def acfs_score_comparison(datasets, 
@@ -21,13 +22,14 @@ def acfs_score_comparison(datasets,
                         n_repeats=5,
                         n_intervals=5,
                         metric="accuracy",
+                        method=1,
                         send_email=False,
                         email_data = dict()):
     result = []
     dataset_tqdm = tqdm(datasets)
 
     # Instantiate ranker
-    acfcs = ACFCS(verbose=0,metric=metric)
+    acfcs = ACFCS(verbose=0,metric=metric) if method == 1 else ACFCS2(verbose=0,metric=metric)
     nb = NaiveBayes(encode_data=False,n_intervals=n_intervals,metric=metric)
     for database in dataset_tqdm:
         name, label = database

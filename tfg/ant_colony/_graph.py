@@ -344,7 +344,7 @@ class AntFeatureGraphMI:
         else:
             raise ValueError("Unknown step")
         if percentage < 1:
-            indexes = np.random.choice(np.arange(len(neighbours)),m.ceil(len(nodes)*percentage))
+            indexes = np.random.choice(np.arange(len(neighbours)),m.ceil(len(neighbours)*percentage))
             return [neighbours[index] for index in indexes], np.array(pheromones)[indexes]
         return neighbours, np.array(pheromones)
 

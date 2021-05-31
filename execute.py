@@ -3,6 +3,8 @@ import subprocess
 import argparse
 from time import sleep
 import numpy as np
+import itertools
+from tfg.utils._utils import get_X_y_from_database
 # 
 # py execute.py --email email --password password --algorithm ranker --method 1 --n_computers 1 --computer 1 --metric accuracy --filename RANKER_1_GRID
 
@@ -15,8 +17,8 @@ n_splits = 3
 n_intervals = 5
 base_path = "./UCIREPO/"
 datasets = [
-    # ["lenses", "ContactLens"],
-    # ["abalone", "Rings"],
+    ["lenses", "ContactLens"],
+    ["abalone", "Rings"],
     ["anneal", "label"],
     ["audiology", "label"],
     ["balance-scale", "label"],
@@ -43,6 +45,8 @@ datasets = [
     ["spam", "class"]
 ]
 
+
+
 graphs_folder = "out/graphs/"
 csv_folder = "out/csv/"
 
@@ -64,6 +68,7 @@ parser.add_argument("--computer", required=True, help="computer/n_computers")
 parser.add_argument("--metric", required=True, default="accuracy",help="scorer")
 parser.add_argument("--filename", default="",help="suffix for the")
 parser.add_argument("--no_email", action="store_true", help="dont_send_email")
+parser.add_argument("--numerical", action="store_true", help="dont_send_email")
 
 args = parser.parse_args()
 email = args.email
@@ -74,7 +79,22 @@ n_computers = int(args.n_computers)
 computer = int(args.computer)-1
 metric = args.metric
 send_email_cond = not args.no_email
+filter_numeric = args.numerical
 filename_suffix = args.filename
+
+
+if filter_numeric:
+    filtered_data = []
+    for name,label in datasets:
+        test = f"{name}.test.csv"
+        data = f"{name}.data.csv"
+        X, _ = get_X_y_from_database(base_path, name, data, test, label)
+        if X.select_dtypes("float").shape[1]>0:
+            # print(X.select_dtypes("float").shape[1])
+            filtered_data.append((name,label))
+    datasets = filtered_data
+
+    
 
 
 if computer >= n_computers:
@@ -88,7 +108,6 @@ email_data = {
     "PASSWORD": password,
 }
 
-import itertools
 def product_dict(**kwargs):
     keys = kwargs.keys()
     vals = kwargs.values()
@@ -276,124 +295,30 @@ def execute_genetic_1(data):
 
 def execute_genetic_2(data):
     print("GENETIC 2")
-    params = [{
-        "size": 20,
-        "seed": seed,
-        "individuals": 20,
-        "generations": 20,
-        "mutation_probability": 0.05,
-        "selection": "simple",
-        "combine": "elitism",
-        "n_intervals": 5,
-        "metric": metric,
-        "verbose": True, "flexible_logic": True, "mixed": False,
-        "encode": False
-    },
-        {
-            "size": 30,
-            "seed": seed,
-            "individuals": 20,
-            "generations": 20,
-            "mutation_probability": 0.1,
-            "selection": "simple",
-            "combine": "elitism",
-            "n_intervals": 5,
-            "metric": metric,
-            "verbose": True, "flexible_logic": True, "mixed": False,
-            "encode": False
-    }, {
-            "size": 20,
-            "seed": seed,
-            "individuals": 30,
-            "generations": 20,
-            "mutation_probability": 0.2,
-            "selection": "simple",
-            "combine": "elitism",
-            "n_intervals": 5,
-            "metric": metric,
-            "verbose": True, "flexible_logic": True, "mixed": False,
-            "encode": False
-    }, {
-            "size": 30,
-            "seed": seed,
-            "individuals": 30,
-            "generations": 20,
-            "mutation_probability": 0.3,
-            "selection": "simple",
-            "combine": "elitism",
-            "n_intervals": 5,
-            "metric": metric,
-            "verbose": True, "flexible_logic": True, "mixed": False,
-            "encode": False
-    }, {
-            "size": 20,
-            "seed": seed,
-            "individuals": 30,
-            "generations": 20,
-            "mutation_probability": 0.3,
-            "selection": "complex",
-            "combine": "elitism",
-            "n_intervals": 5,
-            "metric": metric,
-            "verbose": True, "flexible_logic": True, "mixed": False,
-            "encode": False
-    }, {
-            "size": 30,
-            "seed": seed,
-            "individuals": 30,
-            "generations": 20,
-            "mutation_probability": 0.3,
-            "selection": "complex",
-            "combine": "truncate",
-            "n_intervals": 5,
-            "metric": metric,
-            "verbose": True, "flexible_logic": True, "mixed": False,
-            "encode": False
-    }, {
-            "size": 20,
-            "seed": seed,
-            "individuals": 30,
-            "generations": 20,
-            "mutation_probability": 0.3,
-            "selection": "complex",
-            "combine": "elitism",
-            "n_intervals": 5,
-            "metric": metric,
-            "verbose": True, "flexible_logic": True, "mixed": False,
-            "encode": False
-    }, {
-            "size": 30,
-            "seed": seed,
-            "individuals": 30,
-            "generations": 20,
-            "mutation_probability": 0.3,
-            "selection": "complex",
-            "combine": "elitism",
-            "n_intervals": 5,
-            "metric": metric,
-            "verbose": True,
-            "flexible_logic": True,
-            "mixed": True,
-            "encode": False,
-            "mixed_percentage": 0.5
 
-    }, {
-            "size": 30,
+    grid = {
+        "mutation_probability": [0.01,0.05,0.1,0.2],
+        "selection": ["rank","proportionate"],
+        "combine": ["elitism","truncate"],
+        "mixed": [True,False]
+    }
+    
+    def_params = {
+            "size":np.nan,
             "seed": seed,
             "individuals": 30,
             "generations": 20,
-            "mutation_probability": 0.3,
-            "selection": "rank",
+            "mutation_probability": 0.01,
+            "selection": "proportionate",
             "combine": "elitism",
             "n_intervals": 5,
             "metric": metric,
-            "verbose": True,
-            "flexible_logic": True,
-            "mixed": True,
+            "verbose": False,
+            "mixed": False,
             "encode": False,
             "mixed_percentage": 0.3
 
-    }]
+    }
 
     for data_i in data[::1]:
         try:

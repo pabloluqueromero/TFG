@@ -302,7 +302,7 @@ def execute_genetic_2(data):
         "combine": ["elitism","truncate"],
         "mixed": [True,False]
     }
-    
+
     def_params = {
             "size":np.nan,
             "seed": seed,
@@ -319,6 +319,12 @@ def execute_genetic_2(data):
             "mixed_percentage": 0.3
 
     }
+    params = []
+    for conf in product_dict(**grid):
+        params.append(def_params.copy())
+        for key,val in conf.items():
+            params[-1][key] = val
+    print("Conf Size: ",len(params))
 
     for data_i in data[::1]:
         try:

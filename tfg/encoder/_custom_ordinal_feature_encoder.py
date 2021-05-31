@@ -66,8 +66,8 @@ class CustomOrdinalFeatureEncoder(TransformerMixin, BaseEstimator):
             if self.discretize:
                 numerical_features = X.select_dtypes("float")
                 if len(numerical_features.columns):
-                    self.discretizer = KBinsDiscretizer(n_bins=self.n_intervals,encode="ordinal",strategy="quantile")
-                    X.loc[:,numerical_features.columns] = self.discretizer.fit_transform(numerical_features)
+                    self.discretizer = KBinsDiscretizer(n_bins=self.n_intervals,encode="ordinal",strategy="kmeans")
+                    X.loc[:,numerical_features.columns] = self.discretizer.fit_transform(numerical_features.to_numpy())
                     X.loc[:,numerical_features.columns] = X.loc[:,numerical_features.columns].astype(int)
                     self.numerical_feature_index_ =  list(X.columns.get_indexer(numerical_features.columns))
             X = X.to_numpy()

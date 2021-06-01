@@ -5,8 +5,6 @@ from time import sleep
 import numpy as np
 import itertools
 from tfg.utils._utils import get_X_y_from_database
-# 
-# py execute.py --email email --password password --algorithm ranker --method 1 --n_computers 1 --computer 1 --metric accuracy --filename RANKER_1_GRID
 
 '''
 Global Variables
@@ -300,7 +298,8 @@ def execute_genetic_2(data):
         "mutation_probability": [0.01,0.05,0.1,0.2],
         "selection": ["rank","proportionate"],
         "combine": ["elitism","truncate"],
-        "mixed": [True,False]
+        "mixed": [True,False],
+        "backwards":[False]
     }
 
     def_params = {
@@ -691,7 +690,8 @@ def execute_aco_3(data):
         "alpha": [0.2],
         "beta": [0,0.1],
         "use_initials": [False],
-        "connections": [1]
+        "connections": [1],
+        "step":3,
         }
     params = []
 

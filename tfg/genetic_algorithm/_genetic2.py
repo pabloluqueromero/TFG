@@ -4,7 +4,6 @@ from tfg.utils import backward_search, compute_sufs, compute_sufs_non_incrementa
 from tfg.feature_construction import DummyFeatureConstructor, create_feature
 from tqdm.autonotebook import tqdm
 from time import time
-
 import numpy as np
 import pandas as pd
 
@@ -350,9 +349,10 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
         best_individual = self.execute_algorithm(X,y)
         self.best_features = best_individual
         self.classifier_ = NaiveBayes(encode_data=False,metric = self.metric)
-        self.classifier_.fit(self.transform(X,y)[0],y)
-        self.best_features = backward_search(X,y,self.best_features,self.classifier_)
-
+        if self.backwards:
+            self.best_features = backward_search(X,y,self.best_features,self.classifier_)
+        return self
+        
     def execute_algorithm(self,X,y):
         if self.mixed:
                 self.evaluate = self.evaluate_heuristic
@@ -446,6 +446,7 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
                  encode=True,
                  mixed=True,
                  mixed_percentage = 0.5,
+                 backwards = True
                  ):
         self.mixed_percentage = mixed_percentage
         self.size = size
@@ -459,6 +460,7 @@ class GeneticAlgorithmV2(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.individuals = individuals
         self.generations = generations
         self.use_initials = use_initials
+        self.backwards = backwards
         # self.crossover_probability = crossover_probability
         self.mutation_probability = mutation_probability
         self.selection = self.select_population_rank if "rank" in selection else self.select_population

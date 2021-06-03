@@ -40,7 +40,9 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
                 metric="accuracy",
                 use_initials=False,
                 final_selection="ALL",
-                encode=True):
+                encode=True,
+                backwards=True):
+        self.backwards = backwards
         self.step = step
         self.ants = ants
         self.evaporation_rate = evaporation_rate
@@ -149,7 +151,11 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
             final_ant = FinalAnt(ant_id=0,alpha=self.alpha,beta=beta, metric = self.metric,use_initials = self.use_initials, cache_loo = self.cache_loo, cache_heuristic = self.cache_heuristic,step = self.step)
             final_ant.run(X=X,y=y,graph=self.afg,random_generator=random,parallel=self.parallel)
             self.best_features = final_ant.current_features
-        self.backwards_fss(X,y)
+        best_features = np.concatenate([ f.transform(X) for f in self.best_features],axis=1)
+        self.classifier_.fit(best_features,y)
+
+        if self.backwards:
+            self.backwards_fss(X,y)
             
         if self.save_features:
             translate_features(features=self.best_features,
@@ -203,8 +209,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
     def backwards_fss(self,X,y):
         check_is_fitted(self)
         improvement = True
-        best_features = np.concatenate([ f.transform(X) for f in self.best_features],axis=1)
-        best_score = self.classifier_.leave_one_out_cross_val(best_features,y,fit=True)
+        best_score = self.classifier_.leave_one_out_cross_val(self.best_features,y,fit=True)
         while improvement and best_features.shape[1] >1:
             improvement = False
             feature = None

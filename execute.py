@@ -298,7 +298,7 @@ def execute_genetic_2(data):
         "mutation_probability": [0.01,0.05,0.1,0.2],
         "selection": ["rank","proportionate"],
         "combine": ["elitism","truncate"],
-        "mixed": [True,False],
+        "mixed": [True],
         "backwards":[False]
     }
 
@@ -315,7 +315,7 @@ def execute_genetic_2(data):
             "verbose": False,
             "mixed": False,
             "encode": False,
-            "mixed_percentage": 0.3
+            "mixed_percentage": 0.8
 
     }
     params = []
@@ -659,8 +659,8 @@ def execute_ranker_4(data):
             print(f"Error in database {data_i[0]}: {str(e)}")
 
 
-def execute_aco_3(data):
-    print("ACO3")
+def execute_aco_1(data):
+    print("ACO1")
 
     def_params = {
             "evaporation_rate": 0.1,
@@ -691,7 +691,7 @@ def execute_aco_3(data):
         "beta": [0,0.1],
         "use_initials": [False],
         "connections": [1],
-        "step":3,
+        "step":[3],
         }
     params = []
 
@@ -707,7 +707,7 @@ def execute_aco_3(data):
                                            datasets=[data_i],
                                            n_splits=n_splits,
                                            n_repeats=n_repeats,
-                                           method = 2,
+                                           method = 1,
                                            seed=seed,
                                            params=params,
                                            send_email=send_email_cond,

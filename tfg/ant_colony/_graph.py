@@ -7,7 +7,7 @@ import networkx as nx
 from tfg.ant_colony import Ant
 from tfg.feature_construction import DummyFeatureConstructor
 from tfg.utils import symmetrical_uncertainty
-from tfg.utils import mutual_information_class_conditioned
+from tfg.utils import mutual_information_class_conditioned, mutual_information_class_conditioned2
 from tfg.feature_construction._constructor import create_feature
 import math as m
 
@@ -217,8 +217,8 @@ class AntFeatureGraphMI:
             for j in range(X.shape[1]):
                 if i==j:
                     continue
-                mi.append((j,mutual_information_class_conditioned(X[:,j],X[:,i],y)))
-            mi = sorted(mi,key = lambda x:x[1],reverse=True) # The greater the mutual information score the more correlation which we want to avoid
+                mi.append((j,mutual_information_class_conditioned2(X[:,j],X[:,i],y)))
+            mi = sorted(mi,key = lambda x:x[1],reverse=False) # The greater the mutual information score the more correlation which we want to avoid
             self.neighbour_features_[i] = list(zip(*mi[:k]))[0]
         
         '''MULTIGRAPH CONSTRUCTION'''
@@ -261,6 +261,7 @@ class AntFeatureGraphMI:
                         self.selection_graph.add_edge(node_id,neighbour_id)
                         self.pheromone_selection[edge] = random.random()
                     
+                # --> We don't allow jumpt to other features anymore
                 #Allow jumps to any other original feature
                 for neighbour_feature in range(X.shape[1]):
                     neighbour_id = self.inverse_nodes[(neighbour_feature,None)]

@@ -252,7 +252,8 @@ class GeneticAlgorithmV3(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.best_features = best_individual
         self.classifier_ = NaiveBayes(encode_data=False,metric = self.metric)
         self.classifier_.fit(self.transform(X,y)[0],y)
-        self.best_features = backward_search(X,y,self.best_features,self.classifier_)
+        if self.backwards:
+            self.best_features = backward_search(X,y,self.best_features,self.classifier_)
         return self
 
     def execute_algorithm(self,X,y):
@@ -343,7 +344,9 @@ class GeneticAlgorithmV3(TransformerMixin,ClassifierMixin,BaseEstimator):
                  encode=True,
                  mixed=True,
                  mixed_percentage = 0.5,
+                 backwards = False
                  ):
+        self.backwards = backwards
         self.mixed_percentage = mixed_percentage
         self.size = size
         self.mixed = mixed

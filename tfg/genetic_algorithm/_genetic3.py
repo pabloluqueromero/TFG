@@ -187,11 +187,11 @@ class GeneticAlgorithmV3(TransformerMixin,ClassifierMixin,BaseEstimator):
         return new_population
 
     def elitism(self, population1, population2):
-        maximum = max(population2, key=lambda x: x[1])
-        minimum_index = min(enumerate(population1),
+        maximum = max(population1, key=lambda x: x[1])
+        minimum_index = min(enumerate(population2),
                             key=lambda x: x[1][1])[0]
-        population1[minimum_index] = maximum
-        return population1
+        population2[minimum_index] = maximum
+        return population2
 
     def truncation(self, population1, population2):
         return sorted(population1 + population2, reverse=True, key=lambda x: x[1])[:len(population1)]

@@ -295,7 +295,7 @@ def execute_genetic_2(data):
     print("GENETIC 2")
 
     grid = {
-        "mutation_probability": [0.01,0.05,0.1,0.2],
+        "mutation_probability": [0.05,0.1,0.2],
         "selection": ["rank","proportionate"],
         "combine": ["elitism","truncate"],
         "mixed": [True],

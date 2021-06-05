@@ -26,6 +26,7 @@ def genetic_score_comparison(datasets,
                             metric="accuracy",
                             send_email=False,
                             email_data = dict(),
+                            verbose=False,
                             version=1):
     result = []
     dataset_tqdm = tqdm(datasets)
@@ -56,7 +57,7 @@ def genetic_score_comparison(datasets,
             seed_tqdm = tqdm(rskf.split(X,y),
                              leave=False,
                              total=n_splits*n_repeats, 
-                             bar_format='{l_bar}{bar:20}{r_bar}{bar:-10b}')
+                             bar_format='{l_bar}{bar:20}{r_bar}{bar:-10b}') if verbose else rskf.split(X,y)
             i=-1
             for train_index, test_index  in seed_tqdm:
                 r.reset_evaluation()
@@ -74,7 +75,8 @@ def genetic_score_comparison(datasets,
                 naive_bayes_score = nb.score(X_test, y_test)
                 conf_index = 0
                 for conf in params:
-                    seed_tqdm.set_postfix({ "config": conf_index})
+                    if verbose:
+                        seed_tqdm.set_postfix({ "config": conf_index})
                     r.set_params(**conf)
                     r.fit(X_train, y_train)
                     

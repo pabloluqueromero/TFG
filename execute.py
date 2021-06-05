@@ -678,7 +678,7 @@ def execute_aco_1(data):
             "early_stopping": 4,
             "seed": seed,
             "graph_strategy": "mutual_info",
-            "update_strategy": "best",
+            "update_strategy": "all",
             "final_selection":"BEST",
             "max_errors": 0,
             "save_features": False

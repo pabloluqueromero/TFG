@@ -919,7 +919,7 @@ def execute_aco_1(data):
 
     print(f"Configurations: {len(params)}")
 
-    data = np.array_split(data, n_computers)[computer-1]
+    # data = np.array_split(data, n_computers)[computer-1]
     print(data)
     for data_i in data[::1]:
         try:

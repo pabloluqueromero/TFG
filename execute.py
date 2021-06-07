@@ -904,10 +904,11 @@ def execute_aco_1(data):
         "evaporation_rate": [0.05],
         "intensification_factor": [1,2],
         "alpha": [0.2],
-        "beta": [0,0.1,0.2],
+        "beta": [0,0.2],
         "use_initials": [False],
         "connections": [1],
-        "backwards":[False]
+        "backwards":[False],
+        "step":[3]
         }
     params = []
 

@@ -25,6 +25,7 @@ datasets = [
     ["cmc", "Contraceptive"],
     ["credit", "A16"],
     ["cylinder-bands", "band type"],
+    # ["hill_valley", "class"],
     ["derm", "class"],
     ["electricgrid", "stabf"],
     ["glass", "Type"],
@@ -93,7 +94,8 @@ if filter_numeric:
     datasets = filtered_data
 
     
-
+# l = ['abalone', 'anneal', 'audiology', 'balance-scale', 'breast-cancer', 'car-evaluation', 'cmc']
+# datasets = list(filter(lambda x: x[0] in l, datasets))
 
 if computer >= n_computers:
     print("ERROR: computer >= n_computers")
@@ -351,14 +353,15 @@ def execute_genetic_3(data):
     grid = {
         "mutation_probability": [0.01,0.05,0.1,0.2],
         "selection": ["rank","proportionate"],
-        "combine": ["elitism","truncate"],
-        "mixed": [True,False]
+        "combine": ["truncate"],
+        "mixed": [True,False],
+        "backwards":[False]
     }
     def_params = {
             "size":np.nan,
             "seed": seed,
-            "individuals": 30,
-            "generations": 20,
+            "individuals": 50,
+            "generations": 30,
             "mutation_probability": 0.01,
             "selection": "proportionate",
             "combine": "elitism",
@@ -367,7 +370,7 @@ def execute_genetic_3(data):
             "verbose": False,
             "mixed": False,
             "encode": False,
-            "mixed_percentage": 0.3
+            "mixed_percentage": 0.9
 
     }
 
@@ -377,7 +380,7 @@ def execute_genetic_3(data):
         for key,val in conf.items():
             params[-1][key] = val
     print("Conf Size: ",len(params))
-
+    print(data)
     for data_i in data:
         try:
             result = genetic_score_comparison(base_path=base_path,
@@ -407,7 +410,8 @@ def execute_ranker_1(data):
         "strategy": ["eager","skip"],
         "block_size": [1,2,5,7,10],
         "max_features": [40],
-        "max_iterations":[10,15]
+        "max_iterations":[10,15],
+        "use_initials": [True]
 
     }
     
@@ -447,7 +451,7 @@ def execute_ranker_1(data):
     #         "max_features": 40, "verbose": 0, "max_err": 0}
     # ]
 
-    for data_i in data[::1]:
+    for data_i in data[::-1]:
         try:
             result = ranker_score_comparison(base_path=base_path,
                                              datasets=[data_i],
@@ -672,7 +676,7 @@ def execute_aco_1(data):
             "use_initials": True,
             "connections": 3,
             "verbose": 0,
-            "ants": 1,
+            "ants": 5,
             "beta_evaporation_rate": 0.05,
             "iterations": 10,
             "early_stopping": 4,
@@ -813,7 +817,8 @@ def execute_aco_2(data):
         "alpha": [0.2],
         "beta": [0,0.1,0.2],
         "use_initials": [False],
-        "connections": [4]
+        "connections": [4],
+        "backwards":[False]
         }
     params = []
 
@@ -866,6 +871,70 @@ def execute_aco_2(data):
                                                            "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}       
                                                            })
             result.to_csv(f"final_result/aco_2/{data_i[0]}_{filename_suffix}.csv", index=False)
+        except Exception as e:
+            print(f"ERROR IN {data_i[0]} DB: {e} ")
+
+
+def execute_aco_1(data):
+    print("ACO1")
+
+    def_params = {
+            "evaporation_rate": 0.1,
+            "intensification_factor": 2,
+            "alpha": 0.5,
+            "beta": 0.2,
+            "beta_evaporation_rate": 0.05,
+            "early_stopping": 3,
+            "graph_strategy": "mutual_info",
+            "use_initials": True,
+            "connections": 3,
+            "verbose": 0,
+            "ants": 10,
+            "beta_evaporation_rate": 0.05,
+            "iterations": 10,
+            "early_stopping": 4,
+            "seed": seed,
+            "graph_strategy": "mutual_info",
+            "update_strategy": "all",
+            "max_errors": 0,
+            "save_features": False
+        }
+    
+    grid = {
+        "evaporation_rate": [0.05],
+        "intensification_factor": [1,2],
+        "alpha": [0.2],
+        "beta": [0,0.1,0.2],
+        "use_initials": [False],
+        "connections": [1],
+        "backwards":[False]
+        }
+    params = []
+
+    for conf in product_dict(**grid):
+        params.append(def_params.copy())
+        for key,val in conf.items():
+            params[-1][key] = val
+
+    print(f"Configurations: {len(params)}")
+
+    data = np.array_split(data, n_computers)[computer-1]
+    print(data)
+    for data_i in data[::1]:
+        try:
+            result = acfs_score_comparison(base_path=base_path,
+                                           datasets=[data_i],
+                                           n_splits=n_splits,
+                                           n_repeats=n_repeats,
+                                           seed=seed,
+                                           params=params,
+                                           send_email=send_email_cond,
+                                           email_data={**email_data,
+                                                       **{
+                                                           "TITLE": f"{data_i[0]}_{filename_suffix}",
+                                                           "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}       
+                                                           })
+            result.to_csv(f"final_result/aco_1/{data_i[0]}_{filename_suffix}.csv", index=False)
         except Exception as e:
             print(f"ERROR IN {data_i[0]} DB: {e} ")
 

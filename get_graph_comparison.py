@@ -65,12 +65,13 @@ def graph_sizes(datasets,
             results[-1].append(np.mean(edges_selection[index,:]))
 
 
-    columns = ["Database","Nodes"]
-    for connection in connections_list:
-        columns.append(f"{connection} - Construction")
-        columns.append(f"{connection} - Selection")
+        columns = ["Database","Nodes"]
+        for connection in connections_list:
+            columns.append(f"{connection} - Construction")
+            columns.append(f"{connection} - Selection")
 
-    result = pd.DataFrame(results, columns=columns)
+        result = pd.DataFrame(results, columns=columns)
+        result.to_csv(f"{name}_graph_size.csv",index=False)
     return result
 
 

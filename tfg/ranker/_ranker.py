@@ -14,7 +14,20 @@ from tfg.utils import backward_search, symmetrical_uncertainty
 from tqdm.autonotebook  import tqdm
 from tfg.ant_colony import AntFeatureGraphMI
 
+def memoize(f):
+    cache = dict()
+    def g(classifier,selected_features,current_data,y,fit=True):
+        hashable_individual = tuple(selected_features)
+        hash_individual = hash(hashable_individual)
+        if hash_individual not in cache:
+            cache[hash_individual] = f(classifier, y,fit=fit)
+        elif fit:
+            classifier.fit(current_data,y)
+        return cache[hash_individual]
+    return g
 
+def evaluate_leave_one_out_cross_val(classifier,selected_features,current_data,y,fit=True):
+    return classifier.leave_one_out_cross_val(current_data,y,fit)
 
 class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstimator):
     """First proposal of a hybrid Ranker and Wrapper.
@@ -176,7 +189,9 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
     def predict(self,X,y):
         X,y = self.transform(X,y)
         return self.classifier.predict(X,y)
-
+    
+    def reset_evaluation(self):
+        self.evaluate_leave_one_out_cross_val= memoize(evaluate_leave_one_out_cross_val)
         
     def predict_proba(self,X,y):
         X,y = self.transform(X,y)
@@ -200,8 +215,8 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
            from copy import deepcopy
            current_features =  deepcopy(self.initial_backward_features)
            current_data = np.concatenate([f.transform(X) for f in current_features],axis=1)
-           self.classifier.fit(current_data,y)
-           current_score = self.classifier.leave_one_out_cross_val(current_data,y,fit=False)
+           current_score = self.evaluate_leave_one_out_cross_val(self.classifier,current_features,current_data,y,fit=True)
+        #    current_score = self.classifier.leave_one_out_cross_val(current_data,y,fit=True)
         else:
             rank_iter = iter(self.rank)
         if self.verbose:
@@ -232,7 +247,7 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
             new_X = np.concatenate(new_X,axis=1)
             if iteration==1 and not self.use_initials:
                 current_data = new_X
-                current_score = self.classifier.leave_one_out_cross_val(current_data,y,fit=True)
+                current_score = self.evaluate_leave_one_out_cross_val(self.classifier,selected_features,current_data,y,fit=True)
                 current_features = selected_features
                 first_iteration=False
                 if self.max_iterations <= iteration or (len(current_features) + self.block_size) > self.max_features:
@@ -240,7 +255,7 @@ class RankerLogicalFeatureConstructor(TransformerMixin,ClassifierMixin,BaseEstim
                 continue
             data = np.concatenate([current_data,new_X],axis=1)
             self.classifier.add_features(new_X,y)
-            score = self.classifier.leave_one_out_cross_val(data,y,fit=False)
+            score = self.evaluate_leave_one_out_cross_val(self.classifier,current_features + selected_features,data,y,fit=False)
             if score > current_score :
                 current_score = score
                 current_data = data

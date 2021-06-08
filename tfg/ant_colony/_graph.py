@@ -217,8 +217,8 @@ class AntFeatureGraphMI:
             for j in range(X.shape[1]):
                 if i==j:
                     continue
-                mi.append((j,mutual_information_class_conditioned2(X[:,j],X[:,i],y)))
-            mi = sorted(mi,key = lambda x:x[1],reverse=False) # The greater the mutual information score the more correlation which we want to avoid
+                mi.append((j,mutual_information_class_conditioned(X[:,j],X[:,i],y)))
+            mi = sorted(mi,key = lambda x:x[1],reverse=True) # The greater the mutual information score the more correlation which we want to avoid
             self.neighbour_features_[i] = list(zip(*mi[:k]))[0]
         
         '''MULTIGRAPH CONSTRUCTION'''

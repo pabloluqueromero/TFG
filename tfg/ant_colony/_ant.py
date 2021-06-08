@@ -54,7 +54,7 @@ class Ant:
             cumulative_sum += probabilities[index]
             index += 1
         return index-1
-        # return np.random.choice(np.arange(len(probabilities)),1,p = probabilities)
+        # return np.random.choice(np.arange(len(probabilities)),1,p = probabilities)[0]
 
     def compute_probability(self, pheromones, heuristics):
         '''Computes the probability based on the formula
@@ -110,7 +110,7 @@ class Ant:
         return self.cache_loo[hashed_features]
 
     def explore(self, X, y, graph, random_generator, parallel, max_errors=0):
-        np.random.seed(200)
+        # np.random.seed(200)
         '''
         Search method that follows the following steps:
             1. The initial node is connected to all the others (roulette wheel selection is performed)
@@ -136,8 +136,7 @@ class Ant:
         current_score = np.NINF
         score = 0
         if self.use_initials:
-            self.current_features = [
-                DummyFeatureConstructor(j) for j in range(X.shape[1])]
+            self.current_features = [DummyFeatureConstructor(j) for j in range(X.shape[1])]
             classifier.fit(X, y)
             current_transformed_features_numpy = np.concatenate([f.transform(X) for f in self.current_features],axis=1)
             score = self.evaluate_loo(self.current_features, classifier, current_transformed_features_numpy, y)
@@ -146,17 +145,12 @@ class Ant:
         if len(self.current_features) == 0 :
             current_transformed_features_numpy = None
         
-        if True:
-            initial, pheromones, heuristics = graph.get_initial_nodes(
-                selected_nodes)
+        initial, pheromones, heuristics = graph.get_initial_nodes(
+            selected_nodes)
 
-            probabilities = self.compute_probability(pheromones, heuristics)
-            index = self.choose_next(probabilities, random_generator)
-            node_id, selected_node = initial[index]
-        else:
-            node_id, selected_node, heuristic = graph.max_initial() if isinstance(self,FinalAnt) else graph.get_random_node()
-            heuristics =[heuristic]
-            index = 0
+        probabilities = self.compute_probability(pheromones, heuristics)
+        index = self.choose_next(probabilities, random_generator)
+        node_id, selected_node = initial[index]
 
 
 
@@ -245,16 +239,14 @@ class Ant:
                         break
                     else:
                         n_errors += 1
-                        number_steps = 0
                 else:
-                    number_steps = 0
                     n_errors = 0
+                number_steps = 0
             else:
                 number_steps +=1
             current_su = su
             self.current_features.append(feature_constructor)
             current_score = score
-
             # Select next
             neighbours, pheromones = graph.get_neighbours(
                 selected_node, selected_nodes, step="SELECTION")
@@ -270,8 +262,8 @@ class Ant:
                         su.append(self.compute_sufs_cached(current_su, current_transformed_features_numpy, X[:, neighbour[1][0]],self.current_features,DummyFeatureConstructor(neighbour[1][0]), y, minimum=0))
                     else:
                         # This is a temporal variable that will not be finally selected but only used to calculate the heuristic
-                        su.append(self.compute_sufs_cached(current_su,current_transformed_features_numpy,X[:, neighbour[1][0]] == neighbour[1][1],self.current_features,FeatureOperand(feature_index = neighbour[1][0], value = neighbour[1][1]) ,y,minimum=0))
-                        # su.append(1)
+                        # su.append(self.compute_sufs_cached(current_su,current_transformed_features_numpy,X[:, neighbour[1][0]] == neighbour[1][1],self.current_features,FeatureOperand(feature_index = neighbour[1][0], value = neighbour[1][1]) ,y,minimum=0))
+                        su.append(1)
                         #Look two steps ahead
                         # neighbours_next, _ = graph.get_neighbours(
                         #     neighbour[1], constructed_nodes, step="CONSTRUCTION")

@@ -115,7 +115,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
                                     "p_matrix_s": len(self.afg.pheromone_selection),
                                     "distance_from_best": distance_from_best})
             ants = [Ant(ant_id=i,alpha=self.alpha,beta=beta, metric = self.metric, use_initials = self.use_initials, cache_loo = self.cache_loo, cache_heuristic = self.cache_heuristic,step = self.step) for i in range(self.ants)]
-            beta*=self.beta_evaporation_rate
+            beta*=(1-self.beta_evaporation_rate)
             results = []
             for ant in ants:
                 results.append(ant.run(X=X,y=y,graph=self.afg,random_generator=random,parallel=self.parallel,max_errors = self.max_errors))
@@ -126,13 +126,13 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
             best_ant = np.argmax(results)
             if self.update_strategy == "best":
                 ant = ants[best_ant]
-                self.afg.intensify(ant.current_features,self.intensification_factor,self.use_initials)
+                self.afg.intensify(ant.current_features,self.intensification_factor,1,self.use_initials)
             else:
                 for ant_score,ant in zip(results,ants):
                     self.afg.intensify(ant.current_features,self.intensification_factor,ant_score,self.use_initials)
 
 
-            if results[best_ant] > best_score:
+            if results[best_ant] >= best_score:
                 iterations_without_improvement = 0
                 ant = ants[best_ant]
                 best_score = results[best_ant]

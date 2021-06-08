@@ -667,6 +667,7 @@ def execute_aco_1(data):
     print("ACO1")
 
     def_params = {
+            "encode":False,
             "evaporation_rate": 0.1,
             "intensification_factor": 2,
             "alpha": 0.5,
@@ -676,8 +677,7 @@ def execute_aco_1(data):
             "use_initials": True,
             "connections": 3,
             "verbose": 0,
-            "ants": 5,
-            "beta_evaporation_rate": 0.05,
+            "ants": 2,
             "iterations": 10,
             "early_stopping": 4,
             "seed": seed,
@@ -690,9 +690,9 @@ def execute_aco_1(data):
     
     grid = {
         "evaporation_rate": [0.05],
-        "intensification_factor": [1,2],
+        "intensification_factor": [1],
         "alpha": [0.2],
-        "beta": [0,0.1],
+        "beta": [0,0.2],
         "use_initials": [False],
         "connections": [1],
         "step":[3],
@@ -721,7 +721,7 @@ def execute_aco_1(data):
                                                            "TITLE": f"{data_i[0]}_{filename_suffix}",
                                                            "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}       
                                                            })
-            result.to_csv(f"final_result/aco_3/{data_i[0]}_{filename_suffix}.csv", index=False)
+            result.to_csv(f"final_result/aco_1/{data_i[0]}_{filename_suffix}.csv", index=False)
         except Exception as e:
             print(f"ERROR IN {data_i[0]} DB: {e} ")
 
@@ -738,7 +738,7 @@ def execute_aco_3(data):
             "use_initials": True,
             "connections": 3,
             "verbose": 0,
-            "ants": 1,
+            "ants": 10,
             "beta_evaporation_rate": 0.05,
             "iterations": 10,
             "early_stopping": 4,
@@ -830,17 +830,17 @@ def execute_aco_2(data):
     print(f"Configurations: {len(params)}")
 
     data = [
-        ["lenses", "ContactLens"],
-        ["abalone", "Rings"],
-        ["anneal", "label"],
-        ["audiology", "label"],
-        ["balance-scale", "label"],
-        ["breast-cancer", "Class"],
-        ["car-evaluation", "safety"],
-        ["derm", "class"],
-        ["electricgrid", "stabf"],
-        ["glass", "Type"],
-        ["horse-colic", "surgery"],
+        # ["lenses", "ContactLens"],
+        # ["abalone", "Rings"],
+        # ["anneal", "label"],
+        # ["audiology", "label"],
+        # ["balance-scale", "label"],
+        # ["breast-cancer", "Class"],
+        # ["car-evaluation", "safety"],
+        # ["derm", "class"],
+        # ["electricgrid", "stabf"],
+        # ["glass", "Type"],
+        # ["horse-colic", "surgery"],
         ["iris", "Species"],
         ["krkp", "label"],
         ["mammographicmasses", "Label"],
@@ -871,71 +871,6 @@ def execute_aco_2(data):
                                                            "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}       
                                                            })
             result.to_csv(f"final_result/aco_2/{data_i[0]}_{filename_suffix}.csv", index=False)
-        except Exception as e:
-            print(f"ERROR IN {data_i[0]} DB: {e} ")
-
-
-def execute_aco_1(data):
-    print("ACO1")
-
-    def_params = {
-            "evaporation_rate": 0.1,
-            "intensification_factor": 2,
-            "alpha": 0.5,
-            "beta": 0.2,
-            "beta_evaporation_rate": 0.05,
-            "early_stopping": 3,
-            "graph_strategy": "mutual_info",
-            "use_initials": True,
-            "connections": 3,
-            "verbose": 0,
-            "ants": 10,
-            "beta_evaporation_rate": 0.05,
-            "iterations": 10,
-            "early_stopping": 4,
-            "seed": seed,
-            "graph_strategy": "mutual_info",
-            "update_strategy": "all",
-            "max_errors": 0,
-            "save_features": False
-        }
-    
-    grid = {
-        "evaporation_rate": [0.05],
-        "intensification_factor": [1,2],
-        "alpha": [0.2],
-        "beta": [0,0.2],
-        "use_initials": [False],
-        "connections": [1],
-        "backwards":[False],
-        "step":[3]
-        }
-    params = []
-
-    for conf in product_dict(**grid):
-        params.append(def_params.copy())
-        for key,val in conf.items():
-            params[-1][key] = val
-
-    print(f"Configurations: {len(params)}")
-
-    # data = np.array_split(data, n_computers)[computer-1]
-    print(data)
-    for data_i in data[::1]:
-        try:
-            result = acfs_score_comparison(base_path=base_path,
-                                           datasets=[data_i],
-                                           n_splits=n_splits,
-                                           n_repeats=n_repeats,
-                                           seed=seed,
-                                           params=params,
-                                           send_email=send_email_cond,
-                                           email_data={**email_data,
-                                                       **{
-                                                           "TITLE": f"{data_i[0]}_{filename_suffix}",
-                                                           "FILENAME": f"{data_i[0]}_{filename_suffix}.csv"}       
-                                                           })
-            result.to_csv(f"final_result/aco_1/{data_i[0]}_{filename_suffix}.csv", index=False)
         except Exception as e:
             print(f"ERROR IN {data_i[0]} DB: {e} ")
 

@@ -262,8 +262,8 @@ class Ant:
                         su.append(self.compute_sufs_cached(current_su, current_transformed_features_numpy, X[:, neighbour[1][0]],self.current_features,DummyFeatureConstructor(neighbour[1][0]), y, minimum=0))
                     else:
                         # This is a temporal variable that will not be finally selected but only used to calculate the heuristic
-                        # su.append(self.compute_sufs_cached(current_su,current_transformed_features_numpy,X[:, neighbour[1][0]] == neighbour[1][1],self.current_features,FeatureOperand(feature_index = neighbour[1][0], value = neighbour[1][1]) ,y,minimum=0))
-                        su.append(1)
+                        su.append(self.compute_sufs_cached(current_su,current_transformed_features_numpy,X[:, neighbour[1][0]] == neighbour[1][1],self.current_features,FeatureOperand(feature_index = neighbour[1][0], value = neighbour[1][1]) ,y,minimum=0))
+                        # su.append(1)
                         #Look two steps ahead
                         # neighbours_next, _ = graph.get_neighbours(
                         #     neighbour[1], constructed_nodes, step="CONSTRUCTION")
@@ -283,7 +283,10 @@ class Ant:
 
             su = su[index]
             node_id, selected_node = neighbours[index][:2]
-        self.final_score = current_score
+        if current_transformed_features_numpy.shape[1] > len(self.current_features):
+            current_transformed_features_numpy = np.delete(current_transformed_features_numpy,-1,axis=1)
+        self.final_score = self.evaluate_loo(self.current_features, classifier, current_transformed_features_numpy, y)
+                
         return self.final_score
 
     def run(self, X, y, graph, random_generator, parallel=False, max_errors=0):

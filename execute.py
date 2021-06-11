@@ -677,7 +677,7 @@ def execute_aco_1(data):
             "use_initials": True,
             "connections": 3,
             "verbose": 0,
-            "ants": 2,
+            "ants": 5,
             "iterations": 10,
             "early_stopping": 4,
             "seed": seed,
@@ -691,11 +691,11 @@ def execute_aco_1(data):
     grid = {
         "evaporation_rate": [0.05],
         "intensification_factor": [1],
-        "alpha": [0.2],
-        "beta": [0,0.2],
+        "alpha": [0],
+        "beta": [0],
+        "ants":[2,5],
         "use_initials": [False],
         "connections": [1],
-        "step":[3],
         "backwards":[False],
         }
     params = []

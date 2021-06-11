@@ -26,22 +26,22 @@ datasets = [
     ["credit", "A16"],
     ["cylinder-bands", "band type"],
     # ["hill_valley", "class"],
-    ["derm", "class"],
-    ["electricgrid", "stabf"],
-    ["glass", "Type"],
-    ["horse-colic", "surgery"],
-    ["iris", "Species"],
-    ["krkp", "label"],
-    ["mammographicmasses", "Label"],
+    # ["derm", "class"],
+    # ["electricgrid", "stabf"],
+    # ["glass", "Type"],
+    # ["horse-colic", "surgery"],
+    # ["iris", "Species"],
+    # ["krkp", "label"],
+    # ["mammographicmasses", "Label"],
     ["mushroom", "class"],
     ["pima", "Outcome"],
     ["student", "Walc"],
     ["voting", "Class Name"],
     ["wine", "class"],
-    ["wisconsin", "diagnosis"],
-    ["yeast", "nuc"],
-    ["tictactoe", "class"],
-    ["spam", "class"]
+    # ["wisconsin", "diagnosis"],
+    # ["yeast", "nuc"],
+    # ["tictactoe", "class"],
+    # ["spam", "class"]
 ]
 
 
@@ -351,17 +351,17 @@ def execute_genetic_2(data):
 def execute_genetic_3(data):
     print("GENETIC 3")
     grid = {
-        "mutation_probability": [0.01,0.05,0.1,0.2],
+        "mutation_probability": [0.05,0.1,0.2],
         "selection": ["rank","proportionate"],
-        "combine": ["truncate"],
-        "mixed": [True,False],
+        "combine": ["truncate","elitism"],
+        "mixed": [True],
         "backwards":[False]
     }
     def_params = {
             "size":np.nan,
             "seed": seed,
-            "individuals": 50,
-            "generations": 30,
+            "individuals": 30,
+            "generations": 20,
             "mutation_probability": 0.01,
             "selection": "proportionate",
             "combine": "elitism",
@@ -370,7 +370,7 @@ def execute_genetic_3(data):
             "verbose": False,
             "mixed": False,
             "encode": False,
-            "mixed_percentage": 0.9
+            "mixed_percentage": 0.3
 
     }
 
@@ -691,8 +691,8 @@ def execute_aco_1(data):
     grid = {
         "evaporation_rate": [0.05],
         "intensification_factor": [1],
-        "alpha": [0],
-        "beta": [0],
+        "alpha": [0.2],
+        "beta": [0,0.2],
         "ants":[2,5],
         "use_initials": [False],
         "connections": [1],

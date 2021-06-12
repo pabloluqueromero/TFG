@@ -251,7 +251,7 @@ class GeneticAlgorithmV3(TransformerMixin,ClassifierMixin,BaseEstimator):
         best_individual = self.execute_algorithm(X,y)
         self.best_features = best_individual
         self.classifier_ = NaiveBayes(encode_data=False,metric = self.metric)
-        self.classifier_.fit(self.transform(X,y)[0],y)
+        self.classifier_.fit(np.concatenate([feature.transform(X) for feature in self.best_features],axis=1),y)
         if self.backwards:
             self.best_features = backward_search(X,y,self.best_features,self.classifier_)
         return self

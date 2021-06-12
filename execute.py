@@ -317,7 +317,7 @@ def execute_genetic_2(data):
             "verbose": False,
             "mixed": False,
             "encode": False,
-            "mixed_percentage": 0.8
+            "mixed_percentage": 0.5
 
     }
     params = []
@@ -370,7 +370,7 @@ def execute_genetic_3(data):
             "verbose": False,
             "mixed": False,
             "encode": False,
-            "mixed_percentage": 0.3
+            "mixed_percentage": 0.5
 
     }
 
@@ -693,7 +693,7 @@ def execute_aco_1(data):
         "intensification_factor": [1],
         "alpha": [0.2],
         "beta": [0,0.2],
-        "ants":[2,5],
+        "ants":[2],
         "use_initials": [False],
         "connections": [1],
         "backwards":[False],

@@ -121,7 +121,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_
 
 
 #Classify
-clf = ACFCS(seed = 0)
+clf = ACFCS(seed = 0, ants = 5, iteration = 10)
 clf.fit(X_train, y_train)
 y_pred = clf.predict(X_test)
 ```

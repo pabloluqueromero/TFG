@@ -317,7 +317,7 @@ def execute_genetic_2(data):
             "verbose": False,
             "mixed": False,
             "encode": False,
-            "mixed_percentage": 0.8
+            "mixed_percentage": 0.5
 
     }
     params = []
@@ -370,7 +370,7 @@ def execute_genetic_3(data):
             "verbose": False,
             "mixed": False,
             "encode": False,
-            "mixed_percentage": 0.9
+            "mixed_percentage": 0.5
 
     }
 

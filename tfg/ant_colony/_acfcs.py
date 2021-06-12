@@ -3,11 +3,14 @@ import random
 import numpy as np
 import pandas as pd
 
+#Sklearn imports
 from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
 from sklearn.utils.validation import check_is_fitted
 
+#Auxiliary imports
 from tqdm.autonotebook import tqdm
 
+#TFG imporst
 from tfg.ant_colony import AntFeatureGraph
 from tfg.ant_colony import AntFeatureGraphMI
 from tfg.ant_colony import Ant, FinalAnt

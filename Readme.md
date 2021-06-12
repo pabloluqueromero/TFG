@@ -125,7 +125,6 @@ clf = ACFCS(seed = 0)
 clf.fit(X_train, y_train)
 y_pred = clf.predict(X_test)
 ```
-
 <!--
 Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
 -->

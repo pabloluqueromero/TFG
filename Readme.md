@@ -27,24 +27,17 @@
 <br />
 <p align="center">
   <a href="https://github.com/github_username/repo_name">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Aco_shortpath.svg/330px-Aco_shortpath.svg.png" alt="Logo" width="210">
+    <!-- <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Aco_shortpath.svg/330px-Aco_shortpath.svg.png" alt="Logo" width="210"> -->
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Hypercubematrix_binary.svg/180px-Hypercubematrix_binary.svg.png" alt="Logo" width="210">
   </a>
 
   <h3 align="center">Logical Feature construction for Naive Bayes</h3>
 
   <p align="center">
-    Welcome to my bachelor's final degree project. The aim is to explore different techniques for feature construction and selection using logical operators such as 
-  XOR, AND and OR to improve the performance of the famous NaiveBayes classifier. It is a work in progress and for now two different methods have been explored both are based
-  on a hybrid approach between wrapper and filter measures.
+    Welcome to my Bachelor's Final degree project. The aim is to explore different techniques for feature construction and selection using the logical operators : XOR, AND and OR to improve the performance of the NaiveBayes classifier.
     <br />
     <a href="https://github.com/pabloluqueromero/TFG"><strong>Explore the code »</strong></a>
     <br />
-    <br />
-<!--     <a href="https://github.com/github_username/repo_name">View Demo</a> -->
-<!--     · -->
-<!--     <a href="https://github.com/github_username/repo_name/issues">Report Bug</a> -->
-<!--     · -->
-<!--     <a href="https://github.com/github_username/repo_name/issues">Request Feature</a> -->
   </p>
 </p>
 
@@ -67,8 +60,6 @@
       </ul>
     </li>
     <li><a href="#usage">Usage</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#contact">Contact</a></li>
     <li><a href="#acknowledgements">Acknowledgements</a></li>
   </ol>
 </details>
@@ -77,14 +68,23 @@
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
-The aim is to explore different techniques for feature construction and selection using logical operators such as XOR, AND and OR to improve the performance of the famous NaiveBayes classifier. It is a work in progress and for now two different methods have been explored both are based on a hybrid approach between wrapper and filter measures. 
-The approaches that have been followed until now consist of:
-  * Hybrid Ranker-Wrapper 
-  * Ant Colony Optimizer (with Mutual Information heuristic for graph reduction)
+Welcome to my Bachelor's Final degree project. The aim is to explore different techniques for feature construction and selection using the logical operators : XOR, AND and OR to improve the performance of the NaiveBayes classifier. The three proposed algorithms correspond to the classes: 
+<ul>
+<li>
+<strong>RankerLogicalFeatureConstructor</strong> - for the Hybrid Ranker-Wrapper.
+</li>
+<li>
+<strong>ACFCS</strong> -for the Ant Colony-based algorith. 
+</li>
+<li>
+<strong>GeneticAlgorithm</strong> -for the Genetic Programming.
+</li>
+</ul>
 ### Built With
 
 * [Python](https://www.python.org/)
 * [Sklearn](https://scikit-learn.org/)
+* [Numpy](https://www.numpy.org/)
 * [Numba](https://numba.pydata.org/)
 
 
@@ -98,28 +98,38 @@ The approaches that have been followed until now consist of:
    ```
 2. Install pip packages
    ```sh
-   pip install sklearn
-   pip install numpy
-   pip install numba
-   pip install tqdm
+   pip install -r requirements.txt
    ```
 
 
 
 <!-- USAGE EXAMPLES -->
 ## Usage
+<p>The algorithms are compatible with sklearn, they can be used like any other classifier from the library.
+</p>
+
+ ```python
+#Load imports
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+
+from tfg.ant_colony import ACFCS
+
+#Load data
+X, y = load_iris(return_X_y=True)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
+
+
+#Load data
+clf = ACFCS(seed = 0)
+clf.fit(X_train, y_train)
+y_pred = clf.predict(X_test)
+```
+
 <!--
 Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
 -->
 <!--_For more examples, please refer to the [Documentation](https://example.com)_ -->
-
-
-
-<!-- CONTRIBUTING -->
-## Contributing
-Any contributions or comments are welcome and the code is made available to the community for feature research.
-
-
 
 <!-- LICENSE
 ## License
@@ -127,19 +137,9 @@ Any contributions or comments are welcome and the code is made available to the 
 Distributed under the MIT License. See `LICENSE` for more information.
 -->
 
-
-<!-- CONTACT -->
-## Contact
-
-Pablo Luque Romero: pablo.luque.romero3@gmail.com
-
-Project Link: [https://github.com/pabloluqueromero/TFG](https://github.com/pabloluqueromero/TFG)
-
-
-
 <!-- ACKNOWLEDGEMENTS -->
 ## Acknowledgements
-This work as been developed under the tutorship of Jose Antonio Gámez and Juan Ángel Aledo at Universidad de Castilla La-Mancha
+This work as been developed under the tutorship of Jose Antonio Gámez and Juan Ángel Aledo at Universidad de Castilla La-Mancha.
 
 
 

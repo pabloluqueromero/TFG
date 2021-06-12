@@ -24,7 +24,8 @@ def acfs_score_comparison(datasets,
                         metric="accuracy",
                         method=1,
                         send_email=False,
-                        email_data = dict()):
+                        email_data = dict(),
+                        verbose= True):
     result = []
     dataset_tqdm = tqdm(datasets)
 
@@ -54,7 +55,7 @@ def acfs_score_comparison(datasets,
             seed_tqdm = tqdm(rskf.split(X,y),
                              leave=False,
                              total=n_splits*n_repeats, 
-                             bar_format='{l_bar}{bar:20}{r_bar}{bar:-10b}')
+                             bar_format='{l_bar}{bar:20}{r_bar}{bar:-10b}') if verbose else rskf.split(X,y)
             i=-1
             for train_index, test_index  in seed_tqdm:
                 i+=1
@@ -75,7 +76,8 @@ def acfs_score_comparison(datasets,
 
                     # score
                     acfcs_score_conf = acfcs.score(X_test, y_test)
-                    seed_tqdm.set_postfix({ "config": conf_index,"nb_score":naive_bayes_score,"ant_score":acfcs_score_conf})
+                    if verbose:
+                        seed_tqdm.set_postfix({ "config": conf_index,"nb_score":naive_bayes_score,"ant_score":acfcs_score_conf})
 
                     # Get data
                     n_original_features = len(list(filter(lambda x: isinstance(

@@ -131,7 +131,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 <!-- CONTACT -->
 ## Contact
 
-Pablo Luque Romero: palbo.luque.romero3@gmail.com
+Pablo Luque Romero: pablo.luque.romero3@gmail.com
 
 Project Link: [https://github.com/pabloluqueromero/TFG](https://github.com/pabloluqueromero/TFG)
 

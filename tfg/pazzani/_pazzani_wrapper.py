@@ -180,7 +180,7 @@ class PazzaniWrapper(BaseEstimator):
         # check_X_y(X,y)
         return self.feature_transformer(X),y
         
-    def predict(self,X,y):
+    def predict(self,X):
         X,y = self.transform(X,y)
         return self.classifier.predict(X,y)
 

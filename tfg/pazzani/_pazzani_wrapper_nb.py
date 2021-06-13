@@ -10,7 +10,7 @@ from sklearn.model_selection import LeaveOneOut
 from tfg.encoder import CustomOrdinalFeatureEncoder
 from tfg.naive_bayes import NaiveBayes
 from tfg.utils import join_columns,concat_columns,flatten,memoize,combine_columns
-from tfg.wrapper import PazzaniWrapper
+from tfg.pazzani import PazzaniWrapper
 
 def _evaluate(clf,X,y,columns,fit=False):
     if isinstance(X,pd.DataFrame):

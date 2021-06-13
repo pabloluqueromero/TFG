@@ -5,6 +5,7 @@ from datetime import datetime
 import smtplib
 import io
 
+'''Class to send CSV by email to store results'''
 class EmailSendCSV:
     def __init__(self,sender,receiver,password):
         self.sender_email = sender

@@ -4,8 +4,8 @@ from sklearn.model_selection import train_test_split
 
 # Local imports
 from tfg.utils import make_discrete, generate_xor_data
-from tfg.wrapper import PazzaniWrapper
-from tfg.wrapper import PazzaniWrapperNB
+from tfg.pazzani import PazzaniWrapper
+from tfg.pazzani import PazzaniWrapperNB
 
 
 def test_fssj_xor_problem():

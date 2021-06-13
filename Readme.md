@@ -31,7 +31,7 @@
     <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Hypercubematrix_binary.svg/180px-Hypercubematrix_binary.svg.png" style="border-radius:50%;background-color:#8895b97d" alt="Logo" width="210">
   </a>
 
-  <h3 align="center">Logical Feature construction for Naive Bayes</h3>
+  <h3 align="center">Logical Feature construction For the Naive Bayes classifier</h3>
 
   <p align="center">
     Welcome to my Bachelor's Final degree project. The aim is to explore different techniques for feature construction and selection using the logical operators : XOR, AND and OR to improve the performance of the Naive Bayes classifier.

@@ -11,7 +11,7 @@ from tqdm.autonotebook import tqdm
 # Local imports
 from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
 from tfg.feature_construction import DummyFeatureConstructor
-from tfg.optimization.genetic_programming import GeneticProgramming, GeneticProgrammingV2, GeneticProgrammingV3
+from tfg.optimization.genetic_programming import GeneticProgrammingFlexibleLogic, GeneticProgrammingRankMutation
 from tfg.naive_bayes import NaiveBayes
 from tfg.utils import get_X_y_from_database
 
@@ -80,7 +80,7 @@ def genetic_score_comparison(datasets,
                              metric="accuracy",
                              send_email=False,
                              email_data=dict(),
-                             verbose=False,
+                             verbose=True,
                              version=1):
     result = []
     columns = ["Database",
@@ -98,13 +98,14 @@ def genetic_score_comparison(datasets,
     # Instantiate the classifier
     if version == 1:
         # First Version - No flexibility in the number of attributes (bad performance)
-        clf = GeneticProgramming(seed=seed, metric=metric)
+        # clf = GeneticProgramming(seed=seed, metric=metric)
+        clf = GeneticProgrammingFlexibleLogic(seed=seed, metric=metric)
     elif version == 2:
         # Version with flexibility
-        clf = GeneticProgrammingV2(seed=seed, metric=metric)
+        clf = GeneticProgrammingFlexibleLogic(seed=seed, metric=metric)
     else:
         # Guided mutation based on SU
-        clf = GeneticProgrammingV3(seed=seed, metric=metric)
+        clf = GeneticProgrammingRankMutation(seed=seed, metric=metric)
     nb = NaiveBayes(encode_data=False, n_intervals=n_intervals, metric=metric)
 
     # Execute algorithm on datasets
@@ -136,7 +137,6 @@ def genetic_score_comparison(datasets,
         # Execute experiments
         for i, data in enumerate(seed_tqdm):
             train_index, test_index = data
-            i += 1
             X_train, X_test = X.iloc[train_index], X.iloc[test_index]
             y_train, y_test = y.iloc[train_index], y.iloc[test_index]
 

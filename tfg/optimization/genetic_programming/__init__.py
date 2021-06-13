@@ -1,9 +1,7 @@
-from ._genetic import GeneticProgramming
-from ._genetic2 import GeneticProgrammingV2
-from ._genetic3 import GeneticProgrammingV3
+from ._genetic2 import GeneticProgrammingFlexibleLogic
+from ._genetic3 import GeneticProgrammingRankMutation
 
 __all__ = [
-    "GeneticProgramming",
-    "GeneticProgrammingV2",
-    "GeneticProgrammingV3"
+    "GeneticProgrammingFlexibleLogic",
+    "GeneticProgrammingRankMutation"
 ]

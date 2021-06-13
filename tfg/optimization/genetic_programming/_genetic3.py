@@ -16,17 +16,17 @@ from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
 from tfg.feature_construction import DummyFeatureConstructor, create_feature
 from tfg.naive_bayes import NaiveBayes
 from tfg.optimization import OptimizationMixIn
-from tfg.optimization.genetic_programming import GeneticProgrammingV2
+from tfg.optimization.genetic_programming import GeneticProgrammingFlexibleLogic
 from tfg.utils import compute_sufs, compute_sufs_non_incremental
 from tfg.utils import memoize_genetic, symmetrical_uncertainty, transform_features
 from tfg.utils import get_max_mean
 
 
-class GeneticProgrammingV3(GeneticProgrammingV2):
-    """ GeneticProgrammingV3 is similar adds a guided-mutation by creating a ranking with features based on
+class GeneticProgrammingRankMutation(GeneticProgrammingFlexibleLogic):
+    """ GeneticProgrammingRankMutation is similar adds a guided-mutation by creating a ranking with features based on
         Symmetrical Uncertainty.
-
-        Refer to GeneticProgrammingV2 for parameter specification
+        Refer to GeneticProgrammingFlexibleLogic for parameter specification.
+        The flexible logic is always set to True
     """
 
     def single_feature(self, feature, X, y):
@@ -34,6 +34,11 @@ class GeneticProgrammingV3(GeneticProgrammingV2):
         return symmetrical_uncertainty(data, y)
 
     def smart_random_sample(self, features, size, X, y):
+        '''
+        Creates a descending ranking of the features based on the SU(feature,y)
+        The probability of being chosen is equals to:
+            position_rank(feature)/feature.shape[0]
+        '''
         array = np.array([self.single_feature_evaluation(feature, X, y) for feature in features])
         index_array = np.argsort(array)[::-1]  # Descending order
         total = array.shape[0]*(array.shape[0]+1)/2
@@ -41,7 +46,7 @@ class GeneticProgrammingV3(GeneticProgrammingV2):
         probability[index_array] = (np.arange(1, array.shape[0]+1)/total)
         return np.random.choice(np.arange(0, len(features)), size=size, replace=False, p=probability)
 
-    def mutation_genetic_3(self, population, X, y):
+    def mutation_rank(self, population, X, y):
         new_population = []
         for individual in population:
             if random.random() < self.mutation_probability:
@@ -132,39 +137,6 @@ class GeneticProgrammingV3(GeneticProgrammingV2):
             new_population.append(individual)
         return new_population
 
-    def execute_algorithm(self, X, y):
-        if self.mixed:
-            self.evaluate = self.evaluate_heuristic
-        else:
-            self.evaluate = self.evaluate_wrapper
-        population = self.generate_population()
-        population_with_fitness = self.fitness(population, X, y)
-        iterator = tqdm(range(self.generations), leave=False) if self.verbose else range(self.generations)
-        for generation in iterator:
-            if self.mixed and generation > int(self.generations*self.mixed_percentage) and self.evaluate == self.evaluate_heuristic:
-                self.evaluate = self.evaluate_wrapper
-                # Reevaluate for fair combination
-                population_with_fitness = self.fitness([individual_with_fitness[0]
-                                                        for individual_with_fitness in population_with_fitness], X, y)
-            selected_individuals = self.selection(population_with_fitness)
-            crossed_individuals = selected_individuals  # self.crossover(selected_individuals)
-            mutated_individuals = self.mutation(crossed_individuals, X, y)
-            new_population = self.fitness(mutated_individuals, X, y)
-            population_with_fitness = self.combine(
-                population_with_fitness, new_population)
-
-            # Obtaining population's statistics
-            if self.verbose:
-                best, mean = get_max_mean(population_with_fitness)
-                iterator.set_postfix({"Generation": generation,
-                                      "hit_count": self.evaluate.hit_count,
-                                      "populationLength": len(population_with_fitness),
-                                      "best fitness": best,
-                                      "mean fitness": mean})
-
-        best_individual = max(population_with_fitness, key=lambda x: x[1])[0]
-        return best_individual[0]+best_individual[1]
-
     def reset_evaluation(self):
         self.evaluate_wrapper = memoize_genetic(self.simple_evaluate)
         self.evaluate_heuristic = memoize_genetic(self.simple_evaluate_heuristic)
@@ -181,17 +153,60 @@ class GeneticProgrammingV3(GeneticProgrammingV2):
             if params["combine"] not in ("elitism", "truncate"):
                 raise ValueError("Unknown selection parameter expected one of : " + str(tuple(["elitism", "truncate"])))
             self.combine = self.elitism if "elit" in params["combine"] else self.truncation
-        self.mutation = self.mutation_genetic_3
+        self.mutation = self.mutation_rank
+        self.flexible_logic = True
 
-    def __init__(self, *args, **kwargs):
-        super(GeneticProgrammingV3, self).__init__(*args, **kwargs)
-        self.mutation = self.mutation_genetic_3
-        self.reset_evaluation()
+def __init__(self,
+                 size=10,
+                 seed=None,
+                 individuals=1,
+                 generations=40,
+                 mutation_probability=0.2,
+                 selection="rank",
+                 mutation="simple",
+                 combine="elitism",
+                 n_intervals=5,
+                 metric="accuracy",
+                 use_initials=False,
+                 verbose=False,
+                 encode_data=True,
+                 mixed=True,
+                 mixed_percentage=0.5
+                 ):
+        self.mixed_percentage = mixed_percentage
+        self.size = size
+        self.mixed = mixed
+        self.encode_data = encode_data
+        self.flexible_logic = True
+        self.verbose = verbose
+        self.n_intervals = n_intervals
+        self.metric = metric
+        self.seed = seed
+        self.individuals = individuals
+        self.generations = generations
+        self.use_initials = use_initials
+        self.mutation_probability = mutation_probability
 
+        self.selection = selection
+        self.combine = combine
+        self.mutation = mutation
+
+        allowed_selection = ('rank', 'proportionate')
+        allowed_combine = ('elitism', 'truncate')
+
+        if self.selection not in allowed_selection:
+            raise ValueError("Unknown selection type: %s, expected one of %s." % (self.selection, selection))
+        if self.combine not in allowed_combine:
+            raise ValueError("Unknown combine type: %s, expected one of %s." % (self.combine, combine))
+
+        self.selection = self.select_population_rank if "rank" in selection else self.select_population
+        self.combine = self.elitism if "elit" in combine else self.truncation
+        self.mutation = self.mutation_rank
+        self.flexible_logic = True
+        self.reset_Evaluation
 
 def memoize_single(f):
     cache = dict()
-
     def g(individual, X, y):
         hash_individual = hash(individual)
         if hash_individual not in cache:

@@ -115,7 +115,7 @@ from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 
 
-from tfg.optimization.genetic_programming import GeneticProgrammingV3
+from tfg.optimization.genetic_programming import GeneticProgrammingRankMutation
 from tfg.pazzani import PazzaniWrapper
 
 
@@ -130,7 +130,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y,
                                                     stratify=y)
 
 
-clf_genetic = GeneticProgrammingV3(seed=0, individuals=20, generations=30)
+clf_genetic = GeneticProgrammingRankMutation(seed=0, individuals=10, generations=10)
 clf_pazzani = PazzaniWrapper(strategy="FSSJ")
 
 # Train models

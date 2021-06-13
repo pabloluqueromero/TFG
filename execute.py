@@ -62,9 +62,9 @@ parser.add_argument("--password", required=True, help="password")
 parser.add_argument("--algorithm", required=True,
                     help="algorithm (ranker, genetic, aco)")
 parser.add_argument("--method", default=1, help="for ranker and genetic 1-3")
-parser.add_argument("--n_computers", required=True, help="")
-parser.add_argument("--computer", required=True, help="computer/n_computers")
-parser.add_argument("--metric", required=True, default="accuracy",help="scorer")
+parser.add_argument("--n_computers", default=1, help="")
+parser.add_argument("--computer", default=1, help="computer/n_computers")
+parser.add_argument("--metric", default="accuracy",help="scorer")
 parser.add_argument("--filename", default="",help="suffix for the")
 parser.add_argument("--no_email", action="store_true", help="dont_send_email")
 parser.add_argument("--numerical", action="store_true", help="dont_send_email")
@@ -214,7 +214,7 @@ def execute_genetic_1(data):
             "metric": metric,
             "verbose": True,
             "flexible_logic": True,
-            "encode": False
+            "encode_data": False
         },
         {
             "mutation": "complex",
@@ -227,7 +227,7 @@ def execute_genetic_1(data):
             "combine": "truncation",
             "n_intervals": 5,
             "metric": metric,
-            "encode": False,
+            "encode_data": False,
             "verbose": True,
             "flexible_logic": True,
         }, {
@@ -251,7 +251,7 @@ def execute_genetic_1(data):
             "selection": "rank",
             "combine": "elitism",
             "n_intervals": 5,
-            "encode": False,
+            "encode_data": False,
             "metric": metric,
             "flexible_logic": True,
             "verbose": True
@@ -267,7 +267,7 @@ def execute_genetic_1(data):
             "metric": metric,
             "flexible_logic": True,
             "verbose": True,
-            "encode": False
+            "encode_data": False
         },
     ]
 
@@ -300,8 +300,7 @@ def execute_genetic_2(data):
         "mutation_probability": [0.05,0.1,0.2],
         "selection": ["rank","proportionate"],
         "combine": ["elitism","truncate"],
-        "mixed": [True],
-        "backwards":[False]
+        "mixed": [True]
     }
 
     def_params = {
@@ -316,7 +315,7 @@ def execute_genetic_2(data):
             "metric": metric,
             "verbose": False,
             "mixed": False,
-            "encode": False,
+            "encode_data": False,
             "mixed_percentage": 0.5
 
     }
@@ -351,16 +350,15 @@ def execute_genetic_2(data):
 def execute_genetic_3(data):
     print("GENETIC 3")
     grid = {
-        "mutation_probability": [0.01,0.05,0.1,0.2],
+        "mutation_probability": [0.05,0.1,0.2],
         "selection": ["rank","proportionate"],
-        "combine": ["truncate"],
-        "mixed": [True,False],
-        "backwards":[False]
+        "combine": ["truncate","elitism"],
+        "mixed": [True]
     }
     def_params = {
             "size":np.nan,
             "seed": seed,
-            "individuals": 50,
+            "individuals": 20,
             "generations": 30,
             "mutation_probability": 0.01,
             "selection": "proportionate",
@@ -369,7 +367,7 @@ def execute_genetic_3(data):
             "metric": metric,
             "verbose": False,
             "mixed": False,
-            "encode": False,
+            "encode_data": False,
             "mixed_percentage": 0.5
 
     }

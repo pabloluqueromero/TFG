@@ -1,21 +1,80 @@
-import random
-from tfg.naive_bayes import NaiveBayes
-from tfg.utils import backward_search, compute_sufs, compute_sufs_non_incremental, memoize_genetic, transform_features
-from tfg.feature_construction import DummyFeatureConstructor, create_feature
-from tqdm.autonotebook import tqdm
-from time import time
 import numpy as np
 import pandas as pd
+import random
+
+from itertools import chain
+from time import time
+from tqdm.autonotebook import tqdm
 
 from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
 from sklearn.utils.validation import check_is_fitted
+
 from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
+from tfg.feature_construction import DummyFeatureConstructor, create_feature
+from tfg.naive_bayes import NaiveBayes
 from tfg.optimization import OptimizationMixIn
-from itertools import chain
+from tfg.utils import compute_sufs, compute_sufs_non_incremental, memoize_genetic, transform_features
 from tfg.utils import get_max_mean
 
 
-class GeneticProgrammingV2(OptimizationMixIn,TransformerMixin, ClassifierMixin, BaseEstimator):
+class GeneticProgrammingFlexibleLogic(OptimizationMixIn, TransformerMixin, ClassifierMixin, BaseEstimator):
+    """GeneticProgramming for Feature Construction and Selection.
+
+
+    Parameters
+    ----------
+
+    seed : int or None
+        Seed to guarantee reproducibility
+
+    individuals : int
+        Number of individuals per population
+
+    generations : int
+        Number of generations 
+
+    mutation_probability : float
+        Probability for each individual of being mutated
+
+    select : {rank,proportionate}
+        Selection strategy
+
+    mutation : {simple,complex}
+        Mutation strategy
+
+    combine : {truncation,elitism} 
+        Population combination strategy
+
+    n_intervals : int
+        Number of intervals for the discretization of continous variables
+
+    mixed : bool
+        Mix heuristic and wrapper evaluation
+
+    mixed_percentage : float
+        Percentage of total iterations to do heuristic evaluation
+
+    metric : {accuracy,f1-score}
+        Target metric for the optimization process
+    
+    flexible_logic: bool
+        Allow different individual sizes in the generation
+    
+    encode_data : bool, default=True
+        Encode data when data is not encoded by default with an OrdinalEncoder
+    
+    verbose :int {0,1}, default = 1 
+        Display process progress
+
+
+    Attributes
+    ----------
+    classifier_ : NaiveBayes
+        Base classifier used for prediction
+
+    best_features_ : array-lik of Feature
+        Array of selected Feature used for transforming new data
+    """
 
     def simple_evaluate(self, individual, X, y):
         classifier_ = NaiveBayes(encode_data=False, metric=self.metric)
@@ -62,7 +121,7 @@ class GeneticProgrammingV2(OptimizationMixIn,TransformerMixin, ClassifierMixin, 
             population.append(individual)
         return population
 
-    def mutate_complex(self, population):
+    def mutate_complex(self, population, **kwargs):
         new_population = []
         for individual in population:
             if random.random() < self.mutation_probability:
@@ -145,7 +204,7 @@ class GeneticProgrammingV2(OptimizationMixIn,TransformerMixin, ClassifierMixin, 
             new_population.append(individual)
         return new_population
 
-    def mutate_simple(self, population):
+    def mutate_simple(self, population, **kwargs):
         new_population = []
         for individual in population:
             if random.random() < self.mutation_probability:
@@ -312,8 +371,6 @@ class GeneticProgrammingV2(OptimizationMixIn,TransformerMixin, ClassifierMixin, 
         self.best_features = best_individual
         self.classifier_ = NaiveBayes(encode_data=False, metric=self.metric)
         self.classifier_.fit(np.concatenate([feature.transform(X) for feature in self.best_features], axis=1), y)
-        if self.backwards:
-            self.best_features = backward_search(X, y, self.best_features, self.classifier_)
         return self
 
     def execute_algorithm(self, X, y):
@@ -332,7 +389,7 @@ class GeneticProgrammingV2(OptimizationMixIn,TransformerMixin, ClassifierMixin, 
                                                         for individual_with_fitness in population_with_fitness], X, y)
             selected_individuals = self.selection(population_with_fitness)
             crossed_individuals = selected_individuals  # self.crossover(selected_individuals)
-            mutated_individuals = self.mutation(crossed_individuals)
+            mutated_individuals = self.mutation(crossed_individuals, X=X, y=y)
             new_population = self.fitness(mutated_individuals, X, y)
             population_with_fitness = self.combine(
                 population_with_fitness, new_population)
@@ -369,9 +426,7 @@ class GeneticProgrammingV2(OptimizationMixIn,TransformerMixin, ClassifierMixin, 
                 raise ValueError("Unknown selection parameter expected one of : " + str(tuple(["complex", "simple"])))
             self.mutation = self.mutate_simple if "simple" == params["mutation"] else self.mutate_complex
 
-
     def __init__(self,
-                 size=10,
                  seed=None,
                  individuals=1,
                  generations=40,
@@ -381,16 +436,13 @@ class GeneticProgrammingV2(OptimizationMixIn,TransformerMixin, ClassifierMixin, 
                  combine="elitism",
                  n_intervals=5,
                  metric="accuracy",
-                 use_initials=False,
                  flexible_logic=True,
                  verbose=False,
                  encode_data=True,
                  mixed=True,
-                 mixed_percentage=0.5,
-                 backwards=False
+                 mixed_percentage=0.5
                  ):
         self.mixed_percentage = mixed_percentage
-        self.size = size
         self.mixed = mixed
         self.encode_data = encode_data
         self.flexible_logic = flexible_logic
@@ -400,12 +452,24 @@ class GeneticProgrammingV2(OptimizationMixIn,TransformerMixin, ClassifierMixin, 
         self.seed = seed
         self.individuals = individuals
         self.generations = generations
-        self.use_initials = use_initials
-        self.backwards = backwards
-        # self.crossover_probability = crossover_probability
         self.mutation_probability = mutation_probability
+
+        self.selection = selection
+        self.combine = combine
+        self.mutation = mutation
+
+        allowed_selection = ('rank', 'proportionate')
+        allowed_combine = ('elitism', 'truncate')
+        allowed_mutation = ('complex', 'simple')
+
+        if self.selection not in allowed_selection:
+            raise ValueError("Unknown selection type: %s, expected one of %s." % (self.selection, selection))
+        if self.combine not in allowed_combine:
+            raise ValueError("Unknown combine type: %s, expected one of %s." % (self.combine, combine))
+        if self.mutation not in allowed_mutation:
+            raise ValueError("Unknown selection type: %s, expected one of %s." % (self.mutation, mutation))
+
         self.selection = self.select_population_rank if "rank" in selection else self.select_population
         self.combine = self.elitism if "elit" in combine else self.truncation
-        self.mutation = self.mutate_simple if "mutation" == mutation else self.mutate_complex
+        self.mutation = self.mutate_simple if "simple" in mutation else self.mutate_complex
         self.reset_evaluation()
-

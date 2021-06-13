@@ -337,3 +337,32 @@ def append_column_to_numpy(array, column):
     a[:, :-1] = array
     a[:, -1] = column.flatten()
     return a
+
+
+
+def memoize_genetic(f):
+    '''Hash individual and store result'''
+    cache = dict()
+    def g(individual, X, y):
+        hashable_individual = tuple(individual[0]),tuple(individual[1]),frozenset(individual[1])
+        hash_individual = hash(hashable_individual)
+        if hash_individual not in cache:
+            cache[hash_individual] = f(individual, X, y)
+            g.miss_count+=1
+        else:
+            g.hit_count+=1
+        return cache[hash_individual]
+    g.cache = cache
+    g.hit_count=0
+    g.miss_count=0
+    return g
+
+
+def get_max_mean(population_with_fitness):
+    '''Metrics for verbose in genetic programming'''
+    best_score = -1
+    cumul = 0
+    for individual, fitness in population_with_fitness:
+        cumul += fitness
+        best_score = max(best_score, fitness)
+    return best_score, cumul/len(population_with_fitness)

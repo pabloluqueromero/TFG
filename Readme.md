@@ -114,26 +114,34 @@ Welcome to my Bachelor's Final degree project. The aim is to explore different t
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 
-from tfg.genetic_programming import GeneticProgrammingV3
-from tfg.naive_bayes import NaiveBayes
+
+from tfg.optimization.genetic_programming import GeneticProgrammingV3
+from tfg.pazzani import PazzaniWrapper
 
 
 # Load data
 X, y = load_iris(return_X_y=True)
+
+#Split
 X_train, X_test, y_train, y_test = train_test_split(X, y,
                                                     test_size=0.3,
                                                     random_state=0,
-                                                    shuffle=True, 
+                                                    shuffle=True,
                                                     stratify=y)
 
 
-# Train model
-clf = GeneticProgrammingV3(seed=0, individuals=20, generations=30)
-clf.fit(X_train, y_train)
+clf_genetic = GeneticProgrammingV3(seed=0, individuals=20, generations=30)
+clf_pazzani = PazzaniWrapper(strategy="FSSJ")
+
+# Train models
+clf_genetic.fit(X_train, y_train)
+clf_pazzani.fit(X_train, y_train)
 
 # Obtain accuracy
-accuracy_score = clf.score(X_test, y_test)
-print(f"Accuracy: {accuracy_score}")
+accuracy_genetic = clf_genetic.score(X_test, y_test)
+accuracy_pazzani = clf_pazzani.score(X_test, y_test)
+print(f"Genetic Programming Accuracy: { accuracy_genetic}")
+print(f"Pazzani Wrapper Accuracy: { accuracy_pazzani}")
 ```
 
 <!--

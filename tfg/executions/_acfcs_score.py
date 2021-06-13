@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 from tqdm.autonotebook import tqdm
 
 # Local imports
-from tfg.ant_colony import ACFCS
+from tfg.optimization.ant_colony import ACFCS
 from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
 from tfg.feature_construction import DummyFeatureConstructor
 from tfg.naive_bayes import NaiveBayes

@@ -10,7 +10,7 @@ from tqdm.autonotebook import tqdm
 from copy import deepcopy
 
 # Local imports
-from tfg.ant_colony import AntFeatureGraphMI
+from tfg.optimization.ant_colony import AntFeatureGraphMI
 from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
 from tfg.feature_construction import construct_features
 from tfg.feature_construction import DummyFeatureConstructor
@@ -204,15 +204,17 @@ class RankerLogicalFeatureConstructor(TransformerMixin, ClassifierMixin, BaseEst
         return self
 
     def predict(self, X):
-        X, y = self.transform(X, y)
+        X, _ = self.transform(X)
+        if self.encode_data:
+            return self.class_encoder_.inverse_transform(self.classifier.predict(X))
         return self.classifier.predict(X)
 
     def reset_evaluation(self):
         # Reset the memoize evaluations
-        self.evaluate_leave_one_out_cross_val = memoize(evaluate_leave_one_out_cross_val)
+        self.evaluate_leave_one_out_cross_val = memoize(evaluate_leave_one_out)
 
-    def predict_proba(self, X, y):
-        X = self.transform(X, y)
+    def predict_proba(self, X):
+        X,_ = self.transform(X)
         return self.classifier.predict_proba(X)
 
     def score(self, X, y):
@@ -321,8 +323,6 @@ class RankerLogicalFeatureConstructor(TransformerMixin, ClassifierMixin, BaseEst
                 y = self.class_encoder_.transform(y)
         if isinstance(X, pd.DataFrame):
             X = X.to_numpy()
-
-        check_X_y(X, y)
         new_X = []
         for feature_constructor in self.final_feature_constructors:
             new_X.append(feature_constructor.transform(X))
@@ -338,12 +338,12 @@ def memoize(f):
         hashable_individual = tuple(selected_features)
         hash_individual = hash(hashable_individual)
         if hash_individual not in cache:
-            cache[hash_individual] = f(classifier, y, fit=fit)
+            cache[hash_individual] = f(classifier, current_data, y, fit=fit)
         elif fit:
             classifier.fit(current_data, y)
         return cache[hash_individual]
     return g
 
 
-def evaluate_leave_one_out_cross_val(classifier, selected_features, current_data, y, fit=True):
+def evaluate_leave_one_out(classifier, current_data, y, fit=True):
     return classifier.leave_one_out_cross_val(current_data, y, fit)

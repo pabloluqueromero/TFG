@@ -7,7 +7,7 @@ from tfg.naive_bayes import NaiveBayes
 from tfg.feature_construction import DummyFeatureConstructor, FeatureOperand
 from tfg.feature_construction._constructor import create_feature
 from tfg.utils import append_column_to_numpy, backward_search, compute_sufs, compute_sufs_non_incremental, hash_features
-from tfg.ant_colony import Ant
+from tfg.optimization.ant_colony import Ant
 
 class Ant2:
     """ Basic building block for the Ant Colony Feature Construction and Selection algorithm.

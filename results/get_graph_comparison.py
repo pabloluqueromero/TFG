@@ -9,7 +9,7 @@ from tqdm.autonotebook import tqdm
 from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
 from tfg.feature_construction import DummyFeatureConstructor
 from tfg.naive_bayes import NaiveBayes
-from tfg.ant_colony import ACFCS, AntFeatureGraphMI
+from tfg.optimization.ant_colony import ACFCS, AntFeatureGraphMI
 from tfg.utils import get_X_y_from_database
 
 def graph_sizes(datasets, 

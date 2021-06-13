@@ -4,10 +4,10 @@ import numpy as np
 import random
 import networkx as nx
 
-from tfg.ant_colony import Ant
+from tfg.optimization.ant_colony import Ant
 from tfg.feature_construction import DummyFeatureConstructor
 from tfg.utils import symmetrical_uncertainty
-from tfg.utils import mutual_information_class_conditioned, mutual_information_class_conditioned2
+from tfg.utils import symmetrical_uncertainty_two_variables, symmetrical_uncertainty_class_conditioned
 from tfg.feature_construction._constructor import create_feature
 import math as m
 
@@ -217,7 +217,7 @@ class AntFeatureGraphMI:
             for j in range(X.shape[1]):
                 if i==j:
                     continue
-                mi.append((j,mutual_information_class_conditioned(X[:,j],X[:,i],y)))
+                mi.append((j,symmetrical_uncertainty_two_variables(X[:,j],X[:,i],y)))
             mi = sorted(mi,key = lambda x:x[1],reverse=True) # The greater the mutual information score the more correlation which we want to avoid
             self.neighbour_features_[i] = list(zip(*mi[:k]))[0]
         

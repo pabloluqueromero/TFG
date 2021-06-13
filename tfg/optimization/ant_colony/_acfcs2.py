@@ -8,14 +8,14 @@ from sklearn.utils.validation import check_is_fitted
 
 from tqdm.autonotebook import tqdm
 
-from tfg.ant_colony import AntFeatureGraph
-from tfg.ant_colony import AntFeatureGraphMI
-from tfg.ant_colony import Ant, FinalAnt
+from tfg.optimization.ant_colony import AntFeatureGraph
+from tfg.optimization.ant_colony import AntFeatureGraphMI
+from tfg.optimization.ant_colony import Ant, FinalAnt
 from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
 from tfg.feature_construction import create_feature,DummyFeatureConstructor
 from tfg.naive_bayes import NaiveBayes
 from tfg.utils import translate_features,append_column_to_numpy
-from tfg.ant_colony._ant2 import Ant2
+from tfg.optimization.ant_colony._ant2 import Ant2
 
 class ACFCS2(TransformerMixin,ClassifierMixin,BaseEstimator):
     def __init__(self,
@@ -41,7 +41,7 @@ class ACFCS2(TransformerMixin,ClassifierMixin,BaseEstimator):
                 metric="accuracy",
                 use_initials=False,
                 final_selection="ALL",
-                encode=True):
+                encode_data=True):
         self.step = step
         self.ants = ants
         self.evaporation_rate = evaporation_rate
@@ -63,7 +63,7 @@ class ACFCS2(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.update_strategy = update_strategy
         self.use_initials = use_initials
         self.final_selection = final_selection
-        self.encode = encode
+        self.encode_data = encode_data
         self.max_errors = max_errors
         allowed_graph_strategy = ("full","mutual_info")
         if self.graph_strategy not in allowed_graph_strategy:
@@ -86,7 +86,7 @@ class ACFCS2(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.categories_ = None
         if isinstance(X,pd.DataFrame):
             self.categories_ = X.columns
-        if self.encode:
+        if self.encode_data:
             X = self.feature_encoder_.fit_transform(X)
             y = self.class_encoder_.fit_transform(y)
         if init_graph:
@@ -236,15 +236,18 @@ class ACFCS2(TransformerMixin,ClassifierMixin,BaseEstimator):
         check_is_fitted(self)
         if isinstance(y,pd.DataFrame):
             y = y.to_numpy()
-        if self.encode:
+        if self.encode_data:
             X = self.feature_encoder_.transform(X)
-            y = self.class_encoder_.transform(y)
+            if y is not None:
+                y = self.class_encoder_.transform(y)
         X = np.concatenate([ f.transform(X) for f in self.best_features],axis=1)
         return X,y
 
-    def predict(self,X,y):
+    def predict(self,X):
         X,y = self.transform(X,y)
-        return self.classifier_.predict(X,y)
+        if self.encode_data:
+            return self.class_encoder_.inverse_transform(self.classifier.predict(X))
+        return self.classifier_.predict(X)
 
         
     def predict_proba(self,X,y):

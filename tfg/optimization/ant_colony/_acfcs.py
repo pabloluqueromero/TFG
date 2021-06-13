@@ -11,9 +11,9 @@ from sklearn.utils.validation import check_is_fitted
 from tqdm.autonotebook import tqdm
 
 #TFG imporst
-from tfg.ant_colony import AntFeatureGraph
-from tfg.ant_colony import AntFeatureGraphMI
-from tfg.ant_colony import Ant, FinalAnt
+from tfg.optimization.ant_colony import AntFeatureGraph
+from tfg.optimization.ant_colony import AntFeatureGraphMI
+from tfg.optimization.ant_colony import Ant, FinalAnt
 from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
 from tfg.feature_construction import create_feature,DummyFeatureConstructor
 from tfg.naive_bayes import NaiveBayes
@@ -33,7 +33,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
                 update_strategy="best",
                 seed = None,
                 parallel=False,
-                save_features=True,
+                save_features=False,
                 path=None,
                 filename=None,
                 verbose=0,
@@ -43,8 +43,8 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
                 metric="accuracy",
                 use_initials=False,
                 final_selection="ALL",
-                encode=True,
-                backwards=True):
+                encode_data=True,
+                backwards=False):
         self.backwards = backwards
         self.step = step
         self.backwards = backwards
@@ -68,7 +68,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.update_strategy = update_strategy
         self.use_initials = use_initials
         self.final_selection = final_selection
-        self.encode = encode
+        self.encode_data = encode_data
         self.max_errors = max_errors
         allowed_graph_strategy = ("full","mutual_info")
         if self.graph_strategy not in allowed_graph_strategy:
@@ -91,7 +91,7 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
         self.categories_ = None
         if isinstance(X,pd.DataFrame):
             self.categories_ = X.columns
-        if self.encode:
+        if self.encode_data:
             X = self.feature_encoder_.fit_transform(X)
             y = self.class_encoder_.fit_transform(y)
         if init_graph:
@@ -207,53 +207,4 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
                 break
             current_features.append(feature_constructor)
         return current_features
-
-    def backwards_fss(self,X,y):
-        check_is_fitted(self)
-        improvement = True
-        best_features = np.concatenate([ f.transform(X) for f in self.best_features],axis=1)
-        best_score = self.classifier_.leave_one_out_cross_val(best_features,y,fit=False)
-        while improvement and best_features.shape[1] >1:
-            improvement = False
-            feature = None
-            for i in range(best_features.shape[1]):
-                feature = best_features[:,i].reshape(-1,1)
-                current_features = np.delete(best_features,i,axis=1)
-                self.classifier_.remove_feature(i)
-                current_score = self.classifier_.leave_one_out_cross_val(current_features,y,fit=False)
-                self.classifier_.add_features(feature,y,[i])
-                if current_score > best_score:
-                    feature_index = i
-                    improvement = True
-                    best_score = current_score
-                
-            if improvement:
-                best_features = np.delete(best_features,feature_index,axis=1)
-                self.classifier_.remove_feature(feature_index)
-                del self.best_features[feature_index]
-        return
-                
-               
-    def transform(self,X,y):
-        check_is_fitted(self)
-        if isinstance(y,pd.DataFrame):
-            y = y.to_numpy()
-        if self.encode:
-            X = self.feature_encoder_.transform(X)
-            y = self.class_encoder_.transform(y)
-        X = np.concatenate([ f.transform(X) for f in self.best_features],axis=1)
-        return X,y
-
-    def predict(self,X,y):
-        X,y = self.transform(X,y)
-        return self.classifier_.predict(X,y)
-
-        
-    def predict_proba(self,X,y):
-        X,y = self.transform(X,y)
-        return self.classifier_.predict_proba(X,y)
-
-    def score(self,X,y):
-        X,y = self.transform(X,y)
-        return self.classifier_.score(X,y)
  

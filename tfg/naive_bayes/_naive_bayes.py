@@ -14,69 +14,6 @@ from tfg.utils import get_scorer
 
 # For unseen values we want that log(0) = -inf
 np.seterr(divide='ignore')
-"""
-Enhanced methods with Numba nopython mode
-"""
-@njit
-def _get_tables(X: np.array, y: np.array, n_classes: int, alpha: float):
-    """Computes conditional log count for each value of each feature"""
-    smoothed_log_counts = []
-    smoothed_counts = []
-    feature_values_count = []
-    feature_values_count_per_element = []
-    feature_unique_values_count = []
-    for i in range(X.shape[1]):
-        feature = X[:, i]
-        feature_values_count.append(np.max(feature)+1)
-        counts = _get_counts(feature, y, feature_values_count[i], n_classes)
-        feature_values_count_per_element.append(np.sum(counts, axis=1))
-        feature_unique_values_count.append((feature_values_count_per_element[i] != 0).sum())
-
-        smoothed_count = counts+alpha
-        smoothed_counts.append(smoothed_count)
-
-        smoothed_count_log = np.log(smoothed_count)
-        smoothed_log_counts.append(smoothed_count_log)
-    return smoothed_counts, smoothed_log_counts, np.array(feature_values_count), feature_values_count_per_element, np.array(feature_unique_values_count)
-
-
-@njit
-def _get_counts(column: np.ndarray, y: np.ndarray, n_features_: int, n_classes: int):
-    """Computes count for each value of each feature for each class value"""
-    counts = np.zeros((n_features_, n_classes), dtype=np.float64)
-    for i in range(column.shape[0]):
-        counts[column[i], y[i]] += 1
-    return counts
-
-
-@njit
-def compute_total_probability_(class_count_, feature_values_count_, alpha):
-    """Computes count for each value of each feature for each class value"""
-    total_probability_ = class_count_ + alpha*feature_values_count_.reshape(-1, 1)
-    total_log_probability_ = np.log(total_probability_)
-    total_log_probability_ = np.where(total_log_probability_ == np.NINF, 0, total_log_probability_)
-    total_log_probability_ = np.sum(total_log_probability_, axis=0)
-    return total_log_probability_
-
-
-def _predict(X: np.ndarray, smoothed_log_counts_: np.ndarray, feature_values_count_: np.ndarray, alpha: float):
-    """Computes the log joint probability"""
-    log_probability = np.zeros((X.shape[0], smoothed_log_counts_[0].shape[1]))  # (n_samples,n_classes)
-    log_alpha = (np.log(alpha) if alpha else 0)
-    for j in range(X.shape[1]):
-        log_probability = _predict_single(log_probability, j, X, feature_values_count_,
-                                          smoothed_log_counts_[j], log_alpha)
-    return log_probability
-
-
-@njit
-def _predict_single(log_probability, j, X, feature_values_count_, smoothed_log_counts_, log_alpha):
-    mask = X[:, j] < feature_values_count_[j]  # Values known in the fitting stage
-    index = X[:, j][mask]
-    log_probability[mask, :] += smoothed_log_counts_[index]   # Only known values that are in probabilities
-    mask = np.logical_not(mask)
-    log_probability[mask, :] += log_alpha  # Unknown values that are not in probabilities => log(0+alpha)
-    return log_probability
 
 
 class NaiveBayes(ClassifierMixin, BaseEstimator):
@@ -436,3 +373,69 @@ class NaiveBayes(ClassifierMixin, BaseEstimator):
         """
         y_pred = self.predict(X)
         return self.scorer(y, y_pred)
+
+
+
+"""
+Enhanced methods with Numba nopython mode
+"""
+@njit
+def _get_tables(X: np.array, y: np.array, n_classes: int, alpha: float):
+    """Computes conditional log count for each value of each feature"""
+    smoothed_log_counts = []
+    smoothed_counts = []
+    feature_values_count = []
+    feature_values_count_per_element = []
+    feature_unique_values_count = []
+    for i in range(X.shape[1]):
+        feature = X[:, i]
+        feature_values_count.append(np.max(feature)+1)
+        counts = _get_counts(feature, y, feature_values_count[i], n_classes)
+        feature_values_count_per_element.append(np.sum(counts, axis=1))
+        feature_unique_values_count.append((feature_values_count_per_element[i] != 0).sum())
+
+        smoothed_count = counts+alpha
+        smoothed_counts.append(smoothed_count)
+
+        smoothed_count_log = np.log(smoothed_count)
+        smoothed_log_counts.append(smoothed_count_log)
+    return smoothed_counts, smoothed_log_counts, np.array(feature_values_count), feature_values_count_per_element, np.array(feature_unique_values_count)
+
+
+@njit
+def _get_counts(column: np.ndarray, y: np.ndarray, n_features_: int, n_classes: int):
+    """Computes count for each value of each feature for each class value"""
+    counts = np.zeros((n_features_, n_classes), dtype=np.float64)
+    for i in range(column.shape[0]):
+        counts[column[i], y[i]] += 1
+    return counts
+
+
+@njit
+def compute_total_probability_(class_count_, feature_values_count_, alpha):
+    """Computes count for each value of each feature for each class value"""
+    total_probability_ = class_count_ + alpha*feature_values_count_.reshape(-1, 1)
+    total_log_probability_ = np.log(total_probability_)
+    total_log_probability_ = np.where(total_log_probability_ == np.NINF, 0, total_log_probability_)
+    total_log_probability_ = np.sum(total_log_probability_, axis=0)
+    return total_log_probability_
+
+
+def _predict(X: np.ndarray, smoothed_log_counts_: np.ndarray, feature_values_count_: np.ndarray, alpha: float):
+    """Computes the log joint probability"""
+    log_probability = np.zeros((X.shape[0], smoothed_log_counts_[0].shape[1]))  # (n_samples,n_classes)
+    log_alpha = (np.log(alpha) if alpha else 0)
+    for j in range(X.shape[1]):
+        log_probability = _predict_single(log_probability, j, X, feature_values_count_,
+                                          smoothed_log_counts_[j], log_alpha)
+    return log_probability
+
+
+@njit
+def _predict_single(log_probability, j, X, feature_values_count_, smoothed_log_counts_, log_alpha):
+    mask = X[:, j] < feature_values_count_[j]  # Values known in the fitting stage
+    index = X[:, j][mask]
+    log_probability[mask, :] += smoothed_log_counts_[index]   # Only known values that are in probabilities
+    mask = np.logical_not(mask)
+    log_probability[mask, :] += log_alpha  # Unknown values that are not in probabilities => log(0+alpha)
+    return log_probability

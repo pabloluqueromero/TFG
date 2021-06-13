@@ -23,6 +23,8 @@ from ._utils import append_column_to_numpy
 from ._utils import hash_features
 from ._utils import compute_sufs_non_incremental
 from ._mail import EmailSendCSV,send_results
+from ._utils import get_max_mean
+from ._utils import memoize_genetic
 
 
 
@@ -53,4 +55,6 @@ __all__ = [
     "hash_features",
     "append_column_to_numpy",
     "compute_sufs_non_incremental",
+    "get_max_mean",
+    "memoize_genetic",
 ]

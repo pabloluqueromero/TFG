@@ -80,6 +80,7 @@ Welcome to my Bachelor's Final degree project. The aim is to explore different t
 <strong>GeneticAlgorithm</strong> -for the Genetic Programming.
 </li>
 </ul>
+
 ### Built With
 
 * [Python](https://www.python.org/)
@@ -148,7 +149,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 <!-- ACKNOWLEDGEMENTS -->
 ## Acknowledgements
-This work as been developed under the tutorship of Jose Antonio Gámez and Juan Ángel Aledo at Universidad de Castilla La-Mancha.
+This work has been developed under the tutorship of José Antonio Gámez and Juan Ángel Aledo at Universidad de Castilla La-Mancha.
 
 
 

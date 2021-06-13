@@ -12,8 +12,8 @@ from ._utils import symmetrical_uncertainty
 from ._utils import shannon_entropy
 from ._utils import compute_sufs
 from ._utils import translate_features
-from ._utils import mutual_information_class_conditioned
-from ._utils import mutual_information_class_conditioned2
+from ._utils import symmetrical_uncertainty_two_variables
+from ._utils import symmetrical_uncertainty_class_conditioned
 from ._utils import get_X_y_from_database
 from ._utils import get_graphs
 from ._utils import get_scorer
@@ -43,7 +43,7 @@ __all__ = [
     "compute_sufs",
     "translate_features",
     "mutual_information_class_conditioned",
-    "mutual_information_class_conditioned2",
+    "symmetrical_uncertainty_class_conditioned",
     "get_X_y_from_database",
     "backward_search",
     "get_graphs",

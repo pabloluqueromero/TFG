@@ -194,7 +194,7 @@ def translate_features(features,feature_encoder,categories=None,path=".",filenam
         f.write(dumps(translated_features)) 
 
 
-# def mutual_information_class_conditioned(f1,f2,y):
+# def symmetrical_uncertainty_two_variables(f1,f2,y):
 #     values, counts = np.unique(y,return_counts=True)
 #     counts = counts/counts.sum()
 #     score = []
@@ -206,7 +206,7 @@ def translate_features(features,feature_encoder,categories=None,path=".",filenam
 #     return (score * counts).sum()
 
 
-def mutual_information_class_conditioned2(f1,f2,y):
+def symmetrical_uncertainty_class_conditioned(f1,f2,y):
     values, counts = np.unique(y,return_counts=True)
     counts = counts/counts.sum()
     score = []
@@ -217,7 +217,7 @@ def mutual_information_class_conditioned2(f1,f2,y):
     score = np.array(score)
     return (score * counts).sum()
     
-def mutual_information_class_conditioned(f1,f2,y):
+def symmetrical_uncertainty_two_variables(f1,f2,y):
     X = combine_columns(np.concatenate([f1.reshape(-1,1),f2.reshape(-1,1)],axis=1).astype(str)).flatten()
     # values, counts = np.unique(y,return_counts=True)
     # counts = counts/counts.sum()

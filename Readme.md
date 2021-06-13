@@ -109,21 +109,29 @@ Welcome to my Bachelor's Final degree project. The aim is to explore different t
 </p>
 
  ```python
-#Load imports
+# Load imports
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 
-from tfg.ant_colony import ACFCS
+from tfg.genetic_programming import GeneticProgrammingV3
+from tfg.naive_bayes import NaiveBayes
 
-#Load data
+
+# Load data
 X, y = load_iris(return_X_y=True)
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
+X_train, X_test, y_train, y_test = train_test_split(X, y,
+                                                    test_size=0.3,
+                                                    random_state=0,
+                                                    shuffle=True, stratify=y)
 
 
-#Create model and predict
-clf = ACFCS(seed = 0, ants = 5, iteration = 10)
+# Train model
+clf = GeneticProgrammingV3(seed=0, individuals=20, generations=30)
 clf.fit(X_train, y_train)
-y_pred = clf.predict(X_test)
+
+# Obtain accuracy
+accuracy_score = clf.score(X_test, y_test)
+print(f"Accuracy: {accuracy_score}")
 ```
 
 <!--

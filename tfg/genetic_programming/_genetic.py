@@ -20,7 +20,7 @@ def memoize(f):
             cache[hash_individual] = f(individual, X, y)
         return cache[hash_individual]
     return g
-class GeneticAlgorithm(TransformerMixin,ClassifierMixin,BaseEstimator):
+class GeneticProgramming(TransformerMixin,ClassifierMixin,BaseEstimator):
     def simple_evaluate(self, individual, X, y):
         classifier = NaiveBayes(encode_data=False)
         return classifier.leave_one_out_cross_val(transform_features(individual, X), y, fit=True)
@@ -228,18 +228,19 @@ class GeneticAlgorithm(TransformerMixin,ClassifierMixin,BaseEstimator):
         if "combine" in params: 
             self.combine = self.elitism if "elit" in params["combine"] else self.truncation
         
-    def transform(self,X,y):
+    def transform(self,X,y=None):
         check_is_fitted(self)
         if isinstance(y,pd.DataFrame):
             y = y.to_numpy()
         X = self.feature_encoder_.transform(X)
-        y = self.class_encoder_.transform(y)
+        if y is not None:
+            y = self.class_encoder_.transform(y)
         X = np.concatenate([ f.transform(X) for f in self.best_features],axis=1)
         return X,y
 
-    def predict(self,X,y):
-        X,y = self.transform(X,y)
-        return self.classifier_.predict(X,y)
+    def predict(self,X):
+        X,_ = self.transform(X)
+        return self.classifier_.predict(X)
 
         
     def predict_proba(self,X,y):

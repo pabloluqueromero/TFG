@@ -11,7 +11,7 @@ from tqdm.autonotebook import tqdm
 # Local imports
 from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
 from tfg.feature_construction import DummyFeatureConstructor
-from tfg.genetic_algorithm import GeneticProgramming, GeneticProgrammingV2, GeneticProgrammingV3
+from tfg.genetic_programming import GeneticProgramming, GeneticProgrammingV2, GeneticProgrammingV3
 from tfg.naive_bayes import NaiveBayes
 from tfg.utils import get_X_y_from_database
 

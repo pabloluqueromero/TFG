@@ -122,7 +122,8 @@ X, y = load_iris(return_X_y=True)
 X_train, X_test, y_train, y_test = train_test_split(X, y,
                                                     test_size=0.3,
                                                     random_state=0,
-                                                    shuffle=True, stratify=y)
+                                                    shuffle=True, 
+                                                    stratify=y)
 
 
 # Train model

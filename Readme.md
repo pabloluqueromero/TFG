@@ -26,15 +26,15 @@
 <!-- PROJECT LOGO -->
 <br />
 <p align="center">
-  <a href="https://github.com/github_username/repo_name">
+  <a href="https://github.com/github_username/repo_name" >
     <!-- <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Aco_shortpath.svg/330px-Aco_shortpath.svg.png" alt="Logo" width="210"> -->
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Hypercubematrix_binary.svg/180px-Hypercubematrix_binary.svg.png" alt="Logo" width="210">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Hypercubematrix_binary.svg/180px-Hypercubematrix_binary.svg.png" style="border-radius:50%;background-color:#8895b97d" alt="Logo" width="210">
   </a>
 
   <h3 align="center">Logical Feature construction for Naive Bayes</h3>
 
   <p align="center">
-    Welcome to my Bachelor's Final degree project. The aim is to explore different techniques for feature construction and selection using the logical operators : XOR, AND and OR to improve the performance of the NaiveBayes classifier.
+    Welcome to my Bachelor's Final degree project. The aim is to explore different techniques for feature construction and selection using the logical operators : XOR, AND and OR to improve the performance of the Naive Bayes classifier.
     <br />
     <a href="https://github.com/pabloluqueromero/TFG"><strong>Explore the code »</strong></a>
     <br />
@@ -68,7 +68,7 @@
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
-Welcome to my Bachelor's Final degree project. The aim is to explore different techniques for feature construction and selection using the logical operators : XOR, AND and OR to improve the performance of the NaiveBayes classifier. The three proposed algorithms correspond to the classes: 
+Welcome to my Bachelor's Final degree project. The aim is to explore different techniques for feature construction and selection using the logical operators : XOR, AND and OR to improve the performance of the Naive Bayes classifier. The three proposed algorithms correspond to the classes: 
 <ul>
 <li>
 <strong>RankerLogicalFeatureConstructor</strong> - for the Hybrid Ranker-Wrapper.
@@ -80,6 +80,7 @@ Welcome to my Bachelor's Final degree project. The aim is to explore different t
 <strong>GeneticAlgorithm</strong> -for the Genetic Programming.
 </li>
 </ul>
+
 ### Built With
 
 * [Python](https://www.python.org/)
@@ -109,21 +110,30 @@ Welcome to my Bachelor's Final degree project. The aim is to explore different t
 </p>
 
  ```python
-#Load imports
+# Load imports
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 
-from tfg.ant_colony import ACFCS
+from tfg.genetic_programming import GeneticProgrammingV3
+from tfg.naive_bayes import NaiveBayes
 
-#Load data
+
+# Load data
 X, y = load_iris(return_X_y=True)
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
+X_train, X_test, y_train, y_test = train_test_split(X, y,
+                                                    test_size=0.3,
+                                                    random_state=0,
+                                                    shuffle=True, 
+                                                    stratify=y)
 
 
-#Load data
-clf = ACFCS(seed = 0)
+# Train model
+clf = GeneticProgrammingV3(seed=0, individuals=20, generations=30)
 clf.fit(X_train, y_train)
-y_pred = clf.predict(X_test)
+
+# Obtain accuracy
+accuracy_score = clf.score(X_test, y_test)
+print(f"Accuracy: {accuracy_score}")
 ```
 
 <!--
@@ -139,7 +149,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 <!-- ACKNOWLEDGEMENTS -->
 ## Acknowledgements
-This work as been developed under the tutorship of Jose Antonio Gámez and Juan Ángel Aledo at Universidad de Castilla La-Mancha.
+This work has been developed under the tutorship of José Antonio Gámez and Juan Ángel Aledo at Universidad de Castilla La-Mancha.
 
 
 

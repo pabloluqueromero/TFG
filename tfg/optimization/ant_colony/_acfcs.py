@@ -18,8 +18,10 @@ from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
 from tfg.feature_construction import create_feature,DummyFeatureConstructor
 from tfg.naive_bayes import NaiveBayes
 from tfg.utils import translate_features,append_column_to_numpy
+from tfg.optimization.ant_colony._graph import AntFeatureGraphMILazy
+from tfg.optimization import OptimizationMixin
 
-class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
+class ACFCS(OptimizationMixin,TransformerMixin,ClassifierMixin,BaseEstimator):
     def __init__(self,
                 ants=10, 
                 evaporation_rate=0.05,
@@ -43,11 +45,8 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
                 metric="accuracy",
                 use_initials=False,
                 final_selection="ALL",
-                encode_data=True,
-                backwards=False):
-        self.backwards = backwards
+                encode_data=True):
         self.step = step
-        self.backwards = backwards
         self.ants = ants
         self.evaporation_rate = evaporation_rate
         self.intensification_factor = intensification_factor
@@ -95,14 +94,17 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
             X = self.feature_encoder_.fit_transform(X)
             y = self.class_encoder_.fit_transform(y)
         if init_graph:
-            if self.graph_strategy=="full":
-                    self.afg = AntFeatureGraph(seed=self.seed).compute_graph(X, y, ("XOR","OR", "AND"))
+            if self.graph_strategy == "full":
+                #Full graph
+                self.afg = AntFeatureGraph(seed=self.seed).compute_graph(X, y, ("XOR","OR", "AND"))
             else:
-                    self.afg = AntFeatureGraphMI(seed=self.seed,connections=self.connections).compute_graph(X, y, ("XOR","OR", "AND"))
+                #Pruned graph
+                self.afg = AntFeatureGraphMI(seed=self.seed,connections=self.connections).compute_graph(X, y, ("XOR","OR", "AND"))
         else:
             self.afg.reset_pheromones()
         if self.verbose:
             print(f"Number of nodes: {len(self.afg.nodes)}")
+
         random.seed(self.seed)
         best_score = 0
         self.best_features = []
@@ -147,64 +149,21 @@ class ACFCS(TransformerMixin,ClassifierMixin,BaseEstimator):
 
 
         self.classifier_ = NaiveBayes(encode_data=False,metric = self.metric)
-        # self.best_features = self.get_best_features(self.afg,X,y)
         if self.final_selection=="BEST":
-            # self.best_features = self.get_best_features(self.afg,X,y)
             pass
         else:
+            #An ant traverses the graph deterministically to obtain the features
             final_ant = FinalAnt(ant_id=0,alpha=self.alpha,beta=beta, metric = self.metric,use_initials = self.use_initials, cache_loo = self.cache_loo, cache_heuristic = self.cache_heuristic,step = self.step)
             final_ant.run(X=X,y=y,graph=self.afg,random_generator=random,parallel=self.parallel)
             self.best_features = final_ant.current_features
+        #Train model with final features
         self.classifier_.fit(np.concatenate([feature.transform(X) for feature in self.best_features],axis=1),y)
-        if self.backwards:
-            self.backwards_fss(X,y)
             
         if self.save_features:
+            #Save to features to dict
             translate_features(features=self.best_features,
                                 feature_encoder = self.feature_encoder_,
                                 categories=self.categories_,
                                 path=self.path,
                                 filename=self.filename)
         return self
-
-    def get_best_features(self,afg,X,y):
-        # def get_best_neighbours(self,pheromone,heuristic):
-        #     return np.argmax(np.pow(pheromone,self.alpha)* np.pow(heuristic,self.beta))
-        nodes,pheromones,_ = afg.get_initial_nodes(set())
-        node_id,selected_node  = nodes[np.argmax(pheromones)]#get_best_neighbours(pheromones,heuristic)
-        selected_nodes = set()
-        constructed_nodes = set()
-        classifier = NaiveBayes(encode_data=False,metric=self.metric)
-        is_fitted = False
-        current_features = []
-        current_score = 0
-        score=0
-        while True:
-            current_score = score
-            if selected_node[1] is None:
-                feature_constructor = DummyFeatureConstructor(selected_node[0])
-                selected_nodes.add(node_id)
-            else:
-                # Need to construct next feature and compute heuristic value for the feature to remplace temporal su from half-var
-                neighbours,pheromones = self.afg.get_neighbours(selected_node, constructed_nodes, step="CONSTRUCTION")
-                # Compute heuristic
-                if len(neighbours)==0:
-                    break                
-                index = np.argmax(pheromones)
-                feature_constructor = create_feature(neighbours[index][2],[selected_node,neighbours[index][1]])
-                constructed_nodes.add(frozenset((node_id,neighbours[index][0],neighbours[index][2])))
-                node_id,selected_node = neighbours[index][:2]
-            #Assess new feature
-            transformed_feature = feature_constructor.transform(X)
-            if is_fitted:
-                classifier.add_features(transformed_feature, y)
-            else:
-                classifier.fit(transformed_feature, y)
-                is_fitted = True
-            features = append_column_to_numpy(features,transformed_feature)#np.concatenate([f.transform(X) for f in current_features]+[transformed_feature],axis=1)   
-            score = classifier.leave_one_out_cross_val(features, y,fit=False)
-            if score <= current_score:
-                break
-            current_features.append(feature_constructor)
-        return current_features
- 

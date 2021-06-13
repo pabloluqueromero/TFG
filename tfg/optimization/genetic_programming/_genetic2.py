@@ -12,12 +12,12 @@ from sklearn.utils.validation import check_is_fitted
 from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
 from tfg.feature_construction import DummyFeatureConstructor, create_feature
 from tfg.naive_bayes import NaiveBayes
-from tfg.optimization import OptimizationMixIn
+from tfg.optimization import OptimizationMixin
 from tfg.utils import compute_sufs, compute_sufs_non_incremental, memoize_genetic, transform_features
 from tfg.utils import get_max_mean
 
 
-class GeneticProgrammingFlexibleLogic(OptimizationMixIn, TransformerMixin, ClassifierMixin, BaseEstimator):
+class GeneticProgrammingFlexibleLogic(OptimizationMixin, TransformerMixin, ClassifierMixin, BaseEstimator):
     """GeneticProgramming for Feature Construction and Selection.
 
 

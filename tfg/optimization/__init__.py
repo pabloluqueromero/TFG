@@ -1,6 +1,6 @@
-from ._optimization import OptimizationMixIn
+from ._optimization import OptimizationMixin
 
 
 __all__ = [
-    "OptimizationMixIn",
+    "OptimizationMixin",
 ]

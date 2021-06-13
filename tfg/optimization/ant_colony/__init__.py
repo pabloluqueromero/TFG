@@ -1,6 +1,7 @@
 from ._ant import Ant, FinalAnt
 from ._graph import AntFeatureGraph
 from ._graph import AntFeatureGraphMI
+from ._graph import AntFeatureGraphMILazy
 from ._acfcs import ACFCS
 
 __all__ = [
@@ -8,5 +9,6 @@ __all__ = [
     "FinalAnt",
     "AntFeatureGraph",
     "AntFeatureGraphMI",
-    "ACFCS"
+    "ACFCS",
+    "AntFeatureGraphMILazy"
 ]

@@ -26,6 +26,12 @@ class Ant:
     ant_id : int
         Parameter to uniquely identify the ant.
 
+    cache_loo : dict
+        Store evaluation LOO results for better performance in executions
+
+    cache_heursitc
+        Store evaluation SUFS results for better performance in executions
+
     Attributes
     ----------
     current_features : array-like of Features
@@ -54,7 +60,6 @@ class Ant:
             cumulative_sum += probabilities[index]
             index += 1
         return index-1
-        # return np.random.choice(np.arange(len(probabilities)),1,p = probabilities)[0]
 
     def compute_probability(self, pheromones, heuristics):
         '''Computes the probability based on the formula
@@ -87,9 +92,6 @@ class Ant:
         feature = create_feature(operator, operands)
         return self.compute_sufs_cached(current_su, transformed_features, feature.transform(X), constructors, feature, y, minimum=0)
 
-
-        # return current_su + symmetrical_uncertainty(feature.transform(X),y)
-
     def set_cache(self, cache_loo, cache_heuristic):
         self.cache_loo = cache_loo
         self.cache_heuristic = cache_heuristic
@@ -110,7 +112,6 @@ class Ant:
         return self.cache_loo[hashed_features]
 
     def explore(self, X, y, graph, random_generator, parallel, max_errors=0):
-        # np.random.seed(200)
         '''
         Search method that follows the following steps:
             1. The initial node is connected to all the others (roulette wheel selection is performed)
@@ -172,16 +173,9 @@ class Ant:
                 # Need to construct next feature and compute heuristic value for the feature to replace temporal su from half-var
                 neighbours, pheromones = graph.get_neighbours(
                     selected_node, constructed_nodes, step="CONSTRUCTION")
-                # Compute heuristic
-                # if not isinstance(self,FinalAnt):
-                #     indexes = np.random.choice(np.arange(0,len(neighbours)),min(5,len(neighbours)),replace=False,p=pheromones/pheromones.sum())
-                #     neighbours  = [ neighbours[index] for index in indexes]
-                #     pheromones  = pheromones[indexes]
-            
 
                 if len(neighbours) == 0:
                     break
-                # neighbours, pheromones = list(zip(*random.sample(list(zip(neighbours,pheromones)),math.ceil(len(neighbours)*0.25))))
                 if self.beta != 0:
                     if parallel:
                         with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -207,6 +201,7 @@ class Ant:
                                             current_su=current_su,
                                             X=X, y=y) for neighbour in neighbours]
                 else:
+                    #Avoid unnecessary evaluation
                     su = np.ones(len(neighbours))
 
                 probabilities = self.compute_probability(
@@ -253,8 +248,8 @@ class Ant:
             
             # Compute heuristic
             su = []
-            # if len(neighbours)==0:
-            #     break
+            if len(neighbours)==0:
+                break
             if self.beta != 0:
                 for neighbour,pheromone in  zip(neighbours, pheromones):
                     if neighbour[1][1] is None:
@@ -263,19 +258,7 @@ class Ant:
                     else:
                         # This is a temporal variable that will not be finally selected but only used to calculate the heuristic
                         su.append(self.compute_sufs_cached(current_su,current_transformed_features_numpy,X[:, neighbour[1][0]] == neighbour[1][1],self.current_features,FeatureOperand(feature_index = neighbour[1][0], value = neighbour[1][1]) ,y,minimum=0))
-                        # su.append(1)
-                        #Look two steps ahead
-                        # neighbours_next, _ = graph.get_neighbours(
-                        #     neighbour[1], constructed_nodes, step="CONSTRUCTION")
-                        # su.append(max(self.compute_neighbour_sufs(
-                        #                 neighbour=neigbour_next,
-                        #                 transformed_features = current_transformed_features_numpy,
-                        #                 constructors = self.current_features,
-                        #                 selected_node=selected_node,
-                        #                 current_su=current_su,
-                        #                 X=X, y=y)
-                        #     for neigbour_next in neighbours_next))
-                        # su.append(compute_sufs(current_su,[f.transform(X).flatten() for f in self.current_features],X[:, neighbour[1][0]] == neighbour[1][1],y,minimum=0))
+            
             else:
                 su = np.ones(len(neighbours))
             probabilities = self.compute_probability(pheromones, np.array(su))
@@ -290,7 +273,6 @@ class Ant:
         return self.final_score
 
     def run(self, X, y, graph, random_generator, parallel=False, max_errors=0):
-        # print(f"Ant [{self.ant_id}] running in thread [{threading.get_ident()}]")
         return self.explore(X, y, graph, random_generator, parallel, max_errors)
 
 

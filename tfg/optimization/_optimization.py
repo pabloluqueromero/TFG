@@ -4,7 +4,7 @@ import numpy as np
 
 from sklearn.utils.validation import check_is_fitted
 
-class OptimizationMixIn:
+class OptimizationMixin:
     '''
     Mixing for transforming features in best_features for optimization algorithms
     '''

@@ -1,22 +1,31 @@
+import os
+
 import pandas as pd
 import numpy as np
-import os
 import plotly.express as px
 
 from collections import OrderedDict, deque
 from scipy.stats import entropy
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
 from sklearn.utils.validation import check_is_fitted
-from itertools import combinations
 from sklearn.metrics import normalized_mutual_info_score
+
+#Auxiliary imports
+from itertools import combinations
 from json import dumps
 
+#Local import
 from tfg.feature_construction import DummyFeatureConstructor
 
+
+'''
+Pazzani wrapper
+'''
 def concat_columns(d):
     return "-".join(d)
 
 def join_columns(X,columns):
+    '''Join a numpy array over the axis=1'''
     if isinstance(X,pd.DataFrame):
         X=X.to_numpy()
     X_1 = None
@@ -86,14 +95,6 @@ def twospirals(n_points, noise=.5):
             np.hstack((np.zeros(n_points),np.ones(n_points))).astype(int)) 
 
 
-def onecold(a):
-    n = len(a)
-    s = a.strides[0]
-    strided = np.lib.stride_tricks.as_strided
-    b = np.concatenate((a,a[:-1]))
-    return strided(b[1:], shape=(n-1,n), strides=(s,s))
-    
-
 def combinations_without_repeat(a):
     n = len(a)
     out = np.empty((n,n-1,2),dtype=a.dtype)
@@ -106,6 +107,7 @@ def combinations_without_repeat(a):
 
 
 def shannon_entropy(column):
+    '''H(X) = -sum(p(x_i) * log_2(p_xi))'''
     count = np.bincount(column)
     return entropy(count, base=2)
 
@@ -126,12 +128,14 @@ def symmetrical_uncertainty(f1,f2,X=None):
     '''SU 
        Formula: 2*I(X,Y)/(H(X)+H(Y)
        f1: feature 1 (int or array-like),
-       f2: feature 2, (int or array-like)''' 
+       f2: feature 2, (int or array-like)
+       
+       Equivalente to normalized_mutual_info_score from sklearn
+       ''' 
     if (isinstance(f1,int) or isinstance(f2,int)) and X is None:
         raise Exception("X must be provided for feature indexation")
     a = X[:,f1] if isinstance(f1,int) else f1
     b = X[:,f2] if isinstance(f2,int) else f2
-    # return normalized_mutual_info_score(a.flatten(),b.flatten())
     a = a.flatten()
     b = b.flatten()
     gain = info_gain(a.reshape(-1,1),b)
@@ -154,8 +158,7 @@ def compute_sufs(current_su,current_features,new_feature,y,beta=0.5,minimum=None
         penalisation = 0
     else:
         penalisation = beta*sum(
-                    symmetrical_uncertainty(current_features[:,j],new_feature) #->The result should be the same but sklearn's is more tested
-                    # normalized_mutual_info_score(current_features[:,j].flatten(),new_feature.flatten())
+                    symmetrical_uncertainty(current_features[:,j],new_feature)
                     for j in range(current_features.shape[1]))
 
     su = current_su+class_su-penalisation 
@@ -170,8 +173,7 @@ def compute_sufs_non_incremental(features,y,beta=0.5,minimum=None):
     '''
     class_su = sum([symmetrical_uncertainty(f1=f,f2=y) for f in features])
     penalisation = beta*sum(
-                    symmetrical_uncertainty(f1,f2) #->The result should be the same but sklearn's is more tested
-                    # normalized_mutual_info_score(current_features[j],new_feature)
+                    symmetrical_uncertainty(f1,f2)
                     for f1,f2 in combinations(features,2))
 
     su = class_su-penalisation 
@@ -181,6 +183,7 @@ def compute_sufs_non_incremental(features,y,beta=0.5,minimum=None):
 
 
 def translate_features(features,feature_encoder,categories=None,path=".",filename="selected_features"):
+    '''Translate features from a model into a json object'''
     if path[-1]=="/":
         path = path[:-1]
 
@@ -193,20 +196,8 @@ def translate_features(features,feature_encoder,categories=None,path=".",filenam
             translated_features.append(od)
         f.write(dumps(translated_features)) 
 
-
-# def symmetrical_uncertainty_two_variables(f1,f2,y):
-#     values, counts = np.unique(y,return_counts=True)
-#     counts = counts/counts.sum()
-#     score = []
-#     for i in range(values.shape[0]):
-#         value = values[i]
-#         mask = y == value
-#         score.append(normalized_mutual_info_score(f1[mask],f2[mask]))
-#     score = np.array(score)
-#     return (score * counts).sum()
-
-
 def symmetrical_uncertainty_class_conditioned(f1,f2,y):
+    '''Computes SU(X_i,X_j|Y)'''
     values, counts = np.unique(y,return_counts=True)
     counts = counts/counts.sum()
     score = []
@@ -219,20 +210,12 @@ def symmetrical_uncertainty_class_conditioned(f1,f2,y):
     
 def symmetrical_uncertainty_two_variables(f1,f2,y):
     X = combine_columns(np.concatenate([f1.reshape(-1,1),f2.reshape(-1,1)],axis=1).astype(str)).flatten()
-    # values, counts = np.unique(y,return_counts=True)
-    # counts = counts/counts.sum()
-    # score = []
-    # for i in range(values.shape[0]):
-    #     value = values[i]
-    #     mask = y == value
-    #     score.append(normalized_mutual_info_score(f1[mask],f2[mask]))
-    # score = np.array(score)
-    # return (score * counts).sum()
     return normalized_mutual_info_score(X,y)
 
 
 
 def get_X_y_from_database(base_path, name, data, test, label):
+    '''Get data from UCIREPO folder'''
     full_data_path = base_path+name+"/"+data
     full_test_path = base_path+name+"/"+test
     has_test = os.path.exists(base_path+name+"/"+test)
@@ -251,6 +234,7 @@ def get_X_y_from_database(base_path, name, data, test, label):
 
 
 def get_graphs(df,folder):
+    '''Obtain graphs for time comparison'''
     #FIT
     filename = "fit_time_fix_n_samples.png"
     fig = px.line(df[df["n_samples"].isin([10,100,1000])].sort_values(['n_samples','n_features']),
@@ -290,6 +274,7 @@ def get_graphs(df,folder):
     fig.write_image(folder+filename)
     
 def get_scorer(scoring):
+    '''Defines the scorer that are compatible with the NB classifier and the algorhtms that use it'''
     scores = {"accuracy": accuracy_score,
               "f1_score": f1_score,
               "roc_auc_score":roc_auc_score
@@ -300,7 +285,7 @@ def get_scorer(scoring):
 
 
 def transform_features(features,X):
-    # return np.concatenate([f.transform(X) for f in features],axis=1)
+    '''Objects inheriting from Feature are used to transform a matrix of data'''
     array = np.zeros(shape=(X.shape[0],len(features)))
     for i,f in enumerate(features):
         transformed = f.transform(X).reshape(-1,1)
@@ -310,6 +295,7 @@ def transform_features(features,X):
 
 
 def backward_search(X,y,current_features,classifier):
+    '''1-step backward elimination, the classifier is expected to be fitted already'''
     check_is_fitted(classifier)
     transformed_features = np.concatenate([f.transform(X) for f in current_features],axis=1)
     improvement = True
@@ -319,7 +305,7 @@ def backward_search(X,y,current_features,classifier):
         feature = None
         for i in range(transformed_features.shape[1]):
             feature = transformed_features[:,i].reshape(-1,1)
-            iteration_features = np.delete(transformed_features,i,axis=1)
+            iteration_features = np.delete(transformed_fe,atures,i,axis=1)
             classifier.remove_feature(i)
             current_score = classifier.leave_one_out_cross_val(iteration_features,y,fit=False)
             classifier.add_features(feature,y,[i])
@@ -340,6 +326,7 @@ def hash_features(features):
     return hash(tuple(features))
 
 def append_column_to_numpy(array,column):
+    '''Fast append over axis=1, avoids using np.concatenate repeteadly'''
     a = np.zeros((array.shape[0],array.shape[1]+1),dtype=int)
     a[:,:-1] = array
     a[:,-1]=column.flatten()

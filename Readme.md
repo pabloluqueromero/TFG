@@ -140,8 +140,8 @@ clf_pazzani.fit(X_train, y_train)
 # Obtain accuracy
 accuracy_genetic = clf_genetic.score(X_test, y_test)
 accuracy_pazzani = clf_pazzani.score(X_test, y_test)
-print(f"Genetic Programming Accuracy: { accuracy_genetic}")
-print(f"Pazzani Wrapper Accuracy: { accuracy_pazzani}")
+print(f"Genetic Programming Accuracy: {accuracy_genetic}")
+print(f"Pazzani Wrapper Accuracy: {accuracy_pazzani}")
 ```
 
 <!--

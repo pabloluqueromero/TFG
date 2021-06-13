@@ -9,7 +9,7 @@ from itertools import combinations
 from tqdm.autonotebook import tqdm
 from copy import deepcopy
 
-#Local imports
+# Local imports
 from tfg.ant_colony import AntFeatureGraphMI
 from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
 from tfg.feature_construction import construct_features
@@ -135,7 +135,7 @@ class RankerLogicalFeatureConstructor(TransformerMixin, ClassifierMixin, BaseEst
             raise ValueError("Unknown operator type: %s, expected one of %s." % (self.strategy, allowed_strategies))
 
     def fit(self, X, y):
-        #Parse input
+        # Parse input
         if isinstance(y, pd.DataFrame):
             y = y.to_numpy()
         if self.encode_data:
@@ -147,8 +147,8 @@ class RankerLogicalFeatureConstructor(TransformerMixin, ClassifierMixin, BaseEst
         if isinstance(X, pd.DataFrame):
             X = X.to_numpy()
         check_X_y(X, y)
-        
-        #Reset the stored results for new fit
+
+        # Reset the stored results for new fit
         self.reset_evaluation()
 
         # Generate rank
@@ -208,7 +208,7 @@ class RankerLogicalFeatureConstructor(TransformerMixin, ClassifierMixin, BaseEst
         return self.classifier.predict(X)
 
     def reset_evaluation(self):
-        #Reset the memoize evaluations
+        # Reset the memoize evaluations
         self.evaluate_leave_one_out_cross_val = memoize(evaluate_leave_one_out_cross_val)
 
     def predict_proba(self, X, y):
@@ -228,29 +228,29 @@ class RankerLogicalFeatureConstructor(TransformerMixin, ClassifierMixin, BaseEst
         current_features = []
         current_data = None
         if self.use_initials:
-            #Original Features have already been taken into account
+            # Original Features have already been taken into account
             rank_iter = filter(lambda x: not isinstance(
                 self.all_feature_constructors[x], DummyFeatureConstructor), iter(self.rank))
-                
-            #Deep copy to avoid issues when modifying the list
+
+            # Deep copy to avoid issues when modifying the list
             current_features = deepcopy(self.initial_backward_features)
             current_data = np.concatenate([f.transform(X) for f in current_features], axis=1)
-            
-            #Get initial LOO score
+
+            # Get initial LOO score
             current_score = self.evaluate_leave_one_out_cross_val(
                 self.classifier, current_features, current_data, y, fit=True)
         else:
-            #Iterator over the sorted list of indexes
+            # Iterator over the sorted list of indexes
             rank_iter = iter(self.rank)
 
         if self.verbose:
             progress_bar = tqdm(total=len(self.rank), bar_format='{l_bar}{bar:20}{r_bar}{bar:-10b}')
-        
+
         iteration = 0
         iterations_without_improvements = 0
 
-        #Loop for including {block size} elements at a time
-        #Rank is an iterator, so the for loop is not sequential!
+        # Loop for including {block size} elements at a time
+        # Rank is an iterator, so the for loop is not sequential!
         for feature_constructor_index in rank_iter:
             iteration += 1
             if self.verbose:
@@ -258,7 +258,7 @@ class RankerLogicalFeatureConstructor(TransformerMixin, ClassifierMixin, BaseEst
                 progress_bar.update(1)
                 progress_bar.refresh()
 
-            #Add block size features
+            # Add block size features
             new_X = [self.all_feature_constructors[feature_constructor_index].transform(X)]
             selected_features = [self.all_feature_constructors[feature_constructor_index]]
             for _ in range(self.block_size-1):
@@ -272,8 +272,8 @@ class RankerLogicalFeatureConstructor(TransformerMixin, ClassifierMixin, BaseEst
                 except:
                     # Block size does not divide the number of elements in the rank. The search is halted
                     break
-                
-            #Evaluate features
+
+            # Evaluate features
             new_X = np.concatenate(new_X, axis=1)
             if iteration == 1 and not self.use_initials:
                 current_data = new_X
@@ -286,7 +286,7 @@ class RankerLogicalFeatureConstructor(TransformerMixin, ClassifierMixin, BaseEst
                 continue
             data = np.concatenate([current_data, new_X], axis=1)
             self.classifier.add_features(new_X, y)
-            #LOO evaluation
+            # LOO evaluation
             score = self.evaluate_leave_one_out_cross_val(
                 self.classifier, current_features + selected_features, data, y, fit=False)
             if score > current_score:
@@ -296,7 +296,7 @@ class RankerLogicalFeatureConstructor(TransformerMixin, ClassifierMixin, BaseEst
                 iterations_without_improvements = 0
             else:
                 iterations_without_improvements += 1
-                #Remove last added block
+                # Remove last added block
                 for feature_index_to_remove in range(data.shape[1], data.shape[1]-new_X.shape[1], -1):
                     self.classifier.remove_feature(feature_index_to_remove-1)
                 if self.strategy == "eager" and self.max_err < iterations_without_improvements:
@@ -332,8 +332,9 @@ class RankerLogicalFeatureConstructor(TransformerMixin, ClassifierMixin, BaseEst
 # Auxiliary method for improving the experiments execution time.
 def memoize(f):
     cache = dict()
+
     def g(classifier, selected_features, current_data, y, fit=True):
-        #Hash the individual
+        # Hash the individual
         hashable_individual = tuple(selected_features)
         hash_individual = hash(hashable_individual)
         if hash_individual not in cache:

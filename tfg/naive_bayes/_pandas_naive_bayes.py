@@ -9,6 +9,7 @@ class PandasNaiveBayes:
             - Computation based on aggregations and join with a single table.
             - May be suitable for implementing Bayesian networks.
     '''
+
     def __init__(self, attributes: list, class_to_predict: str):
         self.attributes = attributes
         self.class_to_predict = class_to_predict

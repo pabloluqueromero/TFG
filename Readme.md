@@ -26,9 +26,9 @@
 <!-- PROJECT LOGO -->
 <br />
 <p align="center">
-  <a href="https://github.com/github_username/repo_name">
+  <a href="https://github.com/github_username/repo_name" >
     <!-- <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Aco_shortpath.svg/330px-Aco_shortpath.svg.png" alt="Logo" width="210"> -->
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Hypercubematrix_binary.svg/180px-Hypercubematrix_binary.svg.png" alt="Logo" width="210">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Hypercubematrix_binary.svg/180px-Hypercubematrix_binary.svg.png" style="border-radius:50%;background-color:#8895b97d" alt="Logo" width="210">
   </a>
 
   <h3 align="center">Logical Feature construction for Naive Bayes</h3>

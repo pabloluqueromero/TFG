@@ -149,7 +149,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 <!-- ACKNOWLEDGEMENTS -->
 ## Acknowledgements
-This work has been developed under the tutorship of José Antonio Gámez and Juan Ángel Aledo at Universidad de Castilla La-Mancha.
+This work has been developed under the tutorship of José Antonio Gámez and Juan Ángel Aledo Sánchez at Universidad de Castilla La-Mancha.
 
 
 

@@ -34,7 +34,7 @@
   <h3 align="center">Logical Feature construction for Naive Bayes</h3>
 
   <p align="center">
-    Welcome to my Bachelor's Final degree project. The aim is to explore different techniques for feature construction and selection using the logical operators : XOR, AND and OR to improve the performance of the NaiveBayes classifier.
+    Welcome to my Bachelor's Final degree project. The aim is to explore different techniques for feature construction and selection using the logical operators : XOR, AND and OR to improve the performance of the Naive Bayes classifier.
     <br />
     <a href="https://github.com/pabloluqueromero/TFG"><strong>Explore the code »</strong></a>
     <br />
@@ -68,7 +68,7 @@
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
-Welcome to my Bachelor's Final degree project. The aim is to explore different techniques for feature construction and selection using the logical operators : XOR, AND and OR to improve the performance of the NaiveBayes classifier. The three proposed algorithms correspond to the classes: 
+Welcome to my Bachelor's Final degree project. The aim is to explore different techniques for feature construction and selection using the logical operators : XOR, AND and OR to improve the performance of the Naive Bayes classifier. The three proposed algorithms correspond to the classes: 
 <ul>
 <li>
 <strong>RankerLogicalFeatureConstructor</strong> - for the Hybrid Ranker-Wrapper.

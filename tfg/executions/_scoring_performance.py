@@ -13,6 +13,32 @@ from tfg.naive_bayes import NaiveBayes
 from tfg.utils import make_discrete
 from tfg.utils import get_X_y_from_database
 
+"""
+    Method to compare the Naive Bayes classifier against the Categorial NB of sklearn.
+
+    Requires skleran >= 0.24.1 
+
+    Parameters
+    ----------
+
+    datasets : array-like of tuples
+        List of tuples where each elements is of the type: ('dataset_name','target_name')
+
+    base_path: str
+        Path to the folder with all the datasets
+
+    verbose :int {0,1}, default = 1 
+        Display process progress
+
+    seed : int or None
+        Seed to guarantee reproducibility
+
+    n_iterations : int
+        Number of iterations to average the result
+        
+    test_size : float, default=0.3
+        Size for the test
+"""
 
 def scoring_comparison(base_path,datasets,verbose=1,test_size=0.3,seed=None,n_iterations=30):
     column_names = ["dataset",

@@ -71,13 +71,13 @@
 Welcome to my Bachelor's Final degree project. The aim is to explore different techniques for feature construction and selection using the logical operators : XOR, AND and OR to improve the performance of the Naive Bayes classifier. The three proposed algorithms correspond to the classes: 
 <ul>
 <li>
-<strong>RankerLogicalFeatureConstructor</strong> - for the Hybrid Ranker-Wrapper.
+<strong>RankerLogicalFeatureConstructor</strong> for the Hybrid Ranker-Wrapper.
 </li>
 <li>
-<strong>ACFCS</strong> -for the Ant Colony-based algorith. 
+<strong>ACFCS</strong> for the Ant Colony Optimization algorithm. 
 </li>
 <li>
-<strong>GeneticAlgorithm</strong> -for the Genetic Programming.
+<strong>GeneticAlgorithm</strong> for the Genetic Programming.
 </li>
 </ul>
 

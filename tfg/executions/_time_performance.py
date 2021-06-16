@@ -4,14 +4,12 @@ import pandas as pd
 from itertools import product
 from sklearn.datasets import make_classification
 from sklearn.naive_bayes import CategoricalNB, GaussianNB
-from tqdm.autonotebook  import tqdm
+from tqdm.autonotebook import tqdm
 
 from tfg.encoder import CustomOrdinalFeatureEncoder
 from tfg.naive_bayes import NaiveBayes
 from tfg.utils import make_discrete
 from time import time
-
-
 
 
 def evaluate(X_train, y_train, X_test, y_test, clf, fit_time, predict_time, score):
@@ -23,7 +21,7 @@ def evaluate(X_train, y_train, X_test, y_test, clf, fit_time, predict_time, scor
     s = clf.score(X_test, y_test)
     predict_time.append(time()-ts)
     score.append(s)
-    return 0
+    return 0  # errors
 
 
 def update_df(results,
@@ -45,6 +43,34 @@ def update_df(results,
     results = results.append(row)
 
 
+"""
+    Method to compare the Naive Bayes classifier against the Categorial NB of sklearn (time performance).
+
+    Requires skleran >= 0.24.1 
+
+    Parameters
+    ----------
+
+    combinations : array-like of tuples
+        List of tuples where each elements is of the type: ('n_samples','n_features
+        
+    combinations : array-like of tuples
+        List of tuples where each elements is of the type: ('n_samples','n_features')
+
+    n_iterations : int
+        Number of iterations to average the result
+        
+    base_path: str
+        Path to the folder with all the datasets
+
+    verbose :int {0,1}, default = 1 
+        Display process progress
+
+    seed : int or None
+        Seed to guarantee reproducibility
+"""
+
+
 def time_comparison(combinations=None, n_iterations=15, verbose=1, seed=200):
     column_names = ["Classifier",
                     "n_samples",
@@ -60,19 +86,19 @@ def time_comparison(combinations=None, n_iterations=15, verbose=1, seed=200):
         columns = range(10, 40010, 5000)
         rows = [10, 100, 1000]
         combinations = list(product(rows, columns)) + list(product(columns, rows))
-        combinations += list(product([10,100,1000], [500000]))
-        combinations += list(product([500000],[10,100,1000]))
+        combinations += list(product([10, 100, 1000], [500000]))
+        combinations += list(product([500000], [10, 100, 1000]))
 
     clf_no_encoding = NaiveBayes(encode_data=False, alpha=1)
-    clf_encoding = NaiveBayes(encode_data=True, alpha=1,discretize=False)
+    clf_encoding = NaiveBayes(encode_data=True, alpha=1, discretize=False)
     clf_categorical_sklearn = CategoricalNB(alpha=1)
     clf_gaussian_sklearn = GaussianNB()
     progress_bar = tqdm(total=len(combinations), bar_format='{l_bar}{bar:20}{r_bar}{bar:-10b}')
     X = []
     y = []
-    for n_samples,n_features  in combinations:
+    for n_samples, n_features in combinations:
         if verbose:
-            progress_bar.set_postfix({"n_samples":n_samples, "n_features":n_features})
+            progress_bar.set_postfix({"n_samples": n_samples, "n_features": n_features})
             progress_bar.update(1)
             progress_bar.refresh()
         del X
@@ -165,7 +191,7 @@ def time_comparison(combinations=None, n_iterations=15, verbose=1, seed=200):
                   custom_no_encoding_nb_predict_time,
                   custom_no_encoding_nb_score,
                   custom_no_encoding_nb_errors)
-        results_df =  pd.DataFrame(results,columns=column_names)
-        results_df.drop_duplicates(["Classifier","n_samples","n_features"],inplace=True)
+        results_df = pd.DataFrame(results, columns=column_names)
+        results_df.drop_duplicates(["Classifier", "n_samples", "n_features"], inplace=True)
         results_df.to_csv("backup.csv")
     return results_df

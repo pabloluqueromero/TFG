@@ -11,6 +11,10 @@ from time import time
 from tfg.naive_bayes import NaiveBayes
 from tfg.encoder import CustomOrdinalFeatureEncoder
 
+'''
+Method to test NB leave one out
+'''
+
 
 def cross_leave_one_out(clf, X, y):
     l = LeaveOneOut()
@@ -22,7 +26,7 @@ def cross_leave_one_out(clf, X, y):
     return np.mean(score_avg)
 
 
-def test_incremental_validation(X=None, y=None, iterations=10,verbose=1):
+def test_incremental_validation(X=None, y=None, iterations=10, verbose=1):
     if not X:
         X, y = make_classification(n_samples=500,
                                    n_features=1000,
@@ -37,7 +41,7 @@ def test_incremental_validation(X=None, y=None, iterations=10,verbose=1):
                                    scale=1.0,
                                    shuffle=True,
                                    random_state=0)
-    X//=10 #--> To be able to evaluate categoricalNB
+    X //= 10  # --> To be able to evaluate categoricalNB
 
     # classifiers
     nb_classifier = NaiveBayes(encode_data=True)
@@ -56,16 +60,10 @@ def test_incremental_validation(X=None, y=None, iterations=10,verbose=1):
             print(f"Iteration {i}")
         ts = time()
         X2 = custom_encoder.fit_transform(X)
-        # score_1 = cross_leave_one_out(cnb, X2, y)
-        # categorical_nb.append(time()-ts)
 
         ts = time()
         score_2 = nb_classifier.leave_one_out_cross_val(X, y)
         custom_nb_val_1.append(time()-ts)
-
-        # ts = time()
-        # score_3 = nb_classifier.leave_one_out_cross_val2(X, y)
-        # custom_nb_val_2.append(time()-ts)
 
         ts = time()
         score_4 = cross_leave_one_out(nb_classifier, X, y)
@@ -77,12 +75,10 @@ def test_incremental_validation(X=None, y=None, iterations=10,verbose=1):
         custom_nb_val_4.append(time()-ts)
 
         if i == 0:
-            score_1=score_2
+            score_1 = score_2
             scores = [score_1, score_2, score_4, score_5]
-            assert all( score == scores[0] for score in scores )
+            assert all(score == scores[0] for score in scores)
     print("Categorical with scikit loo: ", np.mean(categorical_nb[1:]))
     print("Custom with scikit loo: ", np.mean(custom_nb_val_3[1:]))
     print("Custom with scikit loo (pre-encoding): ", np.mean(custom_nb_val_4[1:]))
     print("Custom with first incremental: ", np.mean(custom_nb_val_1[1:]))
-    # print("Custom with second incremental: ", np.mean(custom_nb_val_2[1:]))
-

@@ -52,7 +52,7 @@ Welcome to my Bachelor's Final degree project. The aim is to explore different t
 <strong>ACFCS</strong> for the Ant Colony Optimization algorithm. 
 </li>
 <li>
-<strong>GeneticAlgorithm</strong> for the Genetic Programming.
+<strong>GeneticProgrammingRankMutation</strong> for the Genetic Programming (2nd scheme).
 </li>
 </ul>
 

@@ -157,7 +157,6 @@ class GeneticProgrammingRankMutation(GeneticProgrammingFlexibleLogic):
         self.flexible_logic = True
 
 def __init__(self,
-                 size=10,
                  seed=None,
                  individuals=1,
                  generations=40,
@@ -167,14 +166,12 @@ def __init__(self,
                  combine="elitism",
                  n_intervals=5,
                  metric="accuracy",
-                 use_initials=False,
                  verbose=False,
                  encode_data=True,
                  mixed=True,
                  mixed_percentage=0.5
                  ):
         self.mixed_percentage = mixed_percentage
-        self.size = size
         self.mixed = mixed
         self.encode_data = encode_data
         self.flexible_logic = True
@@ -184,7 +181,6 @@ def __init__(self,
         self.seed = seed
         self.individuals = individuals
         self.generations = generations
-        self.use_initials = use_initials
         self.mutation_probability = mutation_probability
 
         self.selection = selection

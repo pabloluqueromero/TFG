@@ -1,0 +1,62 @@
+\begin{tabular}{|c|c|c|c|c|c|} % Tres primeras con anchura predefinida
+\hline 
+\bft{}  &  
+\bft{}  & 
+\bft{Number}&
+\bft{Number}  &
+\bft{Number} &
+\bft{Most frequent} \
+\rowcolor{tema!10} % Color con transparencia correspondiente
+ \multirow{-2}{*}{\bft{ID}}  & 
+ \multirow{-2}{*}{\bft{Name}}  & 
+\bft{of features} &
+\bft{of instances} &
+\bft{of classes} &
+\bft{class proportion} \\
+\hline
+\#1 & abalone & 8 & 4182 & 28 & 0.16\\\hline
+\#2 & anneal & 38 & 898 & 5 & 0.76\\\hline
+\#3 & audiology & 69 & 227 & 24 & 0.25\\\hline
+\#4 & balance-scale & 4 & 625 & 3 & 0.46\\\hline
+\#5 & breast-cancer & 9 & 286 & 2 & 0.7\\\hline
+\#6 & car-evaluation & 5 & 1728 & 4 & 0.7\\\hline
+\#7 & cmc & 9 & 1473 & 3 & 0.43\\\hline
+\#8 & credit & 15 & 690 & 2 & 0.56\\\hline
+\#9 & cylinder-bands & 39 & 539 & 2 & 0.58\\\hline
+\#10 & derm & 34 & 366 & 6 & 0.31\\\hline
+\#11 & electricgrid & 13 & 10000 & 2 & 0.64\\\hline
+\#12 & glass & 9 & 214 & 6 & 0.36\\\hline
+\#13 & horse-colic & 27 & 368 &
+\hline
+\end{tabular}
+\begin{tabular}{|c|c|c|c|c|c|} % Tres primeras con anchura predefinida
+\hline 
+\bft{}  &  
+\bft{}  & 
+\bft{Number}&
+\bft{Number}  &
+\bft{Number} &
+\bft{Most frequent} \
+\rowcolor{tema!10} % Color con transparencia correspondiente
+ \multirow{-2}{*}{\bft{ID}}  & 
+ \multirow{-2}{*}{\bft{Name}}  & 
+\bft{of features} &
+\bft{of instances} &
+\bft{of classes} &
+\bft{class proportion} \\
+ 3 & 0.58\\\hline
+\#14 & iris & 4 & 150 & 3 & 0.33\\\hline
+\#15 & krkp & 36 & 3196 & 2 & 0.52\\\hline
+\#16 & lenses & 4 & 24 & 3 & 0.62\\\hline
+\#17 & mammographicmasses & 5 & 961 & 2 & 0.54\\\hline
+\#18 & mushroom & 22 & 8124 & 2 & 0.52\\\hline
+\#19 & pima & 8 & 768 & 2 & 0.65\\\hline
+\#20 & spam & 57 & 4601 & 2 & 0.61\\\hline
+\#21 & student & 32 & 395 & 5 & 0.38\\\hline
+\#22 & tictactoe & 9 & 958 & 2 & 0.65\\\hline
+\#23 & voting & 16 & 435 & 2 & 0.61\\\hline
+\#24 & wine & 13 & 178 & 3 & 0.4\\\hline
+\#25 & wisconsin & 30 & 569 & 2 & 0.63\\\hline
+\#26 & yeast & 8 & 1484 & 10 & 0.31\\
+\hline
+\end{tabular}

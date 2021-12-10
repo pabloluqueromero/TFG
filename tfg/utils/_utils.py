@@ -344,8 +344,7 @@ def memoize_genetic(f):
     '''Hash individual and store result'''
     cache = dict()
     def g(individual, X, y):
-        hashable_individual = tuple(individual[0]),tuple(individual[1]),frozenset(individual[1])
-        hash_individual = hash(hashable_individual)
+        hash_individual = hash(individual)
         if hash_individual not in cache:
             cache[hash_individual] = f(individual, X, y)
             g.miss_count+=1

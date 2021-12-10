@@ -11,7 +11,7 @@ from tqdm.autonotebook import tqdm
 # Local imports
 from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
 from tfg.feature_construction import DummyFeatureConstructor
-from tfg.optimization.genetic_programming import GeneticProgrammingFlexibleLogic, GeneticProgrammingRankMutation
+from tfg.optimization.genetic_programming import GeneticProgramming
 from tfg.naive_bayes import NaiveBayes
 from tfg.utils import get_X_y_from_database
 
@@ -63,10 +63,6 @@ from tfg.utils import get_X_y_from_database
             - PASSWORD : password
             - TITLE : Subject
             - FILENAME : filename for the file to be sent
-    
-    version : int {1,2,3}
-       Version of the algorithm to run
-
 """
 
 
@@ -80,8 +76,7 @@ def genetic_score_comparison(datasets,
                              metric="accuracy",
                              send_email=False,
                              email_data=dict(),
-                             verbose=True,
-                             version=1):
+                             verbose=True):
     result = []
     columns = ["Database",
                "Number of attributes",
@@ -95,17 +90,7 @@ def genetic_score_comparison(datasets,
 
     dataset_tqdm = tqdm(datasets)
 
-    # Instantiate the classifier
-    if version == 1:
-        # First Version - No flexibility in the number of attributes (bad performance)
-        # clf = GeneticProgramming(seed=seed, metric=metric)
-        clf = GeneticProgrammingFlexibleLogic(seed=seed, metric=metric)
-    elif version == 2:
-        # Version with flexibility
-        clf = GeneticProgrammingFlexibleLogic(seed=seed, metric=metric)
-    else:
-        # Guided mutation based on SU
-        clf = GeneticProgrammingRankMutation(seed=seed, metric=metric)
+    clf = GeneticProgramming(seed=seed, metric=metric) 
     nb = NaiveBayes(encode_data=False, n_intervals=n_intervals, metric=metric)
 
     # Execute algorithm on datasets
@@ -190,5 +175,5 @@ def genetic_score_comparison(datasets,
     result = pd.DataFrame(result, columns=columns)
     if send_email:
         from tfg.utils import send_results
-        send_results(f"GENETIC_{version}", email_data, result)
+        send_results(f"GENETIC", email_data, result)
     return result

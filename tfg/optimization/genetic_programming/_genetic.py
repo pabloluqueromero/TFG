@@ -2,24 +2,23 @@ import numpy as np
 import pandas as pd
 import random
 
-import GeneticUtils
+from ._genetic_utils import GeneticUtils
 
 from itertools import chain
 from time import time
 from tqdm.autonotebook import tqdm
 
 from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
-from sklearn.utils.validation import check_is_fitted
 
 from tfg.encoder import CustomLabelEncoder, CustomOrdinalFeatureEncoder
-from tfg.feature_construction import DummyFeatureConstructor, create_feature
+from tfg.feature_construction import DummyFeatureConstructor
 from tfg.naive_bayes import NaiveBayes
 from tfg.optimization import OptimizationMixin
-from tfg.utils import compute_sufs, compute_sufs_non_incremental, memoize_genetic, transform_features
+from tfg.utils import compute_sufs_non_incremental, memoize_genetic, transform_features
 from tfg.utils import get_max_mean
 
 
-class GeneticProgrammingFlexibleLogic(OptimizationMixin, TransformerMixin, ClassifierMixin, BaseEstimator):
+class GeneticProgramming(OptimizationMixin, TransformerMixin, ClassifierMixin, BaseEstimator):
     """GeneticProgramming for Feature Construction and Selection.
 
 
@@ -80,10 +79,10 @@ class GeneticProgrammingFlexibleLogic(OptimizationMixin, TransformerMixin, Class
 
     def simple_evaluate(self, individual, X, y):
         classifier_ = NaiveBayes(encode_data=False, metric=self.metric)
-        return classifier_.leave_one_out_cross_val(transform_features(individual[0]+individual[1], X), y, fit=True)
+        return classifier_.leave_one_out_cross_val(transform_features(individual.get_all_features(), X), y, fit=True)
 
     def simple_evaluate_heuristic(self, individual, X, y):
-        return compute_sufs_non_incremental(features=[f.transform(X) for f in chain(*individual[:2])], y=y)
+        return compute_sufs_non_incremental(features=[f.transform(X) for f in individual.get_all_features()], y=y)
 
     def fitness(self, population, X, y):
         return [(individual, self.evaluate(individual, X, y)) for individual in population]
@@ -94,7 +93,7 @@ class GeneticProgrammingFlexibleLogic(OptimizationMixin, TransformerMixin, Class
         for _ in range(self.individuals):
             individual = Individual()
             for _ in utils.get_inidividual_size():
-                individual.add_constructed(utils.generate_feature(random))
+                individual.add_constructed_feature(utils.generate_feature())
                 
             n_og_features = random.randint(0, self.n_features-1)
             features = list(range(self.n_features))
@@ -104,7 +103,9 @@ class GeneticProgrammingFlexibleLogic(OptimizationMixin, TransformerMixin, Class
         return population
 
     def mutate_complex(self, population, **kwargs):
-        for individual in population:
+        new_population = []
+        for individual in map(lambda i: i.copy(), population):
+            new_population.append(individual)
             if random.random() < self.mutation_probability:
                  GeneticUtils \
                         .with_instance(self) \
@@ -113,15 +114,17 @@ class GeneticProgrammingFlexibleLogic(OptimizationMixin, TransformerMixin, Class
             if random.random() < self.mutation_probability:
                 GeneticUtils \
                         .with_instance(self) \
-                        .complex_mutate_original_features(individual)
+                        .mutate_original_features(individual)
 
             GeneticUtils \
                     .with_instance(self) \
                     .fix_individual(individual)
+        return new_population
 
     def mutate_simple(self, population, **kwargs):
         new_population = []
-        for individual in population:
+        for individual in map(lambda i: i.copy(), population):
+            new_population.append(individual)
             if random.random() < self.mutation_probability:
                  GeneticUtils \
                         .with_instance(self) \
@@ -131,7 +134,30 @@ class GeneticProgrammingFlexibleLogic(OptimizationMixin, TransformerMixin, Class
             if random.random() < self.mutation_probability:
                 GeneticUtils \
                         .with_instance(self) \
-                        .complex_mutate_original_features(individual)
+                        .mutate_original_features(individual)
+
+            GeneticUtils \
+                    .with_instance(self) \
+                    .fix_individual(individual)
+        return new_population
+
+    def mutate_rank(self, population, **kwargs):
+        assert "X" in kwargs
+        assert "y" in kwargs
+        
+        new_population = []
+        for individual in map(lambda i: i.copy(), population):
+            new_population.append(individual)
+            if random.random() < self.mutation_probability:
+                 GeneticUtils \
+                        .with_instance(self) \
+                        .rank_mutate_constructed_features(individual, kwargs["X"], kwargs["y"])
+                
+                
+            if random.random() < self.mutation_probability:
+                GeneticUtils \
+                        .with_instance(self) \
+                        .mutate_original_features(individual)
 
             GeneticUtils \
                     .with_instance(self) \
@@ -140,8 +166,8 @@ class GeneticProgrammingFlexibleLogic(OptimizationMixin, TransformerMixin, Class
 
     def elitism(self, population1, population2):
         maximum = max(population1, key=lambda x: x[1])
-        minimum_index = min(enumerate(population2),
-                            key=lambda x: x[1][1])[0]
+        minimum_index = min(range(len(population2)),
+                            key=lambda x: population2[x][1])
         population2[minimum_index] = maximum
         return population2
 
@@ -159,7 +185,7 @@ class GeneticProgrammingFlexibleLogic(OptimizationMixin, TransformerMixin, Class
             for individual_with_fitness in population:
                 cumulative_prob += individual_with_fitness[1]/totalFitness
                 if r <= cumulative_prob:
-                    selected_individuals.append(self.copy_individual(individual_with_fitness[0]))
+                    selected_individuals.append(individual_with_fitness[0].copy())
                     break
         return selected_individuals
 
@@ -174,12 +200,9 @@ class GeneticProgrammingFlexibleLogic(OptimizationMixin, TransformerMixin, Class
             for i, individual_with_fitness in enumerate(population, start=1):
                 cumulative_prob += (num_selected-i+1)/totalRank
                 if r <= cumulative_prob:
-                    selected_individuals.append(self.copy_individual(individual_with_fitness[0]))
+                    selected_individuals.append(individual_with_fitness[0].copy())
                     break
         return selected_individuals
-
-    def copy_individual(self, individual):
-        return ([chrms.copy() for chrms in individual[0]], [chrms.copy() for chrms in individual[1]], individual[2].copy())
 
     def fit(self, X, y):
         self.feature_encoder_ = CustomOrdinalFeatureEncoder()
@@ -199,6 +222,8 @@ class GeneticProgrammingFlexibleLogic(OptimizationMixin, TransformerMixin, Class
             self.unique_values = [np.unique(X[:, j]).shape[0] for j in range(X.shape[1])]
         random.seed(self.seed)
         np.random.seed(self.seed)
+        
+        self.random = random
         self.size = np.ceil(np.sqrt(X.shape[1]))
         best_individual = self.execute_algorithm(X, y)
         self.best_features = best_individual
@@ -222,7 +247,7 @@ class GeneticProgrammingFlexibleLogic(OptimizationMixin, TransformerMixin, Class
                                                         for individual_with_fitness in population_with_fitness], X, y)
             selected_individuals = self.selection(population_with_fitness)
             crossed_individuals = selected_individuals  # self.crossover(selected_individuals)
-            mutated_individuals = self.mutation(crossed_individuals, X=X, y=y)
+            mutated_individuals = self.mutate(crossed_individuals, X=X, y=y)
             new_population = self.fitness(mutated_individuals, X, y)
             population_with_fitness = self.combine(
                 population_with_fitness, new_population)
@@ -237,7 +262,7 @@ class GeneticProgrammingFlexibleLogic(OptimizationMixin, TransformerMixin, Class
                                       "mean fitness": mean})
 
         best_individual = max(population_with_fitness, key=lambda x: x[1])[0]
-        return best_individual[0]+best_individual[1]
+        return best_individual.get_all_features()
 
     def reset_evaluation(self):
         self.evaluate_wrapper = memoize_genetic(self.simple_evaluate)
@@ -255,9 +280,15 @@ class GeneticProgrammingFlexibleLogic(OptimizationMixin, TransformerMixin, Class
                 raise ValueError("Unknown selection parameter expected one of : " + str(tuple(["elitism", "truncate"])))
             self.combine = self.elitism if "elit" in params["combine"] else self.truncation
         if "mutation" in params:
-            if params["mutation"] not in ("complex", "simple"):
-                raise ValueError("Unknown selection parameter expected one of : " + str(tuple(["complex", "simple"])))
-            self.mutation = self.mutate_simple if "simple" == params["mutation"] else self.mutate_complex
+            if params["mutation"] not in ("complex", "simple", "rank"):
+                raise ValueError("Unknown selection parameter expected one of : " + str(tuple(["complex", "simple", "rank"])))
+            self.mutate = None
+            if 'simple' == params["mutation"]:
+                self.mutate = self.mutate_simple
+            elif "complex" == params["mutation"]:
+                self.mutate = self.mutate_complex
+            else:
+                self.mutate = self.mutate_rank
 
     def __init__(self,
                  seed=None,
@@ -293,7 +324,7 @@ class GeneticProgrammingFlexibleLogic(OptimizationMixin, TransformerMixin, Class
 
         allowed_selection = ('rank', 'proportionate')
         allowed_combine = ('elitism', 'truncate')
-        allowed_mutation = ('complex', 'simple')
+        allowed_mutation = ('complex', 'simple', 'rank')
 
         if self.selection not in allowed_selection:
             raise ValueError("Unknown selection type: %s, expected one of %s." % (self.selection, selection))
@@ -304,7 +335,13 @@ class GeneticProgrammingFlexibleLogic(OptimizationMixin, TransformerMixin, Class
 
         self.selection = self.select_population_rank if "rank" in selection else self.select_population
         self.combine = self.elitism if "elit" in combine else self.truncation
-        self.mutation = self.mutate_simple if "simple" in mutation else self.mutate_complex
+        self.mutate = None
+        if 'simple' == mutation:
+            self.mutate = self.mutate_simple
+        elif "complex" == mutation:
+            self.mutate = self.mutate_complex
+        else:
+            self.mutate = self.mutate_rank
         self.reset_evaluation()
 
 
@@ -316,8 +353,8 @@ class Individual:
         self.original_features = []
         self.original_features_set = set()
               
-    def add_constructed(self, feature):
-        self.constructed.append(feature)
+    def add_constructed_feature(self, feature):
+        self.constructed_features.append(feature)
         
     def add_original(self, index):
         if index in self.original_features_set:
@@ -340,7 +377,21 @@ class Individual:
     def remove_constructed_features(self, indices):
         self.constructed_features = [v for i,v in enumerate(self.constructed_features) if i not in indices]
     
-    def remove_original_ifeatures(self, indices):
+    def remove_original_features(self, indices):
+        #Indices corresponds to list index not feature_index!
+        feature_index_to_remove = set([v.feature_index for i,v in enumerate(self.original_features) if i in indices])
         self.original_features = [v for i,v in enumerate(self.original_features) if i not in indices]
-        self.original_features_set = self.original_features_set - indices
+        self.original_features_set = self.original_features_set - feature_index_to_remove
     
+    def get_all_features(self):
+        return self.constructed_features + self.original_features
+    
+    def copy(self):
+        new_individual = Individual()
+        new_individual.constructed_features = [chrms.copy() for chrms in self.constructed_features]
+        new_individual.original_features = [chrms.copy() for chrms in self.original_features]
+        new_individual.original_features_set = self.original_features_set.copy()
+        return new_individual
+    
+    def __hash__(self):
+        return hash(tuple(self.constructed_features)) + hash(frozenset(self.original_features_set))

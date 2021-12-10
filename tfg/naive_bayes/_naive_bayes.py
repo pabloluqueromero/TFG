@@ -243,7 +243,6 @@ class NaiveBayes(ClassifierMixin, BaseEstimator):
             X = X.astype(int)
         if y.dtype != int:
             X = X.astype(int)
-        log_alpha = np.log(self.alpha)
         log_proba = np.zeros((X.shape[0], self.n_classes_))
         for i in range(X.shape[0]):
             example, label = X[i], y[i]
@@ -379,7 +378,7 @@ class NaiveBayes(ClassifierMixin, BaseEstimator):
 """
 Enhanced methods with Numba nopython mode
 """
-@njit
+#@njit
 def _get_tables(X: np.array, y: np.array, n_classes: int, alpha: float):
     """Computes conditional log count for each value of each feature"""
     smoothed_log_counts = []
@@ -402,7 +401,7 @@ def _get_tables(X: np.array, y: np.array, n_classes: int, alpha: float):
     return smoothed_counts, smoothed_log_counts, np.array(feature_values_count), feature_values_count_per_element, np.array(feature_unique_values_count)
 
 
-@njit
+#@njit
 def _get_counts(column: np.ndarray, y: np.ndarray, n_features_: int, n_classes: int):
     """Computes count for each value of each feature for each class value"""
     counts = np.zeros((n_features_, n_classes), dtype=np.float64)
@@ -411,7 +410,7 @@ def _get_counts(column: np.ndarray, y: np.ndarray, n_features_: int, n_classes: 
     return counts
 
 
-@njit
+#@njit
 def compute_total_probability_(class_count_, feature_values_count_, alpha):
     """Computes count for each value of each feature for each class value"""
     total_probability_ = class_count_ + alpha*feature_values_count_.reshape(-1, 1)
@@ -431,7 +430,7 @@ def _predict(X: np.ndarray, smoothed_log_counts_: np.ndarray, feature_values_cou
     return log_probability
 
 
-@njit
+#@njit
 def _predict_single(log_probability, j, X, feature_values_count_, smoothed_log_counts_, log_alpha):
     mask = X[:, j] < feature_values_count_[j]  # Values known in the fitting stage
     index = X[:, j][mask]
